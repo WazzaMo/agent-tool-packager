@@ -2,6 +2,12 @@
 
 A utility for CLI agentic software development workflows.
 
+Cursor summarised this project as:
+
+> **Agent HQ is an early-stage project to standardize how
+  you add prompts, MCP
+  servers, and skills to agentic CLI workflows, with documentation and conventions in place**
+
 ## Copyright
 
 (c) Copyright 2026 Warwick Molloy.
