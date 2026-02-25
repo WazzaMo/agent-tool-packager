@@ -23,6 +23,32 @@ Ever wanted to install MCP servers, skills etc in a convenient manner?
 
 Me too...
 
+## Build, test and run
+
+**Prerequisites:** Go 1.21 or later.
+
+The CLI lives in the `src/` directory. From the repository root:
+
+```bash
+# Build the binary (output: src/ahq)
+cd src && go build -o ahq .
+
+# Run tests
+cd src && go test ./...
+
+# Run the CLI
+./src/ahq help
+./src/ahq install    # default: install prompt markdown into the current project
+```
+
+To use the binary from anywhere, copy it to a directory on your `PATH`, for example:
+
+```bash
+cp src/ahq ~/bin/ahq
+```
+
+Config is read from `~/.ahq/config.yaml`. See `docs/notes` for the config schema.
+
 ## Other benefits
 
 We are all citizen researchers when it comes to Agentic software dev because
