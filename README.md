@@ -49,8 +49,7 @@ cp src/ahq ~/bin/ahq
 
 Config is read from `~/.ahq/config.yaml`. Package catalogs: global (bundled),
 user local at `~/.ahq/catalog.yaml`, and optional project local at `./.ahq/catalog.yaml`
-(project overrides user overrides global). See `docs/notes/2026-02-25-ahq-cli-prototype.md`
-for the config schema and `docs/notes/2026-02-26-catalog-action-plan.md` for catalog behaviour.
+(project overrides user overrides global). Full details: [docs/configuration.md](docs/configuration.md).
 
 ### Testing the catalog
 

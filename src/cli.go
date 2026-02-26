@@ -16,7 +16,7 @@ Usage:
   ahq catalog refresh    Refresh local catalog from sources
   ahq help               Show this message
 
-Config is read from ~/.ahq/config.yaml. Catalog: ~/.ahq/catalog.yaml.
+Config: ~/.ahq/ (override with AHQ_CONFIG_HOME for testing).
 `
 
 // Run interprets os.Args and runs the appropriate subcommand.

@@ -11,28 +11,45 @@ import (
 
 const defaultProjectPromptsDir = "prompts"
 
-// Config holds the contents of ~/.ahq/config.yaml.
+// AHQConfigHomeEnv is the environment variable that overrides the config
+// directory (default ~/.ahq). Set it for testing or alternate config locations.
+const AHQConfigHomeEnv = "AHQ_CONFIG_HOME"
+
+// Config holds the contents of ~/.ahq/config.yaml (or AHQ_CONFIG_HOME).
 type Config struct {
 	PromptSources      []string `yaml:"prompt_sources"`
 	ProjectPromptsDir  string   `yaml:"project_prompts_dir"`
 }
 
-// ConfigPath returns the path to the user's AHQ config file.
-func ConfigPath() (string, error) {
+// ahqConfigDir returns the directory containing config.yaml and catalog.yaml.
+// If AHQ_CONFIG_HOME is set, that path is used; otherwise ~/.ahq.
+func ahqConfigDir() (string, error) {
+	if d := os.Getenv(AHQConfigHomeEnv); d != "" {
+		return d, nil
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("home directory: %w", err)
 	}
-	return filepath.Join(home, ".ahq", "config.yaml"), nil
+	return filepath.Join(home, ".ahq"), nil
+}
+
+// ConfigPath returns the path to the user's AHQ config file.
+func ConfigPath() (string, error) {
+	dir, err := ahqConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.yaml"), nil
 }
 
 // CatalogPath returns the path to the user's local catalog file.
 func CatalogPath() (string, error) {
-	home, err := os.UserHomeDir()
+	dir, err := ahqConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("home directory: %w", err)
+		return "", err
 	}
-	return filepath.Join(home, ".ahq", "catalog.yaml"), nil
+	return filepath.Join(dir, "catalog.yaml"), nil
 }
 
 // ProjectCatalogPath returns the path to the project-local catalog file under dir (cwd).
@@ -40,7 +57,7 @@ func ProjectCatalogPath(projectDir string) string {
 	return filepath.Join(projectDir, ".ahq", "catalog.yaml")
 }
 
-// Load reads and parses the config file at ~/.ahq/config.yaml.
+// Load reads and parses the config file (see ConfigPath / AHQ_CONFIG_HOME).
 // If the file is missing, returns a clear error without wrapping in a stack.
 func Load() (*Config, error) {
 	path, err := ConfigPath()
