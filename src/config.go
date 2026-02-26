@@ -26,6 +26,20 @@ func ConfigPath() (string, error) {
 	return filepath.Join(home, ".ahq", "config.yaml"), nil
 }
 
+// CatalogPath returns the path to the user's local catalog file.
+func CatalogPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("home directory: %w", err)
+	}
+	return filepath.Join(home, ".ahq", "catalog.yaml"), nil
+}
+
+// ProjectCatalogPath returns the path to the project-local catalog file under dir (cwd).
+func ProjectCatalogPath(projectDir string) string {
+	return filepath.Join(projectDir, ".ahq", "catalog.yaml")
+}
+
 // Load reads and parses the config file at ~/.ahq/config.yaml.
 // If the file is missing, returns a clear error without wrapping in a stack.
 func Load() (*Config, error) {

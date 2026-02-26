@@ -1,0 +1,3 @@
+# Bundled (global) catalog for AHQ. Packages listed here are read-only for users.
+# Add local packages via: ahq catalog add <name> <path>
+packages: []
