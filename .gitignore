@@ -26,6 +26,9 @@ Thumbs.db
 *.swo
 *~
 
+# Project-local ahq state (installed record; optional catalog)
+.ahq/
+
 # Test / coverage
 *.log
 coverage.out
