@@ -144,7 +144,7 @@ Operations that the CLI must support, and who can do what.
 ## Open questions (resolved)
 
 - **Project-local catalog:** Implemented in first cut. Precedence: project over
-  user over global. File: `./.ahq/catalog.yaml`.
+  user over global. File: `./.ahq-local/catalog.yaml`.
 - **Remove of a global name:** Not implemented as "hide via local stub". Only
   entries in the user's local catalog can be removed; removing a global-only
   package reports a clear error. Hiding is achieved by adding a local package

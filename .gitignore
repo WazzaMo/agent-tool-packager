@@ -27,7 +27,7 @@ Thumbs.db
 *~
 
 # Project-local ahq state (installed record; optional catalog)
-.ahq/
+.ahq-local/
 
 # Test / coverage
 *.log

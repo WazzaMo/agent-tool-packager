@@ -48,7 +48,7 @@ cp src/ahq ~/bin/ahq
 ```
 
 Config is read from `~/.ahq/config.yaml`. Package catalogs: global (bundled),
-user local at `~/.ahq/catalog.yaml`, and optional project local at `./.ahq/catalog.yaml`
+user local at `~/.ahq/catalog.yaml`, and optional project local at `./.ahq-local/catalog.yaml`
 (project overrides user overrides global). Full details: [docs/configuration.md](docs/configuration.md).
 
 ### Testing the catalog
@@ -88,7 +88,7 @@ into the project.
 `prompt_sources`. `ahq install <name>` resolves `<name>` from the merged
 catalog (project overrides user overrides global when names match) and copies from that
 package’s location. To add packages for the current repo only, create
-`./.ahq/catalog.yaml` with the same `packages:` list shape as the user catalog.
+`./.ahq-local/catalog.yaml` with the same `packages:` list shape as the user catalog.
 
 ## Other benefits
 

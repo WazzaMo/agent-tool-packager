@@ -14,10 +14,13 @@ and only made "nicer" to read when rendered as HTML or other manner.
 # Principles
 
 1. Use heading levels 1 to 4 (#) to (####) and use level 1 for new sections,
-not only the title, so the title and its introduce is a new section and should have level 1 heading.
+   not only the title, so the title and its introduce is a new section and should
+   have level 1 heading.
+   Vertical space is needed around headings for clarity, meaning empty carriage
+   return before and after headings.
 
 2. Space out the file around headings and between paragraphs so that
-the file does not get cluttered. Place an empty line after a heading.
+   the file does not get cluttered. Place an empty line after a heading.
 
 3. Use Mermaid for images where they add value
 

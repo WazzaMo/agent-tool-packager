@@ -4,7 +4,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Project overview
 
-**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in Go; config at `~/.ahq/config.yaml` (and user catalog at `~/.ahq/catalog.yaml`). **`AHQ_CONFIG_HOME`**: set this env var to a directory path to override the config/catalog location (e.g. for testing); when unset, `~/.ahq` is used. Package catalogs: **global** (bundled), **user** (from config dir), **project** at `./.ahq/catalog.yaml`. Precedence: **project overrides user overrides global**.
+**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in Go; config at `~/.ahq/config.yaml` (and user catalog at `~/.ahq/catalog.yaml`). **`AHQ_CONFIG_HOME`**: set this env var to a directory path to override the config/catalog location (e.g. for testing); when unset, `~/.ahq` is used. Package catalogs: **global** (bundled), **user** (from config dir), **project** at `./.ahq-local/catalog.yaml`. Precedence: **project overrides user overrides global**.
 
 ## Key commands and behaviour
 

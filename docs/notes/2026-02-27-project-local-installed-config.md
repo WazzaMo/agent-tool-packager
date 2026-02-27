@@ -1,4 +1,4 @@
-# Project-local installed config: .ahq and installed schema
+# Project-local installed config: .ahq-local and installed schema
 
 ## Copyright
 
@@ -8,31 +8,36 @@ Created by Warwick Molloy Feb 2026.
 
 # Goal
 
-Store a local config under the working project directory at `{project-root}/.ahq`
+Store a local config under the working project directory at `{project-root}/.ahq-local`
 that records what was installed in the project. This directory should be
 git-ignored so each developer’s or CI’s install state is not committed.
 
 # Location and gitignore
 
-- **Path:** `./.ahq/` at the project root (same directory that may hold
-  `catalog.yaml` for project-scoped catalog entries).
-- **Git:** Add `.ahq/` to the project’s `.gitignore` so that the contents of
-  `.ahq/` are not committed. The project catalog (`.ahq/catalog.yaml`) is
-  optional and, if present, is typically committed so the team shares the same
-  project-level package list; the **installed** record is local to the machine
-  and should be ignored.
+## Path
 
-So we have two roles under `.ahq/`:
+`./.ahq-local/` lives at the project root (the same directory that may hold
+`catalog.yaml` for project-scoped catalog entries).
+
+## Gitignore
+
+Add `.ahq-local/` to the project’s `.gitignore` so that the contents of `.ahq-local/`
+are not committed. The project catalog (`.ahq-local/catalog.yaml`) is optional
+and, if present, is typically committed so the team shares the same
+project-level package list; the installed record is local to the machine
+and should be ignored.
+
+So we have two roles under `.ahq-local/`:
 
 | File             | Purpose                    | Typically committed? |
 |------------------|----------------------------|----------------------|
 | catalog.yaml     | Project-level package list | Yes (team shared)    |
 | installed.yaml   | Record of what was installed | No (git-ignored)   |
 
-To keep “what was installed” strictly local, either ignore the whole `.ahq/`
-directory or ignore only `.ahq/installed.yaml`. This note assumes ignoring
-`.ahq/` as a simple default; projects that commit `catalog.yaml` can instead
-ignore only `.ahq/installed.yaml`.
+To keep “what was installed” strictly local, either ignore the whole `.ahq-local/`
+directory or ignore only `.ahq-local/installed.yaml`. This note assumes ignoring
+`.ahq-local/` as a simple default; projects that commit `catalog.yaml` can instead
+ignore only `.ahq-local/installed.yaml`.
 
 # What the installed config records
 
@@ -54,9 +59,13 @@ The catalog schema uses a list of package entries with `name`, `version`,
 
 ## Nominated schema: installed.yaml
 
-**File:** `./.ahq/installed.yaml`
+### File
 
-**Shape:** A single top-level key `packages` (or `installed`) listing one entry
+`./.ahq-local/installed.yaml`
+
+### Shape
+
+A single top-level key `packages` (or `installed`) lists one entry
 per installed package. Each entry is a small record of what was installed.
 
 | Field     | Purpose                                      |
@@ -80,7 +89,7 @@ per installed package. Each entry is a small record of what was installed.
 Example:
 
 ```yaml
-# .ahq/installed.yaml — list of packages installed in this project
+# .ahq-local/installed.yaml — list of packages installed in this project
 
 packages:
   - name: doc-guide
@@ -103,13 +112,20 @@ the structure similar to `catalog.yaml` (list of package-like entries).
 
 # Relation to catalog and config
 
-- **Catalog** (global, user, project): index of *available* packages (name,
-  version, description, location). Defines what can be installed.
-- **Config** (`config.yaml`): prompt_sources and project_prompts_dir for
-  “install all from config.”
-- **Installed** (`installed.yaml`): record of what was *actually* installed in
-  this project (from catalog installs and, if we track it, from config
-  installs).
+## Catalog
+
+Catalogs (global, user, project) index *available* packages: name, version,
+description, and location. They define what can be installed.
+
+## Config
+
+`config.yaml` configures `prompt_sources` and `project_prompts_dir` for
+“install all from config.”
+
+## Installed
+
+`installed.yaml` records what was *actually* installed in this project
+from catalog installs and, if we track it, from config installs.
 
 Config-based install (copying from `prompt_sources`) might be recorded
 separately or as a synthetic “config” entry; that can be a follow-on. The
@@ -119,10 +135,10 @@ nominated schema above focuses on catalog-based installs first.
 
 | Concept        | Location        | Purpose                         |
 |----------------|-----------------|---------------------------------|
-| Project catalog| ./.ahq/catalog.yaml | Project-level package list   |
-| Installed list | ./.ahq/installed.yaml | What was installed here    |
+| Project catalog| ./.ahq-local/catalog.yaml | Project-level package list   |
+| Installed list | ./.ahq-local/installed.yaml | What was installed here    |
 
-Recommendation: git-ignore `.ahq/` (or at least `.ahq/installed.yaml`). Use
+Recommendation: git-ignore `.ahq-local/` (or at least `.ahq-local/installed.yaml`). Use
 `installed.yaml` with a list of entries shaped like the catalog (name, version)
 plus optional source, installed_at, and files. This gives a clear, machine-readable
 record of what is installed in the project.
