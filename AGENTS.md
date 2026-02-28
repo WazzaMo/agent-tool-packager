@@ -4,7 +4,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Project overview
 
-**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in Go; config at `~/.ahq/config.yaml` (and user catalog at `~/.ahq/catalog.yaml`). **`AHQ_CONFIG_HOME`**: set this env var to a directory path to override the config/catalog location (e.g. for testing); when unset, `~/.ahq` is used. Package catalogs: **global** (bundled), **user** (from config dir), **project** at `./.ahq-local/catalog.yaml`. Precedence: **project overrides user overrides global**.
+**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in Python; config at `~/.ahq/config.yaml` (and user catalog at `~/.ahq/catalog.yaml`). **`AHQ_CONFIG_HOME`**: set this env var to a directory path to override the config/catalog location (e.g. for testing); when unset, `~/.ahq` is used. Package catalogs: **global** (bundled), **user** (from config dir), **project** at `./.ahq-local/catalog.yaml`. Precedence: **project overrides user overrides global**.
 
 ## Key commands and behaviour
 
@@ -17,9 +17,9 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Build and test
 
-- **Prerequisites:** Go 1.21+.
-- Build: `cd src && go build -o ahq .`
-- Test: `cd src && go test ./...`
+- **Prerequisites:** Python 3.12
+
+
 
 ## Documentation and conventions
 
@@ -35,16 +35,14 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## File references
 
-| Topic              | Location |
-|--------------------|----------|
-| CLI usage, catalog | [README.md](README.md) |
-| Configuration      | [docs/configuration.md](docs/configuration.md) |
-| Contributing       | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Doc formatting     | [docs/doc-guide.md](docs/doc-guide.md) |
-| Code style         | [docs/clean-code.md](docs/clean-code.md) |
-| Config schema      | [docs/notes/2026-02-25-ahq-cli-prototype.md](docs/notes/2026-02-25-ahq-cli-prototype.md) |
-| Package & catalog  | [docs/notes/2026-02-25-package-metadata-and-catalog.md](docs/notes/2026-02-25-package-metadata-and-catalog.md) |
-| Catalog lifecycle  | [docs/notes/2026-02-26-catalog-action-plan.md](docs/notes/2026-02-26-catalog-action-plan.md) |
+| Topic                    | Location                                             |
+|--------------------      |----------------                                      |
+| CLI usage, catalog       | [README.md](README.md)                               |
+| Configuration            | [docs/configuration.md](docs/configuration.md)       |
+| Contributing & schema    | [CONTRIBUTING.md](CONTRIBUTING.md)                   |
+| Doc formatting           | [docs/doc-guide.md](docs/doc-guide.md)               |
+| Code style               | [docs/clean-code.md](docs/clean-code.md)             |
+| Package & catalog        | [docs/notes/2026-02-25-package-metadata-and-catalog.md](docs/notes/2026-02-25-package-metadata-and-catalog.md) |
 
 ## Attribution
 
