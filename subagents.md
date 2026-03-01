@@ -24,5 +24,12 @@ Browser - controls a browser via MCP tools.
 
 Planner - divide larger tasks into small, focussed tasks.
 
+Product - understand the product, the intended user experience,
+          the Agent HQ joke and the principle of keepinng the user
+          in control.
 
+Writer -  More deeply understands the jokes and is the one
+          responsible for crafting communication with users.
 
+Software Engineers -  Master software craftsmen who know who to write
+                      clean and maintainable python code.
