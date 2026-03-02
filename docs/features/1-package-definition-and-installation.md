@@ -165,3 +165,13 @@ Must install vecfs executables for the vecfs-embed-ts and vecfs-ts
 to the user bin directory. Any supplementary files to the share
 directory - according to "### User home path" above.
 
+# Gaps
+
+  Gaps / follow-ups
+
+  1. Agent nomination – The ahq agent command and per-agent paths (e.g. .cursor) are not in
+     the current story breakdown and probably need a new story.
+  2. Uninstall – No concrete acceptance criteria (e.g. ahq uninstall <name>), only the
+     decision that it is needed.
+  3. `ahq list packages` – This differs from the earlier ahq list described in AGENTS.md;
+     docs need to be aligned.
