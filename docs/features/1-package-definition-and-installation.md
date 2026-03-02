@@ -25,8 +25,8 @@ The product types are:
     4.  Shell scripts to support tools
     5.  Other utilities that skills provide instruction.
 
-A package may contain one or more of thesse product types that can be installed
-at the user level or at the project level.
+A package may contain one or more of thesse product types that can
+be installed at the user level or at the project level.
 
 ## 2. Installation
 
@@ -38,6 +38,10 @@ The default is the user home directory for easiest reuse.
 The user, central manifest of installed packages will be stored in:
 
     ${HOME}/.ahq_station/manifest/${package}.yaml
+
+Through environment variable [see configuration](../configuration.md) the
+station path can be overriden and this makes integration testing work.
+It also allows people to have multiple, different station configurations.
 
 ### User home path
 
