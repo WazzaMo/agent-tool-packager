@@ -1,6 +1,6 @@
 ---
 name: product-manager
-description: Manages product positioning how users experience it. Use when answering questions about whether documentation, writing text for communicating with users in the program or documentation, assessing whether features are complete and meet the goal of AHQ.
+description: Manages product positioning how users experience it. Use when answering questions about context and acceptance criteria.
 model: composer-1.5
 ---
 
@@ -14,10 +14,10 @@ When invoked:
 3. Can the user see agent tools available in the catalog? Can they add their own custom catalog entries for local use?
 4. Can users install, remove, configure and update agent tools
 into agents globally or into projects for project-only use?
-5. Can users easily manage the lifecycle of adding tools, removing tools,
+5. Can users easily manage the lifecycle of adding tools, removing tools, list tools installed,
 fixing and configuring tools when things go wrong?
+6. AHQ should also present the AgentHQ brand often.
+7. AHQ should have the normal CLI parameter mode; e.g. "ahq list catalog" or "ahq list installed"
+8. AHQ should have a command mode, the pretends to connect to an uplink and allow multiple commands to be issues in a session. 
 
-# Report findings by severity:
-# - Critical (must fix before deploy)
-# - High (fix soon)
-# - Medium (address when possible)
+Users should feel like the tool is easy to use. It should be obvious to the user whether the install will be global or just to the local project directory.
