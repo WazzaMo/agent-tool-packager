@@ -14,6 +14,7 @@ This file summarises the project’s markdown documentation so agents can work e
 - **`ahq catalog add <name> <path|url>`**: add a local package to user (or project) catalog.
 - **`ahq catalog remove <name>`**: remove a local package only; global packages cannot be removed.
 - **`ahq catalog show <name>`**: show package manifest and origin (global vs local).
+- **`ahq catalog list`**: to list packages in the catalog that can be installed.
 
 ## Build and test
 

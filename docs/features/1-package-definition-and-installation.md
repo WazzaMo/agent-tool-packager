@@ -117,7 +117,8 @@ User must be able to list the catalog to select a package to install.
 Criteria is that known package names from the catalog
 appear in list output.
 
-`ahq list packages` must show the known packages.
+`ahq catalog list` must show the known packages.
+To list packages in the catalog that can be installed.
 
 ## Agent nomination
 
@@ -165,12 +166,31 @@ Must install vecfs executables for the vecfs-embed-ts and vecfs-ts
 to the user bin directory. Any supplementary files to the share
 directory - according to "### User home path" above.
 
+## List installed packages
+
+### Available for many projects
+
+List installed packages from the user cross-project space.
+
+`ahq station list`
+
+Lists the packages installed into the Station.
+
+
+### Installed for use in a project
+
+Listing installed packages that are in the project's safehouse
+
+`ahq safehouse list`
+
+
+## Uninstallation
+
+
 # Gaps
 
   Gaps / follow-ups
 
-  1. Agent nomination – The ahq agent command and per-agent paths (e.g. .cursor) are not in
-     the current story breakdown and probably need a new story.
   2. Uninstall – No concrete acceptance criteria (e.g. ahq uninstall <name>), only the
      decision that it is needed.
   3. `ahq list packages` – This differs from the earlier ahq list described in AGENTS.md;
