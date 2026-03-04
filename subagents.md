@@ -25,13 +25,13 @@ Browser - controls a browser via MCP tools.
 Orchestrator - divide larger tasks into small, focussed tasks.
 
 Product-Manager - understand the product, the intended user experience,
-          the Agent HQ joke and the principle of keepinng the user
+          the Agent HQ joke and the principle of keeping the user
           in control.
 
 Copy-writer -  More deeply understands the jokes and is the one
           responsible for crafting communication with users with favorite websites describing spy terminology.
 
-Software Engineers -  Master software craftsmen who know who to write
+Software Engineers -  Master software craftsmen who knows how to write
                       clean and maintainable code.
 
 Security-auditor - Cursor documentation example
