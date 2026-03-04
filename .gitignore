@@ -33,3 +33,5 @@ Thumbs.db
 *.log
 coverage.out
 coverage.html
+
+.ahq_safehouse
