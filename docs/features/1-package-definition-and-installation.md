@@ -33,6 +33,7 @@ be installed at the user level or at the project level.
 - **Rules**: Product type for prompt markdown files. In
   [package-metadata](../notes/2026-02-25-package-metadata-and-catalog.md) and
   code, these are "assets" or "prompts."
+
 - **Station**: Main config area at `~/.ahq_station` (or `STATION_PATH`); see
   [configuration](../configuration.md).
 
@@ -103,10 +104,24 @@ Packaging paths in the tar.gz bundle should support installation:
 - `skill` for the skill
 - `rule` for any rule files 
 
-### 3. Whether to add uninstall support.
+## Removing packages
 
-We will need uninstall support and this will help with test cases
-for installation.
+The proper word for the opposite of installing, is removing, not uninstall.
+
+Packages can be removed from the Station (user's central location) or from 
+the project's Safehouse. Removing a package from a Station can be done with
+the --exfiltrate option to trigger migrating the binaries and Station package
+assets from the Station to all Safehouses, in all projects, that refer to the
+Station assets.
+
+This supports a migration use-case and avoids leaving projects that used the
+Station binaries from being compromised by the package's removal from the Station.
+It works for a migration because a new version can be installed at the Station
+and tested in a project before migrating all Safehouses to the new version.
+
+This implies that Station versions of a package may differ from any Safehouse
+version as long as the Safehouse is project-only installed, so it has no
+reference or association with the Station.
 
 
 # Acceptance Criteria
@@ -184,14 +199,29 @@ Listing installed packages that are in the project's safehouse
 `ahq safehouse list`
 
 
-## Uninstallation
+## Removing packages
 
+### Removing from user's Station
 
-# Gaps
+Removing a package from the Station makes the package unavailable in
+all safehouses (projects) where the Station's binaries were leveraged.
+In some cases, station installed binaries may need to be installed
+in the Safehouses, so those packages keep working. This could be used
+as a migration strategy from version to version.
 
-  Gaps / follow-ups
+```bash
+ahq remove station vecfs
+```
 
-  2. Uninstall – No concrete acceptance criteria (e.g. ahq uninstall <name>), only the
-     decision that it is needed.
-  3. `ahq list packages` – This differs from the earlier ahq list described in AGENTS.md;
-     docs need to be aligned.
+```bash
+ahq remove station vecfs --exfiltrate
+```
+
+The exfiltrate option means to move the binaries
+
+### Removing package from project safehouse
+
+```bash
+ahq remove safehouse vecfs
+```
+
