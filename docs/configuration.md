@@ -35,6 +35,36 @@ The station will have two files:
 
     2.  Catalog scope - ahq_catalog.yaml
 
+#### Station Configuration
+
+The station directory found either at:
+
+1.  ${STATION_PATH}/config.yaml
+2.  ~/.ahq_station/config.yaml
+
+Will hold information about the AgentHQ (AHQ) Station.
+
+It will contain at minimum:
+
+```yaml
+configuration:
+    - version: 0.1.0
+    - agent-paths:
+        - cursor:
+            - home_path: ~/.cursor/
+            - project_path: .cursor/
+            - rule: rules/
+            - commands: commands/
+            - skills: skills/
+        - codex:
+            - home_path: ~/.codex
+        - claude:
+            - home_path: ~/.claude
+        - gemini:
+            - home_path: ~/.gemini
+```
+
+
 ### The Safehouse
 
 Every time an Agent is deployed
