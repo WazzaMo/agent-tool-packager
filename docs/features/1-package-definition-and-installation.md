@@ -42,6 +42,90 @@ be installed at the user level or at the project level.
 Utility programs can be installed to the user home directory or the local project.
 The default is the user home directory for easiest reuse.
 
+Package installation involves:
+
+1.  Making the tools available, where a program is needed (optional)
+
+2.  Briefing the agent, via a skill or configuration to use an MCP, or though a softlink
+    that makes the binary appear available in the project or in the user's home agent
+    installation area `~/.cursor` for example.
+
+### Program execution
+
+Program Installation happens in two stages:
+
+1.  Program installed in user bin directory so it can be executed from the PATH
+
+2.  Program installed locally to the project only and its path is resolved
+    through the skill.
+
+### Agent tech briefing
+
+This is the stage of package installation where the agent is enabled to use
+the package program material, either at the user's home directory configuration
+for the agent or at the project directory level.
+
+### Precedence of Station or Safehouse
+
+Where a package has been installed in a Station and version B is available, generally,
+and an older version of the package, version A, has been installed completely within a project's Safehouse 
+the selection of A or B version in the heat of the moment, is up to the agent.
+
+AHQ cannot decide which tool is used by the agent when possibly two versions of the same
+tool is available to the agent. Therefore, this is not a concern for AHQ and not
+something AHQ can control, nor test.
+
+### Assumption of independence
+
+Packages are assumed to include all components needed to get off at least one shot.
+If a package has dependencies, installation will either:
+
+1.  include a parameter indicating dependencies must be installed; or
+
+2.  the installation will fail with a meaningful error message saying a necessary
+    dependency is missing, so the user knows what to do next.
+
+The installation command with dependency will be given the parameter like this:
+
+```bash
+ahq 
+```
+
+### Package Manifest
+
+The package manifest that is stored in the Station and Safehouse holds package metadata
+which includes:
+
+1. Name - name of package
+
+2. Repo_source : 
+    - path : if package defined in filesystem
+    - url : if package defined in Git repo - Gitlab, Github etc
+    - version : semantic version assumed Major.Minor.Revision
+
+3. Provider : 
+    - author: name text
+    - organisation: company, team or git project name, text.
+
+4. Asset list
+
+5. Asset definition (in list)
+    - path: text, relative path to file
+    - type: skill, program, rule, sub-agent file
+    - name: text
+
+6. List of program dependencies
+
+7. Program definition (in list)
+    - asset_name: text name, matches text in asset record.
+    - runtime: node | deno | bun | python | x64 | arm
+    - command: e.g. `npm vecfs-ts` | `python vecfs-py` | tar
+    - included : boolean - true means the package provides the program (self-hosting) and false flags a dependency
+    - dependency : package name and version to meet dependency
+        - name : package name
+        - version : semantic version - major.minor.revision
+
+
 ### Installation Manifest
 
 The user, central manifest of installed packages will be stored in:
@@ -51,6 +135,7 @@ The user, central manifest of installed packages will be stored in:
 Through environment variable [see configuration](../configuration.md) the
 station path can be overriden and this makes integration testing work.
 It also allows people to have multiple, different station configurations.
+
 
 ### User home path
 
@@ -70,6 +155,12 @@ Utility Binary: ${PROJECT}/.ahq_safehouse/bin
 Supplementary files: ${PROJECT}/.ahq_safehouse/share/${utility}/
 
 Where ${PROJECT} is the path of the local project.
+
+The project's Safehouse holds configuration.
+
+The `.ahq_safehouse/config.yaml` file should record:
+1.  Project agent for handover
+2.  Path to project agent's files.
 
 
 ### Skills updates
@@ -93,7 +184,7 @@ to enable the skill.
 
 AHQ can define the tar.gz packaging AND extraction rules.
 
-When extracting, AHQ should unpack to a temporary path in /tmp/{YYYY-MM-DD-package-name}
+When extracting, AHQ should unpack to a temporary path in /tmp/{YYYY-MM-DD-package-name-version}
 and then pick out the binary files from the package to install into
 the right places (see above) so they would resolve in the user's PATH or be found by the patched path in the skill.md file.
 
@@ -103,6 +194,14 @@ Packaging paths in the tar.gz bundle should support installation:
 - `config` for configuration
 - `skill` for the skill
 - `rule` for any rule files 
+
+### Text material patching
+
+When patching a SKILL.md file for project agent and Safehouse installation,
+e.g. SKILL.md, only the installed copy in the project's agent directory
+is patched. The Safehouse copy should remain with the original, package
+template, to support re-installation or handover to another agent.
+
 
 ## Removing packages
 
@@ -164,6 +263,22 @@ to claude. If the user runs `ahq agent cursor` a second time,
 ahq should respond with a message telling them that it was 
 unnecessary, "Q Branch already knows cursor was assigned to this project"
 
+## Agent handover
+
+When a project is under one particular agent and swaps it for a new
+agent, this is a handover.
+
+Where a package is installed in a project's Safehouse, a handover
+can be affected like this:
+
+```bash
+ahq agent handover to claude
+```
+
+The Safehouse would have known the past agent in its configuratoin
+and so it is possible to convert a project to a new agent this way.
+
+
 ## Installation
 
 When user installs a package to default locations where the package
@@ -174,8 +289,18 @@ must install into the project area, assumed to be the current directory.
 ```bash
 cd test_project
 ahq agent cursor
-ahq install vecfs-ts
+ahq install vecfs-ts --{scope}
 ```
+
+Where {scope} can be either:
+
+1. user
+
+2. project (default)
+
+If scope is not indicated, project scope is assumed because this
+has less impact.
+
 
 Must install vecfs executables for the vecfs-embed-ts and vecfs-ts
 to the user bin directory. Any supplementary files to the share
@@ -210,14 +335,37 @@ in the Safehouses, so those packages keep working. This could be used
 as a migration strategy from version to version.
 
 ```bash
-ahq remove station vecfs
+ahq remove station vecfs --{scope}
 ```
+
+Where {scope} can be:
+
+1.  user
+
+2.  project (default)
+
 
 ```bash
 ahq remove station vecfs --exfiltrate
 ```
 
-The exfiltrate option means to move the binaries
+The exfiltrate option means to move the binaries. Exhiltrate
+requires, and therefore signifies, that user scoped agent installation
+is undone and converted to work in the project.
+
+Exfiltration should result in all aspects of the package migrating from
+the Station to each qualifying project's Safehouse.
+
+#### Exfiltration qualifying Safehouses
+
+Safehouses that qualify for exfiltration are those that have a package
+installed in the project's agent, where skills and other materials installed
+in the Safehouse and project's agent, refer to binaries and dependencies
+located in the Station.
+
+Projects that have packages installed only into their Safehouse and local
+agent do not qualilfy for exfiltration because they have no dependency
+on the Station.
 
 ### Removing package from project safehouse
 
