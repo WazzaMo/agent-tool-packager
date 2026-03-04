@@ -1,0 +1,7 @@
+name: test-package
+version: 1.0.0
+description: Test package for AHQ acceptance criteria
+assets:
+  - path: skills/test-skill.md
+    type: skill
+    name: test-skill
