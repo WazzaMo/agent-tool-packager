@@ -70,3 +70,32 @@ guide. Their naming convention is {semver}-Release-{date}.md where "semver" mean
 with Major.Minor.Revision numbers and date is in YYYY-MM-DD format.
 
 Describe what new features was added in the commits that resulted in this release.
+
+## Features
+
+For product-led engineering, features can be described and documented
+in a way to focus on consistent definitions with use cases
+and acceptance criteria that gives intent around user impact.
+
+They will be found in `docs/features`
+
+## Stories
+
+User stories may be created in the project when breaking down
+features into smaller, buildable components.
+
+These are to be written into `docs/stories`
+
+## Bugs
+
+Some sub agents are directed to find bugs during unit and integration
+testing and work to validate that the bugs are repeatable.
+
+When bugs are found, write it up in docs/bugs/{YYYY-MM-DD-id}-{short-description}.md
+
+It should cover:
+
+  1.  symptoms of failure - what went wrong? what definition says this is wrong?
+  2.  can it be repeated from command line execution?
+  3.  can independent tests be added that find the same problem?
+  
