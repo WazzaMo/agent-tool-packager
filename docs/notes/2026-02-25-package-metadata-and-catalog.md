@@ -99,10 +99,12 @@ for display or resolution.
 
 ### Where the catalog lives
 
-- **User-local**: e.g. `~/.ahq/catalog.yaml` for packages the user has added
+- **User home**: e.g. `~/.ahq_station/catalog.yaml` for packages the user has added
   or subscribed to.
-- **Project-local**: e.g. `./.ahq-local/catalog.yaml` for packages scoped to that
+
+- **Project**: e.g. `./.ahq-station/catalog.yaml` for packages scoped to that
   project.
+
 - **Bundled or remote**: AHQ could ship or point at a default catalog (e.g.
   GitHub repo or static JSON) so users see a default set of packages without
   configuring anything.
