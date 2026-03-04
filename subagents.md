@@ -32,7 +32,7 @@ Writer -  More deeply understands the jokes and is the one
           responsible for crafting communication with users.
 
 Software Engineers -  Master software craftsmen who know who to write
-                      clean and maintainable python code.
+                      clean and maintainable code.
 
 Security-auditor - Cursor example
 
