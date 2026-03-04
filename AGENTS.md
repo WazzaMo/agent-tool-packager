@@ -4,21 +4,22 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Project overview
 
-**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in Python; config at `~/.ahq_station/ahq_station.yaml` (and user catalog at `~/.ahq_station/ahq_catalog.yaml`). **`STATION_PATH`**: set this env var to a directory path to override the Station location (e.g. for testing); when unset, `~/.ahq_station` is used. Package catalogs: **global** (bundled), **user** (from Station), **project** at `./.ahq-local/catalog.yaml`. Precedence: **project overrides user overrides global**.
+**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in **TypeScript** (Node.js 20+); config at `~/.ahq_station/config.yaml` (and user catalog at `~/.ahq_station/ahq_catalog.yaml`). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.ahq_station` is used. Package catalogs: **global** (bundled), **user** (from Station), **project** at `./.ahq-local/catalog.yaml`. Precedence: **project overrides user overrides global**.
 
 ## Key commands and behaviour
 
-- **`ahq install`** (no args): uses config `prompt_sources`; copies prompt markdown into the project (default subdir e.g. `prompts/`).
-- **`ahq install <name>`**: resolves `<name>` from the merged catalog and copies that package’s assets into the project.
-- **`ahq list`**: shows packages (global + user + project). Use `--local-only`, `--global-only`, or `--project-only` to filter.
-- **`ahq catalog add <name> <path|url>`**: add a local package to user (or project) catalog.
-- **`ahq catalog remove <name>`**: remove a local package only; global packages cannot be removed.
-- **`ahq catalog show <name>`**: show package manifest and origin (global vs local).
-- **`ahq catalog list`**: to list packages in the catalog that can be installed.
+- **`ahq station init`**: create ~/.ahq_station (or STATION_PATH) with config, catalog, manifests.
+- **`ahq safehouse init`**: create .ahq_safehouse in the current project.
+- **`ahq agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
+- **`ahq agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
+- **`ahq catalog list`**: list packages in the merged catalog (--global-only, --project-only, --user-only).
+- **`ahq install <name>`**: install package from catalog. Use `--project` (default) or `--user`; `--dependencies` to install deps.
+- **`ahq station list`** / **`ahq safehouse list`**: list installed packages. **`ahq remove station <pkg>`** / **`ahq remove safehouse <pkg>`**: remove packages; use `--exfiltrate` with station remove to copy to Safehouses first.
 
 ## Build and test
 
-- **Prerequisites:** Python 3.12
+- **Prerequisites:** Node.js 20+
+- **Commands:** `npm install`, `npm run build`, `npm run dev` (development)
 
 
 

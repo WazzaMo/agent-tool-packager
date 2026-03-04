@@ -25,9 +25,45 @@ Me too...
 
 ## Build, test and run
 
+**Prerequisites:** Node.js 20+
+
+```bash
+npm install
+npm run build
+```
+
+Run the CLI:
+```bash
+# Direct execution (after build)
+npx ahq --version
+npx ahq station init
+npx ahq safehouse init
+npx ahq agent cursor
+npx ahq catalog list
+npx ahq install <package> [--project|--user] [--dependencies]
+npx ahq station list
+npx ahq safehouse list
+npx ahq remove station <pkg> [--exfiltrate]
+npx ahq remove safehouse <pkg>
+```
+
+Development (no build step):
+```bash
+npm run dev -- station init
+```
+
+Override Station location:
+```bash
+STATION_PATH="/path/to/station" npx ahq station init
+```
 
 ## Configuration
 
+- **Station:** `~/.ahq_station` (or `STATION_PATH`) — config, catalog, manifests
+- **Safehouse:** `./.ahq_safehouse` — per-project installs
+- **Catalog:** global (bundled) + user (`~/.ahq_station/ahq_catalog.yaml`) + project (`./.ahq-local/catalog.yaml`). Precedence: project > user > global
+
+See [docs/configuration.md](docs/configuration.md) for full configuration.
 
 ### Testing the catalog
 
