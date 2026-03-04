@@ -64,6 +64,20 @@ configuration:
             - home_path: ~/.gemini
 ```
 
+#### The Station's Safehouse list
+
+The Station will have a safehouse list to identify all safehouses that have been
+used by the Station.
+
+`${STATION_PATH}/safehouse_list.yaml`
+
+The contents are:
+
+```yaml
+safehouse_paths:
+    - ~/src/woohoo/.aqh_safehouse
+    - ~/src/oh_yeah/.aqh_safehouse
+```
 
 ### The Safehouse
 

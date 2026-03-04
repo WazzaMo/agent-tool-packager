@@ -15,6 +15,38 @@ The user can define their own repository and use AHQ to manage installation as t
 
 # Use Cases
 
+## 0. Initialisation
+
+The AHQ can be initialised in one or more Station locations.
+
+### Default init
+
+Init AHQ for user directory configuration.
+
+```bash
+ahq station init
+```
+
+This will create ~/.ahq_station and all files it contains.
+
+### Non-default init
+
+For directories other than the user home directory, set the STATION_PATH first.
+
+```bash
+STATION_PATH="~/alternate/.ahq_station" ahq station init
+```
+
+### Safehouse init
+
+When the current directory is a project base directory, run station init
+to configure the AHQ Safehouse in the project.
+
+```bash
+cd project_dir
+ahq safehouse init
+```
+
 ## 1. Definition
 
 Define packages containing one or more products.
@@ -88,8 +120,11 @@ If a package has dependencies, installation will either:
 The installation command with dependency will be given the parameter like this:
 
 ```bash
-ahq 
+ahq install vecfs-ts --project --dependencies
 ```
+
+The dependencies flag acts as a pre-approval to installd dependencies. Without this,
+lacking dependencies will cause installation to fail.
 
 ### Package Manifest
 
@@ -222,6 +257,38 @@ This implies that Station versions of a package may differ from any Safehouse
 version as long as the Safehouse is project-only installed, so it has no
 reference or association with the Station.
 
+# Other information
+
+## Safehouse discovery for exfiltrate
+
+See [configuration](../configuration.md) for the safehoust list. This is the
+registry of safehouses trusted by the Station.
+
+## Exfiltrate semantics 
+
+(copy vs move): When running ahq remove station <pkg> --exfiltrate, should binaries/config be copied to each Safehouse (then Station removed). There will be copies at each Safehouse, as a result so they are independent.
+
+## Manifest richness
+
+For Station/Safehouse manifests, the manifest will store the fields per-package
+as defined earlier in "### Package Manifest"
+
+## Agent mapping configuration
+
+This is configured when AHQ is initialised.
+It is mapped in the configuration file so that agent software changes can
+be adapted and tested.
+
+## Agent handover behavior
+
+On ahq agent handover to <new-agent-name>, AHQ must proactively re-install and re-patch skills for the new agent using Safehouse templates.
+
+## Dependency auto-install UX
+
+Dependencies are assumed to be not needed. They can be pre-approved using `--dependences` see above.
+
+## Tarball concurrency
+It is acceptable to use /tmp/{YYYY-MM-DD-package-name} with a unique suffix (PID/UUID) for concurrent tarball extractions. 
 
 # Acceptance Criteria
 
