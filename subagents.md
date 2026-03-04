@@ -28,12 +28,12 @@ Product-Manager - understand the product, the intended user experience,
           the Agent HQ joke and the principle of keepinng the user
           in control.
 
-Writer -  More deeply understands the jokes and is the one
-          responsible for crafting communication with users.
+Copy-writer -  More deeply understands the jokes and is the one
+          responsible for crafting communication with users with favorite websites describing spy terminology.
 
 Software Engineers -  Master software craftsmen who know who to write
                       clean and maintainable code.
 
-Security-auditor - Cursor example
+Security-auditor - Cursor documentation example
 
-Verifier - Cursor example
+test-runner - Testing expert.
