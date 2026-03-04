@@ -1,0 +1,38 @@
+/**
+ * Remove command group: ahq remove safehouse <pkg>, ahq remove station <pkg> [--exfiltrate].
+ */
+
+import type { Command } from "commander";
+import { removeSafehousePackage } from "../remove/remove-safehouse.js";
+import { removeStationPackage } from "../remove/remove-station.js";
+
+export function registerRemoveCommands(program: Command): void {
+  const remove = program
+    .command("remove")
+    .description("Remove packages from Station or project Safehouse");
+
+  remove
+    .command("safehouse <package>")
+    .description("Remove package from current project's Safehouse")
+    .action(async (pkgName: string) => {
+      removeSafehousePackage(pkgName, process.cwd());
+    });
+
+  remove
+    .command("station <package>")
+    .description("Remove package from Station")
+    .option(
+      "--exfiltrate",
+      "Copy Station binaries/share/config to Safehouses that use this package before removing"
+    )
+    .action(
+      async (
+        pkgName: string,
+        opts: { exfiltrate?: boolean }
+      ) => {
+        removeStationPackage(pkgName, {
+          exfiltrate: opts.exfiltrate ?? false,
+        });
+      }
+    );
+}
