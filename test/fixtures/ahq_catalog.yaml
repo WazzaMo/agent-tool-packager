@@ -1,0 +1,11 @@
+# Minimal user catalog for integration tests.
+# Known packages that must appear in `ahq catalog list`.
+packages:
+  - name: test-package
+    version: 1.0.0
+    description: Test package for acceptance criteria
+    location: file://./test/fixtures/test-package
+  - name: doc-guide
+    version: 1.0.0
+    description: Markdown documentation style guide
+    location: file:///nonexistent
