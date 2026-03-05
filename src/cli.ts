@@ -12,11 +12,28 @@ import { registerRemoveCommands } from "./commands/remove.js";
 import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
 
+const greetingMessage = `
+======================================================================
+    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT  HH    HH     QQQQ
+  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T  HH    HH   QQQQQQQQ
+ AA    AA  GG        EE       NNNN  NN     TT     HH    HH  QQ      QQ
+ AA    AA  GG        EEEEE    NNNN  NN     TT     HH    HH  QQ      QQ
+ AA    AA  GG GGGGG  EEEEE    NN NN NN     TT     HHHHHHHH  QQ      QQ
+ AAAAAAAA  GG GGGGG  EE       NN  NNNN     TT     HHHHHHHH  QQ QQ   QQ
+ AAAAAAAA  GG    GG  EE       NN  NNNN     TT     HH    HH  QQ  QQ  QQ
+ AA    AA   GGGGGG   EE       NN    NN     TT     HH    HH  QQ   QQ QQ
+ AA    AA    GGGG    EEEEEEE  NN    NN     TT     HH    HH  QQ    QQQQ
+ AA    AA ======================================  HH    HH   QQQQQQQQ
+ AA    AA    By Warwick Molloy Melbourne, Aus     HH    HH     QQQQ QQ
+
+`;
+
+
 const program = new Command();
 
 program
   .name("ahq")
-  .description("CLI for agentic software development workflows")
+  .description("CLI for agentic software development workflows" + greetingMessage)
   .version("0.1.0");
 
 registerStationCommands(program);
@@ -27,3 +44,4 @@ registerInstallCommand(program);
 registerCatalogCommands(program);
 
 program.parse();
+

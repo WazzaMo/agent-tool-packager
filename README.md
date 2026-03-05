@@ -36,7 +36,7 @@ Me too...
  AA    AA   GGGGGG   EE       NN    NN     TT     HH    HH  QQ   QQ QQ
  AA    AA    GGGG    EEEEEEE  NN    NN     TT     HH    HH  QQ    QQQQ
  AA    AA ======================================  HH    HH   QQQQQQQQ
- AA    AA    By Warwick Molloy Melb, Aus          HH    HH     QQQQ QQ
+ AA    AA    By Warwick Molloy Melbourne, Aus     HH    HH     QQQQ QQ
 
 ```
 
