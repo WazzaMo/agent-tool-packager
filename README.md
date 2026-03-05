@@ -23,6 +23,23 @@ Ever wanted to install MCP servers, skills etc in a convenient manner?
 
 Me too...
 
+
+```
+======================================================================
+    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT  HH    HH     QQQQ
+  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T  HH    HH   QQQQQQQQ
+ AA    AA  GG        EE       NNNN  NN     TT     HH    HH  QQ      QQ
+ AA    AA  GG        EEEEE    NNNN  NN     TT     HH    HH  QQ      QQ
+ AA    AA  GG GGGGG  EEEEE    NN NN NN     TT     HHHHHHHH  QQ      QQ
+ AAAAAAAA  GG GGGGG  EE       NN  NNNN     TT     HHHHHHHH  QQ QQ   QQ
+ AAAAAAAA  GG    GG  EE       NN  NNNN     TT     HH    HH  QQ  QQ  QQ
+ AA    AA   GGGGGG   EE       NN    NN     TT     HH    HH  QQ   QQ QQ
+ AA    AA    GGGG    EEEEEEE  NN    NN     TT     HH    HH  QQ    QQQQ
+ AA    AA ======================================  HH    HH   QQQQQQQQ
+ AA    AA    By Warwick Molloy Melb, Aus          HH    HH     QQQQ QQ
+
+```
+
 ## Build, test and run
 
 **Prerequisites:** Node.js 20+
