@@ -42,7 +42,24 @@ Me too...
 
 ## Build, test and run
 
-**Prerequisites:** Node.js 20+
+### Prerequisites
+
+I use Fast Node Manager and the `.node-version` file will set you up
+with a node that works. Assuming you have FNM installed in your user
+home directory.
+
+[Fast Node Manager Github repo](https://github.com/Schniz/fnm)
+
+```bash
+fnm use
+```
+
+This command will refer to the `.node-version` file and prompt you
+to install that version if your system doesn't have it. Say "yes"
+and you're good to go.
+
+
+Node.js 20+
 
 ```bash
 npm install
