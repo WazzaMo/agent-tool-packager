@@ -26,14 +26,14 @@ const greetingMessage = `
  AA    AA ======================================  HH    HH   QQQQQQQQ
  AA    AA    By Warwick Molloy Melbourne, Aus     HH    HH     QQQQ QQ
 
-`;
+CLI for agentic software development workflows`;
 
 
 const program = new Command();
 
 program
   .name("ahq")
-  .description("CLI for agentic software development workflows" + greetingMessage)
+  .description(greetingMessage)
   .version("0.1.0");
 
 registerStationCommands(program);
