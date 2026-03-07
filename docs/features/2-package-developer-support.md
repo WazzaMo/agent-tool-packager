@@ -129,3 +129,33 @@ ahq package asset add docs/coding-standard.md
 AHQ will stage these by taking the files from the given path
 and adding them to stage.tar and listing the filenames
 in the assets list in the package.yaml file.
+
+Validating the package now should confirm that it is complete.
+
+`ahq validate package`
+
+> Package appears complete. Mandatory minimal values are set.
+> Some optional values are also set.
+> This package can be added to the manifest.
+
+We should get encourage from the package summary as well.
+
+`ahq package summary`
+
+> Package summary:
+> name: clean-docs-and-code
+> assets:
+>   - doc-guide.md
+>   - coding-standard.md
+> license (opt) : Apache License 2.0
+> copyright (opt): Warwick Molloy 2026, All rights reserved
+> This package can be added to the manifest.
+
+Adding the package to the user package manifest should succeed.
+
+`ahq manifest add package`
+
+> Package clean-docs-and-code added to user package manifest.
+> It can now be installed at either the Station or into a project's Safehouse.
+
+Exit code 0 returned, indicating success.
