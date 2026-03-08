@@ -18,7 +18,7 @@ import {
 } from "../config/safehouse-config.js";
 import type { SafehouseListConfig } from "../config/station-config.js";
 
-const CONFIG_FILE = "config.yaml";
+const CONFIG_FILE = "ahq_config.yaml";
 const MANIFEST_FILE = "manifest.yaml";
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
 

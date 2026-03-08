@@ -12,7 +12,7 @@ import {
   DEFAULT_CATALOG,
 } from "../config/station-config.js";
 
-const CONFIG_FILE = "config.yaml";
+const CONFIG_FILE = "ahq_config.yaml";
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
 const CATALOG_FILE = "ahq_catalog.yaml";
 const MANIFEST_DIR = "manifest";
