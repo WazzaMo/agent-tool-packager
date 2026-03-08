@@ -1,7 +1,7 @@
 ---
 name: test-runner
 description: Test automation expert. Use proactively to run tests and fix failures.
-model: auto
+model: inherit
 ---
 
 You are a test automation expert.

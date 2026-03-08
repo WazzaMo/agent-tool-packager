@@ -14,8 +14,8 @@ and only made "nicer" to read when rendered as HTML or other manner.
 # Principles
 
 1. Use heading levels 1 to 4 (#) to (####) and use level 1 for new sections,
-   not only the title, so the title and its introduce is a new section and should
-   have level 1 heading.
+   not only the title, so the title introduces a new section and should
+   have a level 1 heading.
    Vertical space is needed around headings for clarity, meaning empty carriage
    return before and after headings.
 
@@ -60,8 +60,13 @@ List of labelled infos:
 ## Notes
 
 Notes are held in the `docs/notes` directory and follow this document guide for formatting.
-A note should be prefixed with the date in YYYY-MM-DD format and have a meaningful name indicating
-the essential topic of the note.
+A note should be prefixed with the date in YYYY-MM-DD format and have
+a meaningful name indicating the essential topic of the note.
+
+This means that notes should follow the naming convention docs/notes/{YYYY-MM-DD}-{meaningful-short-name}.md
+
+This way notes will be more unique and easy to understand when they were
+produced in the planning and development cycle.
 
 ## Release Notes
 
@@ -79,12 +84,19 @@ and acceptance criteria that gives intent around user impact.
 
 They will be found in `docs/features`
 
-## Stories
+## Epics and Stories
 
 User stories may be created in the project when breaking down
 features into smaller, buildable components.
 
-These are to be written into `docs/stories`
+These are to be written into `docs/stories/`
+
+Write requirements to docs/stories/{epic|story}-{feature-name}-{component}-{description}.md
+
+Stories should be used to take the intention written in a feature
+and turn it into a set of epics and stories that should be used
+as the context to engineer a single component of the whole feature,
+which is part of the final system.
 
 ## Bugs
 
