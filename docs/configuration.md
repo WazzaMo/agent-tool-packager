@@ -35,6 +35,20 @@ The station will have two files:
 
     2.  Catalog scope - ahq_catalog.yaml
 
+#### Station Directory Structure
+
+~/.ahq_station/
+    ahq_station.yaml
+    ahq_catalog.yaml
+    standard-packages/
+        vecfs/
+            ahq-package.yaml
+            package.tar.gz
+    user-packages/
+        special-prompt-set/
+            ahq-package.yaml
+            package.tar.gz
+
 #### Station Configuration
 
 The station directory found either at:
