@@ -53,8 +53,8 @@ The station will have two files:
 
 The station directory found either at:
 
-1.  ${STATION_PATH}/config.yaml
-2.  ~/.ahq_station/config.yaml
+1.  ${STATION_PATH}/ahq_config.yaml
+2.  ~/.ahq_station/ahq_config.yaml
 
 Will hold information about the AgentHQ (AHQ) Station.
 
