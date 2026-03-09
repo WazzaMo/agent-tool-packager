@@ -24,6 +24,10 @@ User packages can be installed as a package testing process,
 to validate against different types of agents before sharing with others
 and requesting that the package be part of the standard catalog.
 
+The developer can perform test installs into one or more projects
+to validate that the process works for a good mix of Agent types.
+
+
 ### Explore the workflow for package devs
 
 Use AHQ to create a skeleton package definition.
@@ -200,6 +204,8 @@ the `user-packages/clean-docs-and-code/` directory.
 
 Exit code 0 returned, indicating success.
 
+--------------------------------------------------------------------------
+
 # AHQ Command Specifics
 
 ## ahq create package skeleton
@@ -217,6 +223,8 @@ Deletes any previous work files:
 
 Creates new, empty `ahq-package.yaml` file.
 
+----
+
 ## Property set commands
 
 These include:
@@ -233,6 +241,8 @@ These include:
 These commands all populate fields in the package file.
 The only special one is the copyright subcommand where copyright
 is a list of strings.
+
+The `ahq package developer` subcommand is adding the author's name to the package.
 
 ### Acceptance Criteria
 
@@ -253,6 +263,8 @@ Exits code:
 
 User-supplied fields must be sanitised for YAML
 
+----
+
 ## ahq validate package
 
 Used to validate the properties in the package file.
@@ -272,6 +284,8 @@ Exit code:
 -1 = Missing `stage.tar` file or empty `stage.tar` file or empty components property.
 -2 = Missing mandatory fields and missing components or `stage.tar` file.
 
+----
+
 ## ahq package summary
 
 Prints the content of the `ahq-package.yaml` file.
@@ -286,6 +300,7 @@ Mist indicate what mandatory fields are missing.
 
 Exit code matches that from `ahq validate package`
 
+----
 
 ## ahq package component add {path}
 
@@ -310,6 +325,33 @@ Exit code:
 0 = path OK; file exists and was added to `stage.tar`
 -1 = Any failure condition with error message telling the user what failed.
 
+----
+
+## ahq package component remove {path}
+
+Checks the given path as a valid file path.
+Then tests to see if a file exists at that path location and if the file is listed
+in the `ahq-package.yaml` as well as included the `stage.tar` file.
+
+It then removes the file from `stage.tar` and removes it from the component list
+in `ahq-package.yaml`.
+
+### Acceptance Criteria
+
+It must remove the file from both the `ahq-package.yaml` and `stage.tar` or leave
+the file in both. At minimum, it must remove the file from `stage.tar` to save
+space. During install, the file being listed will cause an error to be found.
+
+If the file is not listed as a component and not staged in `stage.tar` then this
+is a fatal error. Either, or both, error conditions should be met with an error
+message, informing the user why it failed.
+
+Exit code:
+0 = file removed from stage.tar and from the component list in ahq-package.yaml
+-1 = Failed for one of the reasons given above, and an error message was shown.
+
+----
+
 ## ahq package bundle add exec-base
 
 Add a bundle to the package and stage file. More details below.
@@ -324,6 +366,30 @@ should be added to `stage.tar` and the base directory should be listed as a bund
 Bundles, like components, in the YAML are a list entry.
 
 Same error codes used for `ahq package component add {path}`
+
+----
+
+## ahq package bundle remove exec-base
+
+Remove a bundle from the package and stage file. This undoes and is opposite
+to the `ahq package bundle add exec-base` command.
+
+### Acceptance Criteria
+
+It must check that the bundle was listed in the `ahq-package.yaml` file
+and that the bundle's directory structure was in the stage file `stage.tar`.
+When either of these checks fail to find the bundle, an error message should
+be displayed informing the user that the bundle had not been included in the package.
+
+The bundle base directory should be removed from the bundle list in the package file.
+And the bundle tree should be removed from the stage file. Any other staged files
+should remain in `stage.tar`.
+
+Exit codes:
+0 = success - found the bundle in stage and package file and removed it from both
+-1 = the bundle was not in the package and/or the staging file; or the bundle could
+not be removed from the package and staging file.
+
 
 ## ahq catalog add package
 
@@ -387,6 +453,10 @@ package and components are being developed.
 
 Staging any files will result in creating or updating the `stage.tar` file
 in the current directory.
+
+The `stage.tar` file is temporary and should be in `.gitignore` ideally.
+The staging file is created in the incremental packaging process and deleted
+when the package is added to the catalog.
 
 ### Staging executables
 
