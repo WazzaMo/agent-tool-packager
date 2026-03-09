@@ -453,6 +453,16 @@ Package:
    - mcp-exec
 ```
 
+## Package Types
+
+Rules should usually have one or more markdown component.
+
+Commands may have a bundle or a number of simple components.
+
+Skills will have at least one markdown component - the SKILL.md
+
+MCP servers will have a bundle typically.
+
 
 ## Staging files
 
@@ -461,7 +471,8 @@ Most likely that current directory will be the project directory where the
 package and components are being developed.
 
 Staging any files will result in creating or updating the `stage.tar` file
-in the current directory.
+in the current directory where the package files are found. In other words,
+the package project directory, where the `ahq` commands will be executed.
 
 The `stage.tar` file is temporary and should be in `.gitignore` ideally.
 
