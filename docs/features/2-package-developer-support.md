@@ -45,7 +45,7 @@ Package types can be:
   2.  Skill - markdown file describing for the agent, how to do achieve
       an outcome or a goal.
   3.  MCP servers which could vary in implementation
-  4.  Shell scripts, or other executables, that automate different workflows
+  4.  Commands, which can be shell scripts, or other executables, that automate different workflows
   5.  Experimental payloads to install into a project of a type the
       industry is yet to define.
 
@@ -102,6 +102,15 @@ ahq package copyright "Warwick Molloy 2026" "All rights reserved"
 ahq package license "Apache License 2.0"
 ahq package version 0.1.0
 ```
+
+Give information about how the package should be used.
+
+```bash
+ahq package usage "The MCP can be invoked on most agents by saying 'use package'"
+```
+
+A skill or other prompt matter should tell the agent how to use the package.
+In this case, the usage should give some idea how to get started.
 
 The fields `name`, each line of the list `copyright` and the `license` field are
 up to 80 characters long.
@@ -213,7 +222,7 @@ Exit code 0 returned, indicating success.
 Begins the work of incremental package building.
 Should exit with:
 - 0 if all operations succeed
-- -1 or error code when files could not be deleted or created.
+- 1 or error code when files could not be deleted or created.
 
 ### Acceptance Criteria
 
@@ -259,7 +268,7 @@ and used in the package file, `ahq-package.yaml`.
 
 Exits code:
 0 = File could be opened for write and value updates completed.
--1 = File cannot be found nor opened for write.
+1 = File cannot be found nor opened for write.
 
 User-supplied fields must be sanitised for YAML
 
@@ -281,8 +290,8 @@ It should remind the user about optional fields.
 
 Exit code:
 0 = mandatory fields, components and populated `stage.tar` file exists.
--1 = Missing `stage.tar` file or empty `stage.tar` file or empty components property.
--2 = Missing mandatory fields and missing components or `stage.tar` file.
+1 = Missing `stage.tar` file or empty `stage.tar` file or empty components property.
+2 = Missing mandatory fields and missing components or `stage.tar` file.
 
 ----
 
@@ -296,7 +305,7 @@ are missing and reports the missing elements.
 ### Acceptance Criteria
 
 Must list all set items.
-Mist indicate what mandatory fields are missing.
+Must indicate what mandatory fields are missing.
 
 Exit code matches that from `ahq validate package`
 
@@ -314,8 +323,8 @@ Must check the path and it must confirm the file exists.
 If the path is invalid, it should show an error message
 "Invalid path to component given: {path}"
 
-If the file does not exist, it should show an error message "Nominated path or file 
-does not exist."
+If the file does not exist, it should show an error message "Nominated path 
+or file does not exist."
 
 Component paths must be under the package root.
 
@@ -323,7 +332,7 @@ If `stage.tar` cannot be created or appended this is an error.
 
 Exit code:
 0 = path OK; file exists and was added to `stage.tar`
--1 = Any failure condition with error message telling the user what failed.
+1 = Any failure condition with error message telling the user what failed.
 
 ----
 
@@ -348,7 +357,7 @@ message, informing the user why it failed.
 
 Exit code:
 0 = file removed from stage.tar and from the component list in ahq-package.yaml
--1 = Failed for one of the reasons given above, and an error message was shown.
+1 = Failed for one of the reasons given above, and an error message was shown.
 
 ----
 
@@ -387,7 +396,7 @@ should remain in `stage.tar`.
 
 Exit codes:
 0 = success - found the bundle in stage and package file and removed it from both
--1 = the bundle was not in the package and/or the staging file; or the bundle could
+1 = the bundle was not in the package and/or the staging file; or the bundle could
 not be removed from the package and staging file.
 
 
@@ -410,7 +419,7 @@ should report the failing step.
 
 Exit code:
 0 = all completed successfully
--1 = one of the 4 steps failed.
+1 = one of the 4 steps failed.
 
 -----
 
@@ -424,11 +433,11 @@ Config files use dashes with prefix `ahq-` (e.g. `ahq-package.yaml`, `ahq-config
 
 See [configuration](../configuration.md) for "ahq-package.yaml layout" information.
 
-An example:
+An example MCP package:
 
 ```yaml
 Package:
-- Name: clean-docs-and-code
+- Name: doc-reader-mcp
 - Type: Mcp 
 - Developer: Warwick Molloy
 - License: Apache License 2.0
@@ -455,8 +464,19 @@ Staging any files will result in creating or updating the `stage.tar` file
 in the current directory.
 
 The `stage.tar` file is temporary and should be in `.gitignore` ideally.
-The staging file is created in the incremental packaging process and deleted
-when the package is added to the catalog.
+
+The lifecycle of `stage.tar` the staging file is generally brief.
+1.  the staging file should be created when components or bundles are added
+    to the package being built - this is the staging process.
+2.  when a new skeleton package is created, any lingering staging files
+    are deleted because they must have been for a previous package.
+3.  when the package is added to the Station's catalog, the staging
+    file is deleted as a clean-up function.
+
+The staging file is created in the incremental packaging process and the
+when the package is added to the Station's catalog because it will no longer
+be needed because it's content has been copied to the Station's package
+directory.
 
 ### Staging executables
 
