@@ -16,6 +16,14 @@ Let's place our heart and empathy with package developers and make it easy
 for them to define their package; to support them developing and testing
 their package and later publishing their package for others to use.
 
+## Trial publishing
+
+This process describes creating a package for installation, locally,
+by adding it to the set of user packages in the catalog.
+User packages can be installed as a package testing process,
+to validate against different types of agents before sharing with others
+and requesting that the package be part of the standard catalog.
+
 ### Explore the workflow for package devs
 
 Use AHQ to create a skeleton package definition.
@@ -56,7 +64,7 @@ is incomplete.
 > Only package type is set and many properties remain to make the package
 > viable to install, such as:
 > - name
-> - file assets
+> - file components
 > - usage (help) information.
 > 
 > Command exits with non-zero result.
@@ -77,7 +85,7 @@ respond with:
 > Only package type is set and many properties remain to make the package
 > viable to install, such as:
 > - name
-> - file assets
+> - file components
 > - usage (help) information.
 > 
 > Command exits with non-zero result.
@@ -123,32 +131,32 @@ feature will use the **validate** logic.
 > Copyright: Warwick Molloy 2026, All rights reserved.
 > 
 > Missing:
->  - list of assets
+>  - list of components
 > 
 > For a rule, a list of markdown files would be normal.
 
-Then we add the markdown assets using one line...
+Then we add the markdown components using one line...
 
 ```bash
-ahq package asset add docs/doc-guide.md docs/coding-standard.md
+ahq package component add docs/doc-guide.md docs/coding-standard.md
 ```
 
 or, separately...
 
 ```bash
-ahq package asset add docs/doc-guide.md
-ahq package asset add docs/coding-standard.md
+ahq package component add docs/doc-guide.md
+ahq package component add docs/coding-standard.md
 ```
 
-The path for `asset add` subcommand can be up to system path length, which is at least 256 characters
+The path for `component add` subcommand can be up to system path length, which is at least 256 characters
 in many modern operating systems.
 
 AHQ will stage these by taking the files from the given path
 and adding them to `stage.tar` in the same directory, the current directory,
-and listing the filenames in the assets list in the ahq-package.yaml file.
+and listing the filenames in the components list in the ahq-package.yaml file.
 
 Layout of `stage.tar` will be simple, just the files without any subdirectory.
-Markdown assets do not require a directory structure and the installation
+Markdown components do not require a directory structure and the installation
 into the agent will decide the directories later. 
 
 `tar -tf stage.tar` will output:
@@ -169,7 +177,7 @@ We should get encourage from the package summary as well.
 
 > Package summary:
 > name: clean-docs-and-code
-> assets:
+> components:
 >   - doc-guide.md
 >   - coding-standard.md
 > license (opt) : Apache License 2.0
@@ -187,8 +195,8 @@ Adding the package to the user package catalog should succeed.
 The ahq-package.yaml would be added to the `user-packages` directory in the station
 see [configuration](../configuration.md) for details of the station directory layout.
 The stage file will be gziped and the output called package.tar.gz and it will be placed
-with its corresponding `ahq-package.yaml` file under the `user-pages/clean-docs-and-code/`
-directory.
+with its corresponding `ahq-package.yaml` file under 
+the `user-packages/clean-docs-and-code/` directory.
 
 Exit code 0 returned, indicating success.
 
@@ -214,6 +222,8 @@ Creates new, empty `ahq-package.yaml` file.
 These include:
 - `ahq package type rule`
 - `ahq package name clean-docs-and-code`
+- `ahq package usage "For prompts that ask for clean markdown docs."`
+- `ahq package add usage "Simple prompt text that seeks clearer text output."`
 - `ahq package developer "Warwick Molloy"`
 - `ahq package copyright "Warwick Molloy 2026" "All rights reserved"`
 - `ahq package add copyright "third line value"`
@@ -249,7 +259,7 @@ Used to validate the properties in the package file.
 The logic, or class, that implements the logic will be used in other commands.
 
 The Validate algorithm confirms that the mandatory fields are populated.
-It should also confirm that there are assets in the package and that
+It should also confirm that there are components in the package and that
 the `stage.tar` file exists and has non-zero length.
 
 ### Acceptance Criteria
@@ -258,9 +268,9 @@ It must list mandatory fields that are missing.
 It should remind the user about optional fields.
 
 Exit code:
-0 = mandatory fields, assets and populated `stage.tar` file exists.
--1 = Missing `stage.tar` file or empty `stage.tar` file or empty assets property.
--2 = Missing mandatory fields and missing assets or `stage.tar` file.
+0 = mandatory fields, components and populated `stage.tar` file exists.
+-1 = Missing `stage.tar` file or empty `stage.tar` file or empty components property.
+-2 = Missing mandatory fields and missing components or `stage.tar` file.
 
 ## ahq package summary
 
@@ -277,7 +287,7 @@ Mist indicate what mandatory fields are missing.
 Exit code matches that from `ahq validate package`
 
 
-## ahq package asset add {path}
+## ahq package component add {path}
 
 Checks the given path as a valid file path.
 Then tests to see if a file exists at that path location.
@@ -286,9 +296,13 @@ Takes the file and add it to the `stage.tar` file, creating the file if non-exis
 ### Acceptance Criteria
 
 Must check the path and it must confirm the file exists.
-If the path is invalid, it should show an error message "Invalid path to asset given: {path}"
-If the file does not exist, it should show an error message "Nominated path or file does not exist."
-Asset paths must be under the package root.
+If the path is invalid, it should show an error message
+"Invalid path to component given: {path}"
+
+If the file does not exist, it should show an error message "Nominated path or file 
+does not exist."
+
+Component paths must be under the package root.
 
 If `stage.tar` cannot be created or appended this is an error.
 
@@ -299,7 +313,7 @@ Exit code:
 ## ahq package bundle add exec-base
 
 Add a bundle to the package and stage file. More details below.
-The bundle is different to an asset, where an asset is a single file,
+The bundle is different to an component, where an component is a single file,
 a bundle represents a tree structure and is intended for executables
 and dependency files.
 
@@ -307,32 +321,42 @@ and dependency files.
 
 The bundle and all directories and files under the nominated base directory
 should be added to `stage.tar` and the base directory should be listed as a bundle.
-Bundles, like assets, in the YAML are a list entry.
+Bundles, like components, in the YAML are a list entry.
 
-Same error codes used for `ahq package asset add {path}`
+Same error codes used for `ahq package component add {path}`
 
+## ahq catalog add package
+
+Adds the package to the user section of the Station's catalog.
+This will add to the station directory layout, see [configuration](../configuration.md)
+for Station Directory Structure.
+
+## Acceptance Criteria
+
+It must:
+1. creating a package directory with the name of the package
+2. copying the ahq-package.yaml into the directory
+3. Performing gzip on the stage.tar and naming the output file package.tar.gz
+4. Adding the package name to the user section of the `ahq-catalog.yaml`
+
+If any of the processes above cannot be completed, an error message
+should report the failing step.
+
+Exit code:
+0 = all completed successfully
+-1 = one of the 4 steps failed.
 
 -----
 
 # Considerations
 
+## Naming convention
+
+Config files use dashes with prefix `ahq-` (e.g. `ahq-package.yaml`, `ahq-config.yaml`, `ahq-catalog.yaml`). Directories use underscores (e.g. `~/.ahq_station`). See [configuration](../configuration.md).
+
 ## ahq-package.yaml layout
 
-The `ahq-package.yaml` has mandatory and optional fields
-
-`Package` is the root structure.
-
-| Field Name | Opt or Mand  |
-|------------|--------------|
-| Name       | mandatory    |
-| Type       | mandatory    |
-| Developer  | optional     |
-| License    | optional     |
-| Version    | mandatory    |
-| Copyright  | optional     |
-| assets     | mandatory    |
-| bundles    | optional     |
-
+See [configuration](../configuration.md) for "ahq-package.yaml layout" information.
 
 An example:
 
@@ -343,8 +367,12 @@ Package:
 - Developer: Warwick Molloy
 - License: Apache License 2.0
 - Version: 0.1.0
-- Copyright: Warwick Molloy 2026, All rights reserved.
-- assets:
+- Usage:
+    - Prompt the agent to use the MCP server.
+- Copyright:
+    - Warwick Molloy 2026
+    - All rights reserved.
+- components:
    - SKILL.md
 - bundles:
    - mcp-exec
@@ -355,7 +383,7 @@ Package:
 
 Package assembly is an incmental process that works in the current directory.
 Most likely that current directory will be the project directory where the
-package and assets are being developed.
+package and components are being developed.
 
 Staging any files will result in creating or updating the `stage.tar` file
 in the current directory.
@@ -383,7 +411,7 @@ exec-base/
 
 `ahq package bundle add exec-base`
 
-The `bundle` instead of `asset` tells ahq to take a bundle and replicate this structure
+The `bundle` instead of `component` tells ahq to take a bundle and replicate this structure
 in the staging tar file.
 
 The `stage.tar` file will have the same bundle directory structure.
@@ -404,8 +432,10 @@ Package:
 - Developer: Warwick Molloy
 - License: Apache License 2.0
 - Version: 0.1.0
-- Copyright: Warwick Molloy 2026, All rights reserved.
-- assets:
+- Copyright:
+    - Warwick Molloy 2026
+    - All rights reserved.
+- components:
    - doc-guide.md
    - coding-standard.md
 - bundles:
