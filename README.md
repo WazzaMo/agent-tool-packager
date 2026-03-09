@@ -94,7 +94,7 @@ STATION_PATH="/path/to/station" npx ahq station init
 
 - **Station:** `~/.ahq_station` (or `STATION_PATH`) — config, catalog, manifests
 - **Safehouse:** `./.ahq_safehouse` — per-project installs
-- **Catalog:** global (bundled) + user (`~/.ahq_station/ahq_catalog.yaml`) + project (`./.ahq-local/catalog.yaml`). Precedence: project > user > global
+- **Catalog:** global (bundled) + user (`~/.ahq_station/ahq-catalog.yaml`) + project (`./.ahq-local/catalog.yaml`). Precedence: project > user > global
 
 See [docs/configuration.md](docs/configuration.md) for full configuration.
 
