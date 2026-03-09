@@ -8,7 +8,7 @@ import yaml from "js-yaml";
 import { getStationPath, pathExists } from "../config/paths.js";
 import type { Catalog, CatalogPackage } from "./types.js";
 
-const USER_CATALOG_FILE = "ahq_catalog.yaml";
+const USER_CATALOG_FILE = "ahq-catalog.yaml";
 const PROJECT_CATALOG_FILE = "catalog.yaml";
 const PROJECT_CATALOG_DIR = ".ahq-local";
 
@@ -17,7 +17,7 @@ export function loadGlobalCatalog(): Catalog {
   return { packages: [] };
 }
 
-/** User catalog from Station (~/.ahq_station/ahq_catalog.yaml) */
+/** User catalog from Station (~/.ahq_station/ahq-catalog.yaml) */
 export function loadUserCatalog(): Catalog {
   const stationPath = getStationPath();
   const catalogPath = path.join(stationPath, USER_CATALOG_FILE);

@@ -36,11 +36,11 @@ describe("loadUserCatalog", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("loads packages from Station ahq_catalog.yaml", () => {
+  it("loads packages from Station ahq-catalog.yaml", () => {
     const tmpDir = path.join(os.tmpdir(), `ahq-load2-${Date.now()}`);
     fs.mkdirSync(tmpDir, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpDir, "ahq_catalog.yaml"),
+      path.join(tmpDir, "ahq-catalog.yaml"),
       `packages:
   - name: my-pkg
     version: 1.0.0

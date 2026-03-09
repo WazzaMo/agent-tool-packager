@@ -24,7 +24,7 @@ describe("resolvePackage", () => {
     const tmpStation = path.join(os.tmpdir(), `ahq-test-${Date.now()}`);
     fs.mkdirSync(tmpStation, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpStation, "ahq_catalog.yaml"),
+      path.join(tmpStation, "ahq-catalog.yaml"),
       `packages:
   - name: test-package
     version: 1.0.0

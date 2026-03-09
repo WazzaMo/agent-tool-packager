@@ -74,7 +74,7 @@ describe("Integration: station init", () => {
   it("creates station at STATION_PATH (non-default init)", () => {
     runAhq(["station", "init"], { env: { STATION_PATH: stationDir } });
     expect(fs.existsSync(path.join(stationDir, "ahq_config.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(stationDir, "ahq_catalog.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "ahq-catalog.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "safehouse_list.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "manifest"))).toBe(true);
   });
@@ -98,7 +98,7 @@ describe("Integration: safehouse init", () => {
     // Create minimal station first
     fs.writeFileSync(path.join(stationDir, "ahq_config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(path.join(stationDir, "ahq-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
 
@@ -115,7 +115,7 @@ describe("Integration: safehouse init", () => {
     runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     const safehousePath = path.join(projectDir, ".ahq_safehouse");
     expect(fs.existsSync(safehousePath)).toBe(true);
-    expect(fs.existsSync(path.join(safehousePath, "ahq_config.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(safehousePath, "ahq-config.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(safehousePath, "manifest.yaml"))).toBe(true);
   });
 });
@@ -129,7 +129,7 @@ describe("Integration: catalog list", () => {
     projectDir = path.join(os.tmpdir(), `ahq-catproj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
-    fs.writeFileSync(path.join(stationDir, "ahq_config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
+    fs.writeFileSync(path.join(stationDir, "ahq-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
     const catalogContent = `packages:
   - name: test-package
@@ -139,7 +139,7 @@ describe("Integration: catalog list", () => {
     version: 1.0.0
     location: file:///nonexistent
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "ahq-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
 
@@ -180,7 +180,7 @@ describe("Integration: agent nomination", () => {
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "ahq_config.yaml"),
+      path.join(stationDir, "ahq-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -191,7 +191,7 @@ describe("Integration: agent nomination", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(path.join(stationDir, "ahq-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
@@ -212,7 +212,7 @@ describe("Integration: agent nomination", () => {
     });
     expect(out).toContain("Assigned cursor");
     expect(out).toContain(".cursor/");
-    const configPath = path.join(projectDir, ".ahq_safehouse", "ahq_config.yaml");
+    const configPath = path.join(projectDir, ".ahq_safehouse", "ahq-config.yaml");
     const config = fs.readFileSync(configPath, "utf8");
     expect(config).toContain("cursor");
   });
@@ -243,7 +243,7 @@ describe("Integration: install and list", () => {
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "ahq_config.yaml"),
+      path.join(stationDir, "ahq-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -257,7 +257,7 @@ describe("Integration: install and list", () => {
     version: 1.0.0
     location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "ahq-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
@@ -314,7 +314,7 @@ describe("Integration: remove", () => {
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "ahq_config.yaml"),
+      path.join(stationDir, "ahq-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -328,7 +328,7 @@ describe("Integration: remove", () => {
     version: 1.0.0
     location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "ahq-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });

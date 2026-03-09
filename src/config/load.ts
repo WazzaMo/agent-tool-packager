@@ -18,8 +18,8 @@ import type {
 } from "./station-config.js";
 import type { SafehouseConfig, SafehouseManifest } from "./types.js";
 
-const STATION_CONFIG_FILE = "ahq_config.yaml";
-const SAFEHOUSE_CONFIG_FILE = "ahq_config.yaml";
+const STATION_CONFIG_FILE = "ahq-config.yaml";
+const SAFEHOUSE_CONFIG_FILE = "ahq-config.yaml";
 const SAFEHOUSE_MANIFEST_FILE = "manifest.yaml";
 
 /** Load Station config. Returns null if Station does not exist. */
