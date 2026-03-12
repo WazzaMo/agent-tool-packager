@@ -54,7 +54,7 @@ The station will have two files:
             atp-package.yaml
             package.tar.gz
 
-#### Station Configuration
+#### Station Configuration `atp-config.yaml`
 
 The station directory found either at:
 
@@ -81,6 +81,21 @@ configuration:
             - home_path: ~/.claude
         - gemini:
             - home_path: ~/.gemini
+    - standard-catalog:
+        url: https://agent-tool-packager.example.com/packages/0.1.0/
+```
+
+#### Station Catalog `atp-catalog.yaml`
+
+```yaml
+catalog:
+    - standard-packages-path: ./standard-packages/
+    - user-packages-path: ./user-packages/
+    - packages:
+        - standard:
+            - vecfs
+        - user:
+            - special-prompt-set
 ```
 
 #### The Station's Safehouse list

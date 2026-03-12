@@ -274,6 +274,34 @@ The `atp package developer` subcommand is adding the author's name to the packag
 
 ### Acceptance Criteria
 
+#### Validating `atp package name {a-name}`
+
+The tool should check the Station catalog to see if this name exists
+in the user package list and return an error message if it does
+except when:
+-   the version being proposed is greater, because we support a developer
+    making new versions; Ask the developer to set the version first,
+    if not yet set.
+-   the name exists in the standard packages list, in which case we
+    should give a warning because they might be making the next version.
+    Also, user packages override standard ones.
+
+#### Validating `atp package version {version-string}`
+
+The version string is preferred to be semantic version but it's
+really up to the developer. We expect `[dev ]{major}.{minor}[.{revision}]`
+where major is one or more digits; minor is one or more digits
+and the second period followed by the revision and the revision
+is one or more digits.
+
+A major of `0` is considered an alpha or beta level version.
+
+A prefix of `dev ` may be used for development versions, example `dev 0.1.0`.
+The dev prefix allows the package list to be quickly scanned with `grep`
+for their presence.
+
+#### All other cases
+
 Sets the correct field value. For type, it should match the keyword
 with one of the known types:
     1.  rule -> Rule
@@ -345,7 +373,8 @@ If the path is invalid, it should show an error message
 If the file does not exist, it should show an error message "Nominated path 
 or file does not exist."
 
-Component paths must be under the package root.
+Component paths must be under the package root, which should be the current
+directory where `atp` has been invoked.
 
 If `stage.tar` cannot be created or appended this is an error.
 
