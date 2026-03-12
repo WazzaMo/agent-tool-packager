@@ -1,5 +1,5 @@
 /**
- * Catalog subcommands: ahq catalog list, etc.
+ * Catalog subcommands: atp catalog list, etc.
  */
 
 import type { Command } from "commander";

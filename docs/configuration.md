@@ -1,4 +1,4 @@
-# AHQ configuration
+# ATP configuration
 
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
@@ -6,9 +6,14 @@ Created by Warwick Molloy Feb 2026.
 
 ---------------------------------------------------------------------------
 
+## Naming convention
+
+- **Directories:** Use underscores (_). Example: `~/.atp_station`, `.atp_safehouse`.
+- **Config files:** Use dashes (-) with prefix `atp-`. Example: `atp-config.yaml`, `atp-catalog.yaml`, `atp-package.yaml`.
+
 ## Overview
 
-Agent HQ has different storage and operations areas:
+Agent Tool Packager has different storage and operations areas:
     A.  The Home Office
     B.  The station - the main area in the field of operation
     C.  A safehouse where the agent stores the tools of the trade.
@@ -16,12 +21,12 @@ Agent HQ has different storage and operations areas:
 
 ### The Home Office
 
-In Agent HQ, the "Home Office" is the GitHub repository.
+In Agent Tool Packager, the "Home Office" is the GitHub repository.
 
 ### The Station
 
 Most of the time, there will only be one "station" and it will be in the user's
-home directory. In a *nix platform that is `${HOME}/.ahq_station` and this holds
+home directory. In a *nix platform that is `${HOME}/.atp_station` and this holds
 the main configuration and catalog information locally.
 
 The "Station" is a central multi-agent work office which is a directory on the
@@ -31,18 +36,32 @@ using an environment variable `STATION_PATH`.
 
 The station will have two files:
 
-    1.  Configuration scope - ahq_station.yaml
+    1.  Configuration scope - atp-config.yaml
 
-    2.  Catalog scope - ahq_catalog.yaml
+    2.  Catalog scope - atp-catalog.yaml
+
+#### Station Directory Structure
+
+~/.atp_station/
+    atp-config.yaml
+    atp-catalog.yaml
+    standard-packages/
+        vecfs/
+            atp-package.yaml
+            package.tar.gz
+    user-packages/
+        special-prompt-set/
+            atp-package.yaml
+            package.tar.gz
 
 #### Station Configuration
 
 The station directory found either at:
 
-1.  ${STATION_PATH}/config.yaml
-2.  ~/.ahq_station/config.yaml
+1.  ${STATION_PATH}/atp-config.yaml
+2.  ~/.atp_station/atp-config.yaml
 
-Will hold information about the AgentHQ (AHQ) Station.
+Will hold information about the Agent Tool Packager (ATP) Station.
 
 It will contain at minimum:
 
@@ -69,14 +88,14 @@ configuration:
 The Station will have a safehouse list to identify all safehouses that have been
 used by the Station.
 
-`${STATION_PATH}/safehouse_list.yaml`
+`${STATION_PATH}/atp-safehouse-list.yaml`
 
 The contents are:
 
 ```yaml
 safehouse_paths:
-    - ~/src/woohoo/.aqh_safehouse
-    - ~/src/oh_yeah/.aqh_safehouse
+    - ~/src/woohoo/.atp_safehouse
+    - ~/src/oh_yeah/.atp_safehouse
 ```
 
 ### The Safehouse
@@ -92,7 +111,7 @@ The hierarchy would be like this:
 
 ```
     my-react-todo-list
-        > .ahq_safehouse
+        > .atp_safehouse
 ```
 
 The safehouse holds a manifest of installed agent packages, called `manifest.yaml`
@@ -104,5 +123,41 @@ from which they were installed.
 Standard packages were source from the global home office.
 
 Custom packages are configured into the catalog as personal favourites
-that the user wishes AHQ to manage installation.
+that the user wishes ATP to manage installation.
 
+## atp-package.yaml layout
+
+The `atp-package.yaml` has mandatory and optional fields
+
+`Package` is the root structure.
+
+| Field Name | Opt or Mand  | Type        | max len |
+|------------|--------------|-------------|---------|
+| Name       | mandatory    | string      |     80  |
+| Type       | mandatory    | string      |     20  |
+| Developer  | optional     | string      |     80  |
+| License    | optional     | string      |     80  |
+| Version    | mandatory    | string      |     80  |
+| Copyright  | optional     | string list |     80  |
+| Usage      | mandatory    | string list |     80  |
+| components | mandatory    | string list |    256  |
+| bundles    | optional     | string list |    256  |
+
+
+An example:
+
+```yaml
+Package:
+- Name: clean-docs-and-code
+- Type: Mcp 
+- Developer: Warwick Molloy
+- License: Apache License 2.0
+- Version: 0.1.0
+- Copyright:
+    - Warwick Molloy 2026
+    - All rights reserved.
+- components:
+   - SKILL.md
+- bundles:
+   - mcp-exec
+```

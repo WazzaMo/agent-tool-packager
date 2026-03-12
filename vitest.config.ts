@@ -1,5 +1,5 @@
 /**
- * Vitest configuration for AHQ tests.
+ * Vitest configuration for ATP tests.
  * Unit tests use isolated mocks; integration tests use temp dirs and STATION_PATH.
  */
 

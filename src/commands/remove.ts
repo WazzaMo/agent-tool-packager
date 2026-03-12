@@ -1,5 +1,5 @@
 /**
- * Remove command group: ahq remove safehouse <pkg>, ahq remove station <pkg> [--exfiltrate].
+ * Remove command group: atp remove safehouse <pkg>, atp remove station <pkg> [--exfiltrate].
  */
 
 import type { Command } from "commander";

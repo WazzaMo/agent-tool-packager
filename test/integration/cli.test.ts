@@ -1,5 +1,5 @@
 /**
- * Integration tests for AHQ CLI commands.
+ * Integration tests for ATP CLI commands.
  * Maps to acceptance criteria in docs/features/1-package-definition-and-installation.md
  * Uses temp dirs and STATION_PATH for isolation.
  */
@@ -16,7 +16,7 @@ const PROJECT_ROOT = path.resolve(__dirname, "../..");
 const CLI_PATH = path.join(PROJECT_ROOT, "dist", "cli.js");
 const FIXTURE_PKG = path.resolve(__dirname, "../fixtures/test-package");
 
-function runAhq(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): string {
+function runAtp(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): string {
   const env = { ...process.env, ...opts?.env };
   return execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
     encoding: "utf8",
@@ -25,7 +25,7 @@ function runAhq(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }
   });
 }
 
-function runAhqExpectExit(
+function runAtpExpectExit(
   args: string[],
   expectedExit: number,
   opts?: { cwd?: string; env?: NodeJS.ProcessEnv }
@@ -57,7 +57,7 @@ describe("Integration: station init", () => {
   let originalStationPath: string | undefined;
 
   beforeEach(() => {
-    stationDir = path.join(os.tmpdir(), `ahq-int-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-int-${Date.now()}`);
     originalStationPath = process.env.STATION_PATH;
     process.env.STATION_PATH = stationDir;
   });
@@ -72,16 +72,16 @@ describe("Integration: station init", () => {
   });
 
   it("creates station at STATION_PATH (non-default init)", () => {
-    runAhq(["station", "init"], { env: { STATION_PATH: stationDir } });
-    expect(fs.existsSync(path.join(stationDir, "config.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(stationDir, "ahq_catalog.yaml"))).toBe(true);
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    expect(fs.existsSync(path.join(stationDir, "atp-config.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "atp-catalog.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "safehouse_list.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "manifest"))).toBe(true);
   });
 
   it("reports station already exists on second init", () => {
-    runAhq(["station", "init"], { env: { STATION_PATH: stationDir } });
-    const out = runAhq(["station", "init"], { env: { STATION_PATH: stationDir } });
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    const out = runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
     expect(out).toContain("Station already exists");
   });
 });
@@ -91,14 +91,14 @@ describe("Integration: safehouse init", () => {
   let projectDir: string;
 
   beforeEach(() => {
-    stationDir = path.join(os.tmpdir(), `ahq-station-${Date.now()}`);
-    projectDir = path.join(os.tmpdir(), `ahq-proj-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-station-${Date.now()}`);
+    projectDir = path.join(os.tmpdir(), `atp-proj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     // Create minimal station first
-    fs.writeFileSync(path.join(stationDir, "config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
+    fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
 
@@ -112,10 +112,10 @@ describe("Integration: safehouse init", () => {
   });
 
   it("creates safehouse in project directory", () => {
-    runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
-    const safehousePath = path.join(projectDir, ".ahq_safehouse");
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    const safehousePath = path.join(projectDir, ".atp_safehouse");
     expect(fs.existsSync(safehousePath)).toBe(true);
-    expect(fs.existsSync(path.join(safehousePath, "config.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(safehousePath, "atp-config.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(safehousePath, "manifest.yaml"))).toBe(true);
   });
 });
@@ -125,11 +125,11 @@ describe("Integration: catalog list", () => {
   let projectDir: string;
 
   beforeEach(async () => {
-    stationDir = path.join(os.tmpdir(), `ahq-cat-${Date.now()}`);
-    projectDir = path.join(os.tmpdir(), `ahq-catproj-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-cat-${Date.now()}`);
+    projectDir = path.join(os.tmpdir(), `atp-catproj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
-    fs.writeFileSync(path.join(stationDir, "config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
+    fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
     const catalogContent = `packages:
   - name: test-package
@@ -139,7 +139,7 @@ describe("Integration: catalog list", () => {
     version: 1.0.0
     location: file:///nonexistent
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
 
@@ -152,8 +152,8 @@ describe("Integration: catalog list", () => {
     }
   });
 
-  it("ahq catalog list shows known packages from catalog", () => {
-    const out = runAhq(["catalog", "list"], {
+  it("atp catalog list shows known packages from catalog", () => {
+    const out = runAtp(["catalog", "list"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
@@ -161,8 +161,8 @@ describe("Integration: catalog list", () => {
     expect(out).toContain("doc-guide");
   });
 
-  it("ahq catalog list --user-only shows only user catalog", () => {
-    const out = runAhq(["catalog", "list", "--user-only"], {
+  it("atp catalog list --user-only shows only user catalog", () => {
+    const out = runAtp(["catalog", "list", "--user-only"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
@@ -175,12 +175,12 @@ describe("Integration: agent nomination", () => {
   let projectDir: string;
 
   beforeEach(() => {
-    stationDir = path.join(os.tmpdir(), `ahq-agent-st-${Date.now()}`);
-    projectDir = path.join(os.tmpdir(), `ahq-agent-pj-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-agent-st-${Date.now()}`);
+    projectDir = path.join(os.tmpdir(), `atp-agent-pj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "config.yaml"),
+      path.join(stationDir, "atp-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -191,9 +191,9 @@ describe("Integration: agent nomination", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
-    runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
 
   afterEach(() => {
@@ -205,27 +205,27 @@ describe("Integration: agent nomination", () => {
     }
   });
 
-  it("ahq agent cursor assigns agent and creates agent dir", () => {
-    const out = runAhq(["agent", "cursor"], {
+  it("atp agent cursor assigns agent and creates agent dir", () => {
+    const out = runAtp(["agent", "cursor"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
     expect(out).toContain("Assigned cursor");
     expect(out).toContain(".cursor/");
-    const configPath = path.join(projectDir, ".ahq_safehouse", "config.yaml");
+    const configPath = path.join(projectDir, ".atp_safehouse", "atp-config.yaml");
     const config = fs.readFileSync(configPath, "utf8");
     expect(config).toContain("cursor");
   });
 
-  it("ahq agent cursor second time reports Q Branch message", () => {
-    runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
-    const out = runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+  it("atp agent cursor second time reports Q Branch message", () => {
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    const out = runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     expect(out).toContain("Q Branch already knows cursor was assigned");
   });
 
-  it("ahq agent handover to claude switches agent", () => {
-    runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
-    const out = runAhq(["agent", "handover", "to", "claude"], {
+  it("atp agent handover to claude switches agent", () => {
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    const out = runAtp(["agent", "handover", "to", "claude"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
@@ -238,12 +238,12 @@ describe("Integration: install and list", () => {
   let projectDir: string;
 
   beforeEach(() => {
-    stationDir = path.join(os.tmpdir(), `ahq-inst-st-${Date.now()}`);
-    projectDir = path.join(os.tmpdir(), `ahq-inst-pj-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-inst-st-${Date.now()}`);
+    projectDir = path.join(os.tmpdir(), `atp-inst-pj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "config.yaml"),
+      path.join(stationDir, "atp-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -257,10 +257,10 @@ describe("Integration: install and list", () => {
     version: 1.0.0
     location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
-    runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
-    runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
 
   afterEach(() => {
@@ -272,8 +272,8 @@ describe("Integration: install and list", () => {
     }
   });
 
-  it("ahq install test-package --project installs to safehouse", () => {
-    const out = runAhq(["install", "test-package", "--project"], {
+  it("atp install test-package --project installs to safehouse", () => {
+    const out = runAtp(["install", "test-package", "--project"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
@@ -282,24 +282,24 @@ describe("Integration: install and list", () => {
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
-  it("ahq safehouse list shows installed package", () => {
-    runAhq(["install", "test-package", "--project"], {
+  it("atp safehouse list shows installed package", () => {
+    runAtp(["install", "test-package", "--project"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAhq(["safehouse", "list"], {
+    const out = runAtp(["safehouse", "list"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
     expect(out).toContain("test-package");
   });
 
-  it("ahq install --user records in station manifest", () => {
-    runAhq(["install", "test-package", "--user"], {
+  it("atp install --user records in station manifest", () => {
+    runAtp(["install", "test-package", "--user"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAhq(["station", "list"], { env: { STATION_PATH: stationDir } });
+    const out = runAtp(["station", "list"], { env: { STATION_PATH: stationDir } });
     expect(out).toContain("test-package");
   });
 });
@@ -309,12 +309,12 @@ describe("Integration: remove", () => {
   let projectDir: string;
 
   beforeEach(() => {
-    stationDir = path.join(os.tmpdir(), `ahq-rm-st-${Date.now()}`);
-    projectDir = path.join(os.tmpdir(), `ahq-rm-pj-${Date.now()}`);
+    stationDir = path.join(os.tmpdir(), `atp-rm-st-${Date.now()}`);
+    projectDir = path.join(os.tmpdir(), `atp-rm-pj-${Date.now()}`);
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(
-      path.join(stationDir, "config.yaml"),
+      path.join(stationDir, "atp-config.yaml"),
       `configuration:
   version: 0.1.0
   agent-paths:
@@ -328,10 +328,10 @@ describe("Integration: remove", () => {
     version: 1.0.0
     location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
 `;
-    fs.writeFileSync(path.join(stationDir, "ahq_catalog.yaml"), catalogContent);
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
-    runAhq(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
-    runAhq(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
 
   afterEach(() => {
@@ -343,29 +343,29 @@ describe("Integration: remove", () => {
     }
   });
 
-  it("ahq remove safehouse test-package removes from safehouse", () => {
-    runAhq(["install", "test-package", "--project"], {
+  it("atp remove safehouse test-package removes from safehouse", () => {
+    runAtp(["install", "test-package", "--project"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    runAhq(["remove", "safehouse", "test-package"], {
+    runAtp(["remove", "safehouse", "test-package"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAhq(["safehouse", "list"], {
+    const out = runAtp(["safehouse", "list"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
     expect(out).toContain("No packages installed");
   });
 
-  it("ahq remove station test-package removes from station", () => {
-    runAhq(["install", "test-package", "--user"], {
+  it("atp remove station test-package removes from station", () => {
+    runAtp(["install", "test-package", "--user"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    runAhq(["remove", "station", "test-package"], { env: { STATION_PATH: stationDir } });
-    const out = runAhq(["station", "list"], { env: { STATION_PATH: stationDir } });
+    runAtp(["remove", "station", "test-package"], { env: { STATION_PATH: stationDir } });
+    const out = runAtp(["station", "list"], { env: { STATION_PATH: stationDir } });
     expect(out).toContain("No packages installed");
   });
 });

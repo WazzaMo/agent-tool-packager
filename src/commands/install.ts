@@ -1,5 +1,5 @@
 /**
- * Install command: ahq install <package> [--project|--user] [--dependencies]
+ * Install command: atp install <package> [--project|--user] [--dependencies]
  */
 
 import type { Command } from "commander";
@@ -12,7 +12,7 @@ export function registerInstallCommand(program: Command): void {
     .argument("<package>", "Package name to install")
     .option(
       "--project",
-      "Install to project Safehouse (default: binaries to .ahq_safehouse, skills to agent dir)"
+      "Install to project Safehouse (default: binaries to .atp_safehouse, skills to agent dir)"
     )
     .option(
       "--user",

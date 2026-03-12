@@ -1,5 +1,5 @@
 /**
- * Shared types for AHQ configuration.
+ * Shared types for ATP configuration.
  */
 
 export interface AgentPathEntry {

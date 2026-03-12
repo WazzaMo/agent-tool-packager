@@ -1,5 +1,5 @@
 /**
- * Catalog types for AHQ packages.
+ * Catalog types for ATP packages.
  */
 
 export interface CatalogPackage {

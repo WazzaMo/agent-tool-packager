@@ -1,5 +1,5 @@
 # Go
-/src/ahq
+/src/atp
 /src/*.exe
 /src/vendor/
 
@@ -26,12 +26,12 @@ Thumbs.db
 *.swo
 *~
 
-# Project-local ahq state (installed record; optional catalog)
-.ahq-local/
+# Project-local atp state (installed record; optional catalog)
+.atp-local/
 
 # Test / coverage
 *.log
 coverage.out
 coverage.html
 
-.ahq_safehouse
+.atp_safehouse

@@ -1,6 +1,6 @@
 /**
  * Path resolution for Station and Safehouse.
- * Respects STATION_PATH env var; defaults to ~/.ahq_station.
+ * Respects STATION_PATH env var; defaults to ~/.atp_station.
  */
 
 import fs from "node:fs";
@@ -19,11 +19,11 @@ export function expandHome(p: string): string {
 }
 
 /** Default station path when STATION_PATH is not set */
-export const DEFAULT_STATION_PATH = path.join(os.homedir(), ".ahq_station");
+export const DEFAULT_STATION_PATH = path.join(os.homedir(), ".atp_station");
 
 /**
  * Resolve the Station directory path.
- * Uses STATION_PATH env var if set; otherwise ~/.ahq_station.
+ * Uses STATION_PATH env var if set; otherwise ~/.atp_station.
  */
 export function getStationPath(): string {
   const env = process.env.STATION_PATH;
@@ -37,7 +37,7 @@ export function getStationPath(): string {
  * Resolve the Safehouse path for the current working directory.
  */
 export function getSafehousePath(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".ahq_safehouse");
+  return path.join(cwd, ".atp_safehouse");
 }
 
 /** Check if a path exists and is a directory */

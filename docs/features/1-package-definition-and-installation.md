@@ -11,40 +11,40 @@ Created by Warwick Molloy Feb 2026.
 This is the list of packages that can be installed into a system.
 There is a standard list of packages that come from the source code repository or a central storage.
 
-The user can define their own repository and use AHQ to manage installation as they see fit.
+The user can define their own repository and use ATP to manage installation as they see fit.
 
 # Use Cases
 
 ## 0. Initialisation
 
-The AHQ can be initialised in one or more Station locations.
+The ATP can be initialised in one or more Station locations.
 
 ### Default init
 
-Init AHQ for user directory configuration.
+Init ATP for user directory configuration.
 
 ```bash
-ahq station init
+atp station init
 ```
 
-This will create ~/.ahq_station and all files it contains.
+This will create ~/.atp_station and all files it contains.
 
 ### Non-default init
 
 For directories other than the user home directory, set the STATION_PATH first.
 
 ```bash
-STATION_PATH="~/alternate/.ahq_station" ahq station init
+STATION_PATH="~/alternate/.atp_station" atp station init
 ```
 
 ### Safehouse init
 
 When the current directory is a project base directory, run station init
-to configure the AHQ Safehouse in the project.
+to configure the ATP Safehouse in the project.
 
 ```bash
 cd project_dir
-ahq safehouse init
+atp safehouse init
 ```
 
 ## 1. Definition
@@ -66,7 +66,7 @@ be installed at the user level or at the project level.
   [package-metadata](../notes/2026-02-25-package-metadata-and-catalog.md) and
   code, these are "assets" or "prompts."
 
-- **Station**: Main config area at `~/.ahq_station` (or `STATION_PATH`); see
+- **Station**: Main config area at `~/.atp_station` (or `STATION_PATH`); see
   [configuration](../configuration.md).
 
 ## 2. Installation
@@ -103,9 +103,9 @@ Where a package has been installed in a Station and version B is available, gene
 and an older version of the package, version A, has been installed completely within a project's Safehouse 
 the selection of A or B version in the heat of the moment, is up to the agent.
 
-AHQ cannot decide which tool is used by the agent when possibly two versions of the same
-tool is available to the agent. Therefore, this is not a concern for AHQ and not
-something AHQ can control, nor test.
+ATP cannot decide which tool is used by the agent when possibly two versions of the same
+tool is available to the agent. Therefore, this is not a concern for ATP and not
+something ATP can control, nor test.
 
 ### Assumption of independence
 
@@ -120,7 +120,7 @@ If a package has dependencies, installation will either:
 The installation command with dependency will be given the parameter like this:
 
 ```bash
-ahq install vecfs-ts --project --dependencies
+atp install vecfs-ts --project --dependencies
 ```
 
 The dependencies flag acts as a pre-approval to installd dependencies. Without this,
@@ -165,7 +165,7 @@ which includes:
 
 The user, central manifest of installed packages will be stored in:
 
-    ${HOME}/.ahq_station/manifest/${package}.yaml
+    ${HOME}/.atp_station/manifest/${package}.yaml
 
 Through environment variable [see configuration](../configuration.md) the
 station path can be overriden and this makes integration testing work.
@@ -185,15 +185,15 @@ Where ${utility} might be `vecfs-mcp-ts` as an example.
 
 ### Project path
 
-Utility Binary: ${PROJECT}/.ahq_safehouse/bin
+Utility Binary: ${PROJECT}/.atp_safehouse/bin
 
-Supplementary files: ${PROJECT}/.ahq_safehouse/share/${utility}/
+Supplementary files: ${PROJECT}/.atp_safehouse/share/${utility}/
 
 Where ${PROJECT} is the path of the local project.
 
 The project's Safehouse holds configuration.
 
-The `.ahq_safehouse/config.yaml` file should record:
+The `.atp_safehouse/config.yaml` file should record:
 1.  Project agent for handover
 2.  Path to project agent's files.
 
@@ -208,7 +208,7 @@ tool to be used and letting the installer resolve the path when the tool is inst
 
 ## Questions about feature
 
-### 1. Whether ahq install should auto-install utility packages when a skill depends on them.
+### 1. Whether atp install should auto-install utility packages when a skill depends on them.
 
 The user should be in control. If the user has requested a skill and
 it has dependencies, then as a package manager, those dependencies
@@ -217,9 +217,9 @@ to enable the skill.
 
 ### 2. MCP server tar.gz layout and extraction rules.
 
-AHQ can define the tar.gz packaging AND extraction rules.
+ATP can define the tar.gz packaging AND extraction rules.
 
-When extracting, AHQ should unpack to a temporary path in /tmp/{YYYY-MM-DD-package-name-version}
+When extracting, ATP should unpack to a temporary path in /tmp/{YYYY-MM-DD-package-name-version}
 and then pick out the binary files from the package to install into
 the right places (see above) so they would resolve in the user's PATH or be found by the patched path in the skill.md file.
 
@@ -266,7 +266,7 @@ registry of safehouses trusted by the Station.
 
 ## Exfiltrate semantics 
 
-(copy vs move): When running ahq remove station <pkg> --exfiltrate, should binaries/config be copied to each Safehouse (then Station removed). There will be copies at each Safehouse, as a result so they are independent.
+(copy vs move): When running atp remove station <pkg> --exfiltrate, should binaries/config be copied to each Safehouse (then Station removed). There will be copies at each Safehouse, as a result so they are independent.
 
 ## Manifest richness
 
@@ -275,13 +275,13 @@ as defined earlier in "### Package Manifest"
 
 ## Agent mapping configuration
 
-This is configured when AHQ is initialised.
+This is configured when ATP is initialised.
 It is mapped in the configuration file so that agent software changes can
 be adapted and tested.
 
 ## Agent handover behavior
 
-On ahq agent handover to <new-agent-name>, AHQ must proactively re-install and re-patch skills for the new agent using Safehouse templates.
+On atp agent handover to <new-agent-name>, ATP must proactively re-install and re-patch skills for the new agent using Safehouse templates.
 
 ## Dependency auto-install UX
 
@@ -298,26 +298,26 @@ User must be able to list the catalog to select a package to install.
 Criteria is that known package names from the catalog
 appear in list output.
 
-`ahq catalog list` must show the known packages.
+`atp catalog list` must show the known packages.
 To list packages in the catalog that can be installed.
 
 ## Agent nomination
 
-AHQ needs to know which agent requires the weapons (the package) 
+ATP needs to know which agent requires the weapons (the package) 
 because every agent is different. It is to be assumed that there
 will be no safehouse path in the project file until one is created.
 
-The `ahq agent` command creates the safehouse path in the project.
+The `atp agent` command creates the safehouse path in the project.
 When the agent name is given, it configures the safehouse
 for that agent so that weapons can be installed into the proper place
 for that agent.
 
 ```bash
 cd test_project
-ahq agent cursor
+atp agent cursor
 ```
 
-This will inform ahq to use the `.cursor` directory in the project
+This will inform atp to use the `.cursor` directory in the project
 directory for SKILL.md files.
 
 The skill files should install to the appropriate path for the
@@ -326,8 +326,8 @@ needed once, unless the agent is changed by the user.
 
 Running the `agent` command a second time should not change the
 configuration unless a new agent is nominated, say going from cursor
-to claude. If the user runs `ahq agent cursor` a second time,
-ahq should respond with a message telling them that it was 
+to claude. If the user runs `atp agent cursor` a second time,
+atp should respond with a message telling them that it was 
 unnecessary, "Q Branch already knows cursor was assigned to this project"
 
 ## Agent handover
@@ -339,7 +339,7 @@ Where a package is installed in a project's Safehouse, a handover
 can be affected like this:
 
 ```bash
-ahq agent handover to claude
+atp agent handover to claude
 ```
 
 The Safehouse would have known the past agent in its configuratoin
@@ -355,8 +355,8 @@ must install into the project area, assumed to be the current directory.
 
 ```bash
 cd test_project
-ahq agent cursor
-ahq install vecfs-ts --{scope}
+atp agent cursor
+atp install vecfs-ts --{scope}
 ```
 
 Where {scope} can be either:
@@ -379,7 +379,7 @@ directory - according to "### User home path" above.
 
 List installed packages from the user cross-project space.
 
-`ahq station list`
+`atp station list`
 
 Lists the packages installed into the Station.
 
@@ -388,7 +388,7 @@ Lists the packages installed into the Station.
 
 Listing installed packages that are in the project's safehouse
 
-`ahq safehouse list`
+`atp safehouse list`
 
 
 ## Removing packages
@@ -402,7 +402,7 @@ in the Safehouses, so those packages keep working. This could be used
 as a migration strategy from version to version.
 
 ```bash
-ahq remove station vecfs --{scope}
+atp remove station vecfs --{scope}
 ```
 
 Where {scope} can be:
@@ -413,7 +413,7 @@ Where {scope} can be:
 
 
 ```bash
-ahq remove station vecfs --exfiltrate
+atp remove station vecfs --exfiltrate
 ```
 
 The exfiltrate option means to move the binaries. Exhiltrate
@@ -437,6 +437,6 @@ on the Station.
 ### Removing package from project safehouse
 
 ```bash
-ahq remove safehouse vecfs
+atp remove safehouse vecfs
 ```
 

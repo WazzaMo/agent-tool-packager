@@ -1,5 +1,5 @@
 /**
- * Agent subcommands: ahq agent <name>, ahq agent handover to <name>.
+ * Agent subcommands: atp agent <name>, atp agent handover to <name>.
  */
 
 import fs from "node:fs";
@@ -14,7 +14,7 @@ import {
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
-  "No Safehouse found. Run `ahq safehouse init` first from your project directory.";
+  "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
 function ensureSafehouse(cwd: string): void {
   if (!safehouseExists(cwd)) {
@@ -35,7 +35,7 @@ export function registerAgentCommands(program: Command): void {
     .command("agent")
     .description("Assign or handover the active agent for this project");
 
-  // ahq agent handover to <name> - must be registered before the default
+  // atp agent handover to <name> - must be registered before the default
   agent
     .command("handover")
     .argument("to", "'to' (literal)")
@@ -67,10 +67,10 @@ export function registerAgentCommands(program: Command): void {
       console.log(`Handed over to ${name} (${agentPath})`);
     });
 
-  // ahq agent <name> - assign agent to this project
+  // atp agent <name> - assign agent to this project
   agent
     .argument("<name>", "Agent to assign (e.g. cursor, claude)")
-    .description("Assign agent to this project (run from project with .ahq_safehouse)")
+    .description("Assign agent to this project (run from project with .atp_safehouse)")
     .action((name: string) => {
       const cwd = process.cwd();
       ensureSafehouse(cwd);

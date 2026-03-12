@@ -1,5 +1,5 @@
 # Minimal user catalog for integration tests.
-# Known packages that must appear in `ahq catalog list`.
+# Known packages that must appear in `atp catalog list`.
 packages:
   - name: test-package
     version: 1.0.0

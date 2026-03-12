@@ -1,5 +1,5 @@
 /**
- * Safehouse initialization: creates .ahq_safehouse in cwd with config and manifest.
+ * Safehouse initialization: creates .atp_safehouse in cwd with config and manifest.
  * Registers the safehouse in the Station's safehouse_list when Station exists.
  */
 
@@ -18,7 +18,7 @@ import {
 } from "../config/safehouse-config.js";
 import type { SafehouseListConfig } from "../config/station-config.js";
 
-const CONFIG_FILE = "config.yaml";
+const CONFIG_FILE = "atp-config.yaml";
 const MANIFEST_FILE = "manifest.yaml";
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
 

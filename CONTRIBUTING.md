@@ -1,16 +1,16 @@
-# Contributing to Agent HQ
+# Contributing to Agent Tool Packager
 
-Thank you for your interest in contributing to Agent HQ. Your agents will thank you...
+Thank you for your interest in contributing to Agent Tool Packager. Your agents will thank you...
 
 This guide covers everything you need to get started, from setting up your environment to submitting a pull request.
 
 # How to Contribute
 
-AgentHQ uses the fork and pull request workflow. You do not need write access to the repository to contribute.
+Agent Tool Packager uses the fork and pull request workflow. You do not need write access to the repository to contribute.
 
 ## Step 1: Fork the Repository
 
-1. Navigate to [https://github.com/WazzaMo/ahq](https://github.com/WazzaMo/ahq).
+1. Navigate to [https://github.com/WazzaMo/atp](https://github.com/WazzaMo/atp).
 2. Click the **Fork** button in the top-right corner.
 3. Select **Copy the default branch only** (recommended for most contributions).
 4. GitHub creates your own copy of the repository under your account.
@@ -18,9 +18,9 @@ AgentHQ uses the fork and pull request workflow. You do not need write access to
 ## Step 2: Clone Your Fork
 
 ```bash
-git clone https://github.com/WazzaMo/ahq.git
-# or ... git clone git@github.com:WazzaMo/ahq.git
-cd ahq
+git clone https://github.com/WazzaMo/atp.git
+# or ... git clone git@github.com:WazzaMo/atp.git
+cd atp
 ```
 
 ## Step 3: Create a Branch
@@ -68,7 +68,7 @@ This should be found in the [README file](./README.md).
 
 # Documentation
 
-Documentation is a first-class citizen in AgentHQ. All Markdown files should follow the formatting rules in [docs/doc-guide.md](docs/doc-guide.md):
+Documentation is a first-class citizen in Agent Tool Packager. All Markdown files should follow the formatting rules in [docs/doc-guide.md](docs/doc-guide.md):
 
 - Use `#` (level 1 headings) for new sections, not only the title.
 - Place an empty line after every heading.
@@ -98,13 +98,13 @@ Contributions of all kinds are welcome:
 
 - Support for additional embedding providers in the Python script
 
-- Agent HQ can hold notes about what experience has taught people.
+- Agent Tool Packager can hold notes about what experience has taught people.
 
 If you are unsure whether a change is in scope, open an issue first to discuss it.
 
 # Reporting Issues
 
-Open an issue at [https://github.com/WazzaMo/ahq/issues](https://github.com/WazzaMo/ahq/issues) with:
+Open an issue at [https://github.com/WazzaMo/atp/issues](https://github.com/WazzaMo/atp/issues) with:
 
 - A clear description of the problem or suggestion.
 - Steps to reproduce (for bugs).
@@ -112,4 +112,4 @@ Open an issue at [https://github.com/WazzaMo/ahq/issues](https://github.com/Wazz
 
 # License
 
-By contributing to AgentHQ, you agree that your contributions will be licensed under the Apache License, Version 2.0, the same license as the project.
+By contributing to Agent Tool Packager, you agree that your contributions will be licensed under the Apache License, Version 2.0, the same license as the project.
