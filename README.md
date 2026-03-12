@@ -4,9 +4,9 @@ A utility for CLI agentic software development workflows.
 
 Cursor summarised this project as:
 
-> **Agent HQ is an early-stage project to standardize how
-  you add prompts, MCP
-  servers, and skills to agentic CLI workflows, with documentation and conventions in place**
+> **Agent Tools is an early-stage project to standardize how
+  you add prompts, MCP servers, and skills to agentic CLI workflows,
+  with documentation and conventions in place**
 
 ## Copyright
 
@@ -14,7 +14,7 @@ Cursor summarised this project as:
 Contribution to this project is supported and contributors will be recognised.
 Created by Warwick Molloy Feb 2026.
 
-# Why AHQ?
+# Why Agent Tools?
 
 Ever wanted to install your standard prompt markdown files in a project
 in a convenient way?
@@ -23,19 +23,26 @@ Ever wanted to install MCP servers, skills etc in a convenient manner?
 
 Me too...
 
+And that drove me to create the Agent Tools Packager **ATP**.
+
+Welcome to "Q Branch" !!
+We're going to build the next generation of agent tools together!
+
+
+## Banner!
 
 ```
-    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT  HH    HH     QQQQ
-  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T  HH    HH   QQQQQQQQ
- AA    AA  GG        EE       NNNN  NN     TT     HH    HH  QQ      QQ
- AA    AA  GG        EEEEE    NNNN  NN     TT     HH    HH  QQ      QQ
- AA    AA  GG  GGGG  EEEEE    NN NN NN     TT     HHHHHHHH  QQ      QQ
- AAAAAAAA  GG  G GG  EE       NN  NNNN     TT     HHHHHHHH  QQ QQ   QQ
- AAAAAAAA  GG    GG  EE       NN  NNNN     TT     HH    HH  QQ  QQ  QQ
- AA    AA   GG  GG   EE       NN    NN     TT     HH    HH  QQ   QQ QQ
- AA    AA    GGGG    EEEEEEE  NN    NN     TT     HH    HH  QQ    QQQQ
- AA    AA ======================================  HH    HH   QQQQQQQQ
- AA    AA    By Warwick Molloy Melbourne, Aus     HH    HH     QQQQ QQ
+    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
+  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T      T  TT  T   OOOOOOOO    OOOOOOOO   LL        SS  SS
+ AA    AA  GG        EE       NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
+ AA    AA  GG        EEEEE    NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS
+ AA    AA  GG  GGGG  EEEEE    NN NN NN     TT            TT     OO      OO  OO      OO  LL        SSS
+ AAAAAAAA  GG  G GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL         SSS
+ AAAAAAAA  GG    GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL           SSS
+ AA    AA   GG  GG   EE       NN    NN     TT            TT     OO      OO  OO      OO  LL             SS
+ AA    AA    GGGG    EEEEEEE  NN    NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
+ AA    AA ==========================================     TT      OOOOOOOO    OOOOOOOO   LL        SS  SS
+ AA    AA    By Warwick Molloy Melbourne, Australia      TT        OOOO        OOOO     LLLLLLLL   SSSS
 
 ```
 
@@ -68,16 +75,16 @@ npm run build
 Run the CLI:
 ```bash
 # Direct execution (after build)
-npx ahq --version
-npx ahq station init
-npx ahq safehouse init
-npx ahq agent cursor
-npx ahq catalog list
-npx ahq install <package> [--project|--user] [--dependencies]
-npx ahq station list
-npx ahq safehouse list
-npx ahq remove station <pkg> [--exfiltrate]
-npx ahq remove safehouse <pkg>
+npx atp --version
+npx atp station init
+npx atp safehouse init
+npx atp agent cursor
+npx atp catalog list
+npx atp install <package> [--project|--user] [--dependencies]
+npx atp station list
+npx atp safehouse list
+npx atp remove station <pkg> [--exfiltrate]
+npx atp remove safehouse <pkg>
 ```
 
 Development (no build step):
@@ -87,14 +94,14 @@ npm run dev -- station init
 
 Override Station location:
 ```bash
-STATION_PATH="/path/to/station" npx ahq station init
+STATION_PATH="/path/to/station" npx atp station init
 ```
 
 ## Configuration
 
-- **Station:** `~/.ahq_station` (or `STATION_PATH`) — config, catalog, manifests
-- **Safehouse:** `./.ahq_safehouse` — per-project installs
-- **Catalog:** global (bundled) + user (`~/.ahq_station/ahq-catalog.yaml`) + project (`./.ahq-local/catalog.yaml`). Precedence: project > user > global
+- **Station:** `~/.atp_station` (or `STATION_PATH`) — config, catalog, manifests
+- **Safehouse:** `./.atp_safehouse` — per-project installs
+- **Catalog:** global (bundled) + user (`~/.atp_station/atp-catalog.yaml`) + project (`./.atp-local/catalog.yaml`). Precedence: project > user > global
 
 See [docs/configuration.md](docs/configuration.md) for full configuration.
 

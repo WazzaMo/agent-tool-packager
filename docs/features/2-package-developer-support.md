@@ -16,6 +16,18 @@ Let's place our heart and empathy with package developers and make it easy
 for them to define their package; to support them developing and testing
 their package and later publishing their package for others to use.
 
+The inspiration for new agent tools, and packages, may appear in any
+project. When this inspiration strikes, it is a good idea that the developer
+will create a new package project directory and copy the prompt material
+and executables into that directory. It may even be part of a build
+chain, in CI/CD, that this process of staging a package may be done.
+
+However it is achieved by the developer, the developer will need
+to stage their package, which means they need to have metadata that
+defines the package and the files needed to be packaged for delivery
+to an agent. This feature describes that staging and metadata
+build-up process, using AgentHQ.
+
 ## Trial publishing
 
 This process describes creating a package for installation, locally,
@@ -30,15 +42,22 @@ to validate that the process works for a good mix of Agent types.
 
 ### Explore the workflow for package devs
 
-Use AHQ to create a skeleton package definition.
+Use ATP to create a skeleton package definition.
 
-`ahq create package skeleton`
+`atp create package skeleton`
 
-Produces ahq-package.yaml
+Produces atp-package.yaml
 
-AHQ can be used to perform various tasks, or operations, on the ahq-package.yaml
+ATP can be used to perform various tasks, or operations, on the atp-package.yaml
 
-Set the package type.
+Now that we have a package skeleton, we need to configure the properties
+of the package to give it a complete definition.
+
+First, set the package type. The type of package influences what component
+files or executable bundles might be included in the package and it also
+influences how those files and bundles will be installed into the work
+environment for an agent.
+
 Package types can be:
   1.  Rule - prompt material, usually markdown, that is installed as a rule
       or standard prompt.
@@ -52,9 +71,9 @@ Package types can be:
 A dev should be allowed to get this wrong and to fix it by
 setting the package type again, overwriting the mistake.
 
-`ahq package type rule`
+`atp package type rule`
 
-The ahq-package.yaml file will now have `type` set to `rule`.
+The atp-package.yaml file will now have `type` set to `rule`.
 
 Early in the process, setting the package type will not influence much.
 It's main purpose is to select a path for installation to a Station
@@ -63,7 +82,7 @@ or Safehouse.
 Performing package validation should reveal that the package definition
 is incomplete.
 
-`ahq validate package`
+`atp validate package`
 
 > Only package type is set and many properties remain to make the package
 > viable to install, such as:
@@ -76,13 +95,13 @@ is incomplete.
 
 If a package fails to validate, then it cannot be added to the package catalog.
 
-`ahq catalog add package`
+`atp catalog add package`
 
-This will examine the ahq-package.yaml, run an internal validation and then
+This will examine the atp-package.yaml, run an internal validation and then
 respond with:
 
 > Package definition is not yet complete, so it does not pass validation.
-> Please continue to define the package and run `ahq validate package` for
+> Please continue to define the package and run `atp validate package` for
 > feedback. When validation passes, try adding the package to the catalog.
 > 
 > Validation indicates:
@@ -97,16 +116,16 @@ respond with:
 Define the package's name, add a copyright message and choose a license.
 
 ```bash
-ahq package name clean-docs-and-code
-ahq package copyright "Warwick Molloy 2026" "All rights reserved"
-ahq package license "Apache License 2.0"
-ahq package version 0.1.0
+atp package name clean-docs-and-code
+atp package copyright "Warwick Molloy 2026" "All rights reserved"
+atp package license "Apache License 2.0"
+atp package version 0.1.0
 ```
 
 Give information about how the package should be used.
 
 ```bash
-ahq package usage "The MCP can be invoked on most agents by saying 'use package'"
+atp package usage "The MCP can be invoked on most agents by saying 'use package'"
 ```
 
 A skill or other prompt matter should tell the agent how to use the package.
@@ -118,22 +137,22 @@ up to 80 characters long.
 For long copyright messages, these can be set in multiple lines as so:
 
 ```bash
-ahq package copyright "Warwick Molloy 2026"
+atp package copyright "Warwick Molloy 2026"
 # This will overwrite any existing value
 
-ahq package add copyright "All rights reserved"
+atp package add copyright "All rights reserved"
 # The `add` keyword signals this is an additional list item, and not an overwrite.
 ```
 
-AHQ will set `name`, `copyright`, `version` and `license` fields in ahq-package.yaml
+ATP will set `name`, `copyright`, `version` and `license` fields in atp-package.yaml
 accordingly and return with exit code 0 in all cases, even if it's
 overwriting previous values.
 
-AHQ can show a summary the package, so the developer knows what's defined
+ATP can show a summary the package, so the developer knows what's defined
 and what is still missing. To determine what's missing, the **summary**
 feature will use the **validate** logic.
 
-`ahq package summary`
+`atp package summary`
 
 > Package summary:
 > Name: clean-docs-and-code
@@ -151,22 +170,22 @@ feature will use the **validate** logic.
 Then we add the markdown components using one line...
 
 ```bash
-ahq package component add docs/doc-guide.md docs/coding-standard.md
+atp package component add docs/doc-guide.md docs/coding-standard.md
 ```
 
 or, separately...
 
 ```bash
-ahq package component add docs/doc-guide.md
-ahq package component add docs/coding-standard.md
+atp package component add docs/doc-guide.md
+atp package component add docs/coding-standard.md
 ```
 
 The path for `component add` subcommand can be up to system path length, which is at least 256 characters
 in many modern operating systems.
 
-AHQ will stage these by taking the files from the given path
+ATP will stage these by taking the files from the given path
 and adding them to `stage.tar` in the same directory, the current directory,
-and listing the filenames in the components list in the ahq-package.yaml file.
+and listing the filenames in the components list in the atp-package.yaml file.
 
 Layout of `stage.tar` will be simple, just the files without any subdirectory.
 Markdown components do not require a directory structure and the installation
@@ -178,7 +197,7 @@ into the agent will decide the directories later.
 
 Validating the package now should confirm that it is complete.
 
-`ahq validate package`
+`atp validate package`
 
 > Package appears complete. Mandatory minimal values are set.
 > Some optional values are also set.
@@ -186,7 +205,7 @@ Validating the package now should confirm that it is complete.
 
 We should get encourage from the package summary as well.
 
-`ahq package summary`
+`atp package summary`
 
 > Package summary:
 > name: clean-docs-and-code
@@ -200,24 +219,24 @@ We should get encourage from the package summary as well.
 
 Adding the package to the user package catalog should succeed.
 
-`ahq catalog add package`
+`atp catalog add package`
 
 > Package clean-docs-and-code added to user package catalog.
 > It can now be installed at either the Station or into a project's Safehouse.
 
-The ahq-package.yaml would be added to the `user-packages` directory in the station
+The atp-package.yaml would be added to the `user-packages` directory in the station
 see [configuration](../configuration.md) for details of the station directory layout.
 The stage file will be gziped and the output called package.tar.gz and it will be placed
-with its corresponding `ahq-package.yaml` file under 
+with its corresponding `atp-package.yaml` file under 
 the `user-packages/clean-docs-and-code/` directory.
 
 Exit code 0 returned, indicating success.
 
 --------------------------------------------------------------------------
 
-# AHQ Command Specifics
+# ATP Command Specifics
 
-## ahq create package skeleton
+## atp create package skeleton
 
 Begins the work of incremental package building.
 Should exit with:
@@ -227,31 +246,31 @@ Should exit with:
 ### Acceptance Criteria
 
 Deletes any previous work files:
-1.  ahq-package.yaml
+1.  atp-package.yaml
 2.  stage.tar
 
-Creates new, empty `ahq-package.yaml` file.
+Creates new, empty `atp-package.yaml` file.
 
 ----
 
 ## Property set commands
 
 These include:
-- `ahq package type rule`
-- `ahq package name clean-docs-and-code`
-- `ahq package usage "For prompts that ask for clean markdown docs."`
-- `ahq package add usage "Simple prompt text that seeks clearer text output."`
-- `ahq package developer "Warwick Molloy"`
-- `ahq package copyright "Warwick Molloy 2026" "All rights reserved"`
-- `ahq package add copyright "third line value"`
-- `ahq package license "Apache License 2.0"`
-- `ahq package version 0.1.0`
+- `atp package type rule`
+- `atp package name clean-docs-and-code`
+- `atp package usage "For prompts that ask for clean markdown docs."`
+- `atp package add usage "Simple prompt text that seeks clearer text output."`
+- `atp package developer "Warwick Molloy"`
+- `atp package copyright "Warwick Molloy 2026" "All rights reserved"`
+- `atp package add copyright "third line value"`
+- `atp package license "Apache License 2.0"`
+- `atp package version 0.1.0`
 
 These commands all populate fields in the package file.
 The only special one is the copyright subcommand where copyright
 is a list of strings.
 
-The `ahq package developer` subcommand is adding the author's name to the package.
+The `atp package developer` subcommand is adding the author's name to the package.
 
 ### Acceptance Criteria
 
@@ -264,7 +283,7 @@ with one of the known types:
     5.  other -> Experimental
 
 For other subcommands, the value given within the text length limits will be taken
-and used in the package file, `ahq-package.yaml`.
+and used in the package file, `atp-package.yaml`.
 
 Exits code:
 0 = File could be opened for write and value updates completed.
@@ -274,7 +293,7 @@ User-supplied fields must be sanitised for YAML
 
 ----
 
-## ahq validate package
+## atp validate package
 
 Used to validate the properties in the package file.
 The logic, or class, that implements the logic will be used in other commands.
@@ -295,9 +314,9 @@ Exit code:
 
 ----
 
-## ahq package summary
+## atp package summary
 
-Prints the content of the `ahq-package.yaml` file.
+Prints the content of the `atp-package.yaml` file.
 Lists the values of the properties that were set.
 Then uses the validate function to determine what mandatory values
 are missing and reports the missing elements.
@@ -307,11 +326,11 @@ are missing and reports the missing elements.
 Must list all set items.
 Must indicate what mandatory fields are missing.
 
-Exit code matches that from `ahq validate package`
+Exit code matches that from `atp validate package`
 
 ----
 
-## ahq package component add {path}
+## atp package component add {path}
 
 Checks the given path as a valid file path.
 Then tests to see if a file exists at that path location.
@@ -336,18 +355,18 @@ Exit code:
 
 ----
 
-## ahq package component remove {path}
+## atp package component remove {path}
 
 Checks the given path as a valid file path.
 Then tests to see if a file exists at that path location and if the file is listed
-in the `ahq-package.yaml` as well as included the `stage.tar` file.
+in the `atp-package.yaml` as well as included the `stage.tar` file.
 
 It then removes the file from `stage.tar` and removes it from the component list
-in `ahq-package.yaml`.
+in `atp-package.yaml`.
 
 ### Acceptance Criteria
 
-It must remove the file from both the `ahq-package.yaml` and `stage.tar` or leave
+It must remove the file from both the `atp-package.yaml` and `stage.tar` or leave
 the file in both. At minimum, it must remove the file from `stage.tar` to save
 space. During install, the file being listed will cause an error to be found.
 
@@ -356,12 +375,12 @@ is a fatal error. Either, or both, error conditions should be met with an error
 message, informing the user why it failed.
 
 Exit code:
-0 = file removed from stage.tar and from the component list in ahq-package.yaml
+0 = file removed from stage.tar and from the component list in atp-package.yaml
 1 = Failed for one of the reasons given above, and an error message was shown.
 
 ----
 
-## ahq package bundle add exec-base
+## atp package bundle add exec-base
 
 Add a bundle to the package and stage file. More details below.
 The bundle is different to an component, where an component is a single file,
@@ -374,18 +393,18 @@ The bundle and all directories and files under the nominated base directory
 should be added to `stage.tar` and the base directory should be listed as a bundle.
 Bundles, like components, in the YAML are a list entry.
 
-Same error codes used for `ahq package component add {path}`
+Same error codes used for `atp package component add {path}`
 
 ----
 
-## ahq package bundle remove exec-base
+## atp package bundle remove exec-base
 
 Remove a bundle from the package and stage file. This undoes and is opposite
-to the `ahq package bundle add exec-base` command.
+to the `atp package bundle add exec-base` command.
 
 ### Acceptance Criteria
 
-It must check that the bundle was listed in the `ahq-package.yaml` file
+It must check that the bundle was listed in the `atp-package.yaml` file
 and that the bundle's directory structure was in the stage file `stage.tar`.
 When either of these checks fail to find the bundle, an error message should
 be displayed informing the user that the bundle had not been included in the package.
@@ -400,19 +419,23 @@ Exit codes:
 not be removed from the package and staging file.
 
 
-## ahq catalog add package
+## atp catalog add package
 
 Adds the package to the user section of the Station's catalog.
-This will add to the station directory layout, see [configuration](../configuration.md)
-for Station Directory Structure.
+This will add to the station directory layout, see 
+[configuration](../configuration.md) for Station Directory Structure.
+
+This command, like all the others, should be executed from the base
+directory of the package development, the same directory where the
+`atp-package.yaml` and the `stage.tar` files will be found.
 
 ## Acceptance Criteria
 
 It must:
 1. creating a package directory with the name of the package
-2. copying the ahq-package.yaml into the directory
+2. copying the atp-package.yaml into the directory
 3. Performing gzip on the stage.tar and naming the output file package.tar.gz
-4. Adding the package name to the user section of the `ahq-catalog.yaml`
+4. Adding the package name to the user section of the `atp-catalog.yaml`
 
 If any of the processes above cannot be completed, an error message
 should report the failing step.
@@ -427,11 +450,11 @@ Exit code:
 
 ## Naming convention
 
-Config files use dashes with prefix `ahq-` (e.g. `ahq-package.yaml`, `ahq-config.yaml`, `ahq-catalog.yaml`). Directories use underscores (e.g. `~/.ahq_station`). See [configuration](../configuration.md).
+Config files use dashes with prefix `atp-` (e.g. `atp-package.yaml`, `atp-config.yaml`, `atp-catalog.yaml`). Directories use underscores (e.g. `~/.atp_station`). See [configuration](../configuration.md).
 
-## ahq-package.yaml layout
+## atp-package.yaml layout
 
-See [configuration](../configuration.md) for "ahq-package.yaml layout" information.
+See [configuration](../configuration.md) for "atp-package.yaml layout" information.
 
 An example MCP package:
 
@@ -455,14 +478,67 @@ Package:
 
 ## Package Types
 
+Different types of packages are expected to have different
+components, some are expected to have bundles but they may not
+for various reasons. It's possible that a single executable is all
+that's needed and that could be provided as a single component.
+
+
+### Rule type
+
 Rules should usually have one or more markdown component.
+They provide prompt material that should be used consistently
+and would typically provide background on things like conventions
+or standards that a team choose to use. This is the backbone
+of context engineering.
+
+Given the above, a rule is not expected to include any bundles,
+just a number of markdown component files.
+
+### Command type
 
 Commands may have a bundle or a number of simple components.
+A command on its own is probably not very useful and might
+be a dependency for a skill, where the skill would tell the
+agent how to use the command as extra agency - a utility
+that "Q branch" placed at the disposal of the agent.
 
-Skills will have at least one markdown component - the SKILL.md
+Note that "Q branch" is an spy language term meaning a developer
+of tools for (spy) Agents.
 
-MCP servers will have a bundle typically.
+### Skill type
 
+Skills will have at least one markdown component - the SKILL.md.
+It may rely on or depend on a Command to provide the utility
+tool that the skill informs the agent on effective use.
+
+If a skill provides a bundle, it should be seen as a standalone
+Skill and Command package that has no dependencies on other
+packages.
+
+### Mcp server type
+
+MCP servers will have a bundle typically for the MCP executable
+which might be implemented in one of many languages and frameworks.
+
+An Mcp may include markdown components, such as a SKILL.md
+to inform the agent on usage and triggers for using the MCP.
+
+### Experimental type
+
+AI is a developing space, so it is likely that other packages
+may be developed as an experiment before the type is properly
+recognised.
+
+An `Experimental` type of package is a catch-all and the developer
+of an experimental package may need to alter the Station's configuration
+to update the installation path mappings to fit the needs of their
+experiment.
+
+By default, an Experimental package type will be treated
+as an MCP server because it has the most elaborate structure.
+
+-----
 
 ## Staging files
 
@@ -472,7 +548,7 @@ package and components are being developed.
 
 Staging any files will result in creating or updating the `stage.tar` file
 in the current directory where the package files are found. In other words,
-the package project directory, where the `ahq` commands will be executed.
+the package project directory, where the `atp` commands will be executed.
 
 The `stage.tar` file is temporary and should be in `.gitignore` ideally.
 
@@ -510,9 +586,9 @@ exec-base/
     bin/
         parser
 
-`ahq package bundle add exec-base`
+`atp package bundle add exec-base`
 
-The `bundle` instead of `component` tells ahq to take a bundle and replicate this structure
+The `bundle` instead of `component` tells atp to take a bundle and replicate this structure
 in the staging tar file.
 
 The `stage.tar` file will have the same bundle directory structure.
@@ -521,10 +597,10 @@ The `stage.tar` file will have the same bundle directory structure.
 > exec-base/share/schema/schema.schm
 > exec-base/bin/parser
 
-The ahq-package.yaml would list the `exec-base` directory as a bundle.
+The atp-package.yaml would list the `exec-base` directory as a bundle.
 So, if this bundle were added to the package above, the YAML should look like this:
 
-ahq-package.yaml
+atp-package.yaml
 
 ```yaml
 Package:
