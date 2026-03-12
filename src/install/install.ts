@@ -20,7 +20,7 @@ import { copyPackageAssets } from "./copy-assets.js";
 import type { PackageManifest } from "./types.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
-  "No Safehouse found. Run `ahq safehouse init` first from your project directory.";
+  "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
 export type InstallScope = "project" | "user";
 
@@ -82,7 +82,7 @@ export async function installPackage(
   const manifest = loadPackageManifest(pkgDir);
   if (!manifest) {
     console.error(
-      `No manifest (ahq-package.yaml or package.yaml) found in ${pkgDir}`
+      `No manifest (atp-package.yaml or package.yaml) found in ${pkgDir}`
     );
     process.exit(1);
   }

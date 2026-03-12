@@ -1,5 +1,5 @@
 /**
- * Safehouse subcommands: ahq safehouse init, ahq safehouse list, etc.
+ * Safehouse subcommands: atp safehouse init, atp safehouse list, etc.
  */
 
 import type { Command } from "commander";
@@ -13,7 +13,7 @@ export function registerSafehouseCommands(program: Command): void {
 
   safehouse
     .command("init")
-    .description("Create .ahq_safehouse in the current directory")
+    .description("Create .atp_safehouse in the current directory")
     .action(async () => {
       await safehouseInit();
     });

@@ -25,7 +25,7 @@ Browser - controls a browser via MCP tools.
 Orchestrator - divide larger tasks into small, focussed tasks.
 
 Product-Manager - understand the product, the intended user experience,
-          the Agent HQ joke and the principle of keeping the user
+          the Agent Tool Packager joke and the principle of keeping the user
           in control.
 
 Copy-writer -  More deeply understands the jokes and is the one

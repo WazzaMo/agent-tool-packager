@@ -39,12 +39,12 @@ the `.md` extension (e.g. `verifier.md`, `debugger.md`, `test-runner.md`).
 
 ## Are the subagent files correctly located?
 
-Yes. The AHQ project has subagent files in `.cursor/agents/`, which matches the
+Yes. The ATP project has subagent files in `.cursor/agents/`, which matches the
 documented location. The directory is correct.
 
 ## Why the existing subagent files are not usable
 
-The AHQ project defines six custom subagents in `.cursor/agents/` (orchestrator,
+The ATP project defines six custom subagents in `.cursor/agents/` (orchestrator,
 test-runner, security-auditor, copy-writer, product-manager, software-engineer).
 Despite correct location and valid YAML frontmatter, Composer cannot invoke them.
 The following factors explain why.
@@ -55,14 +55,14 @@ The Cursor docs consistently show subagent files with `.md` extension. Examples:
 
 - `verifier.md`, `debugger.md`, `test-runner.md`, `security-reviewer.md`
 
-The AHQ files are named without extension (e.g. `orchestrator`, `test-runner`).
+The ATP files are named without extension (e.g. `orchestrator`, `test-runner`).
 If Cursor discovers subagents by file extension, files without `.md` may be
 ignored. Renaming to `orchestrator.md`, `test-runner.md`, etc. may be required.
 
 ### Model field values
 
 The docs list valid `model` values: `fast`, `inherit`, or a specific model ID.
-The AHQ subagents use `model: auto` (test-runner) and `model: composer-1.5`
+The ATP subagents use `model: auto` (test-runner) and `model: composer-1.5`
 (orchestrator). These values are not documented. Invalid model values could
 cause Cursor to skip or misconfigure the subagents.
 
@@ -143,9 +143,9 @@ Implement MCP servers that embody each subagent role. For example:
 Composer could then invoke these via MCP tools rather than via a subagent
 dispatch mechanism. The subagent becomes a tool, not a separate agent process.
 
-### Option C: AHQ packages and skills
+### Option C: ATP packages and skills
 
-Define AHQ packages (skills or rules) that encode subagent behaviour:
+Define ATP packages (skills or rules) that encode subagent behaviour:
 
 - Prompts and instructions for each role (Orchestrator, Product-Manager, etc.)
 - Installed into the project's Safehouse and agent directories
@@ -179,8 +179,8 @@ This works today without any new infrastructure.
    tools (e.g. test-runner, Security-auditor). MCP servers can encapsulate
    tooling that a single prompt cannot.
 
-4. **AHQ integration:** Option C aligns with AHQ's package model. Subagent
-   prompts could be AHQ skills or rules, installed per project, and versioned
+4. **ATP integration:** Option C aligns with ATP's package model. Subagent
+   prompts could be ATP skills or rules, installed per project, and versioned
    in the catalog.
 
 ## References

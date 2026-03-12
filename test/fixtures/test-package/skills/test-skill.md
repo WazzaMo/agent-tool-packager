@@ -1,3 +1,3 @@
 # Test Skill
 
-A minimal skill file for AHQ package installation tests.
+A minimal skill file for ATP package installation tests.

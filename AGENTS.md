@@ -1,20 +1,20 @@
-# Agent HQ — summary for AI agents
+# Agent Tool Packager (ATP) — summary for AI agents
 
 This file summarises the project’s markdown documentation so agents can work effectively in this repo.
 
 ## Project overview
 
-**Agent HQ (AHQ)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in **TypeScript** (Node.js 20+); config at `~/.ahq_station/ahq-config.yaml`; one catalog at `~/.ahq_station/ahq-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.ahq_station` is used. The project safehouse (`./.ahq_safehouse`) holds only a manifest of installed packages, not a catalog.
+**Agent Tool Packager (ATP)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in **TypeScript** (Node.js 20+); config at `~/.atp_station/atp-config.yaml`; one catalog at `~/.atp_station/atp-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.atp_station` is used. The project safehouse (`./.atp_safehouse`) holds only a manifest of installed packages, not a catalog.
 
 ## Key commands and behaviour
 
-- **`ahq station init`**: create ~/.ahq_station (or STATION_PATH) with config, catalog, manifests.
-- **`ahq safehouse init`**: create .ahq_safehouse in the current project.
-- **`ahq agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
-- **`ahq agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
-- **`ahq catalog list`**: list packages in the station catalog.
-- **`ahq install <name>`**: install package from catalog. Use `--project` (default) or `--user`; `--dependencies` to install deps.
-- **`ahq station list`** / **`ahq safehouse list`**: list installed packages. **`ahq remove station <pkg>`** / **`ahq remove safehouse <pkg>`**: remove packages; use `--exfiltrate` with station remove to copy to Safehouses first.
+- **`atp station init`**: create ~/.atp_station (or STATION_PATH) with config, catalog, manifests.
+- **`atp safehouse init`**: create .atp_safehouse in the current project.
+- **`atp agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
+- **`atp agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
+- **`atp catalog list`**: list packages in the station catalog.
+- **`atp install <name>`**: install package from catalog. Use `--project` (default) or `--user`; `--dependencies` to install deps.
+- **`atp station list`** / **`atp safehouse list`**: list installed packages. **`atp remove station <pkg>`** / **`atp remove safehouse <pkg>`**: remove packages; use `--exfiltrate` with station remove to copy to Safehouses first.
 
 ## Build and test
 
@@ -31,15 +31,15 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Naming convention
 
-- **Directories:** Use underscores (_). Example: `~/.ahq_station`, `.ahq_safehouse`.
-- **Config files:** Use dashes (-) with prefix `ahq-`. Example: `ahq-config.yaml`, `ahq-catalog.yaml`, `ahq-package.yaml`. Never use `ahq_config.yaml` or similar.
+- **Directories:** Use underscores (_). Example: `~/.atp_station`, `.atp_safehouse`.
+- **Config files:** Use dashes (-) with prefix `atp-`. Example: `atp-config.yaml`, `atp-catalog.yaml`, `atp-package.yaml`. Never use `atp_config.yaml` or similar.
 
 ## Concepts (from design notes)
 
-- **Package:** Versioned unit of assets (e.g. markdown) plus a manifest (e.g. `ahq-package.yaml`) with name, version, description, and list of assets. Catalog entries point at paths or URLs; install copies from there into the project.
-- **Catalog:** Single index at the Station (`ahq-catalog.yaml`) listing available packages (standard + user). All installs source from this catalog.
-- **Safehouse manifest:** Each project’s `.ahq_safehouse` holds `manifest.yaml` listing installed packages for that project; it does not hold a catalog.
-- **Config (prototype):** `~/.ahq_station/ahq-config.yaml` with `prompt_sources` (dirs or files) and optional `project_prompts_dir` (default e.g. `prompts`). Source dirs are copied one level (no recursion).
+- **Package:** Versioned unit of assets (e.g. markdown) plus a manifest (e.g. `atp-package.yaml`) with name, version, description, and list of assets. Catalog entries point at paths or URLs; install copies from there into the project.
+- **Catalog:** Single index at the Station (`atp-catalog.yaml`) listing available packages (standard + user). All installs source from this catalog.
+- **Safehouse manifest:** Each project’s `.atp_safehouse` holds `manifest.yaml` listing installed packages for that project; it does not hold a catalog.
+- **Config (prototype):** `~/.atp_station/atp-config.yaml` with `prompt_sources` (dirs or files) and optional `project_prompts_dir` (default e.g. `prompts`). Source dirs are copied one level (no recursion).
 
 ## File references
 

@@ -26,7 +26,7 @@ However it is achieved by the developer, the developer will need
 to stage their package, which means they need to have metadata that
 defines the package and the files needed to be packaged for delivery
 to an agent. This feature describes that staging and metadata
-build-up process, using AgentHQ.
+build-up process, using Agent Tool Packager.
 
 ## Trial publishing
 

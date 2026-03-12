@@ -1,5 +1,5 @@
 /**
- * Station initialization: creates ~/.ahq_station (or STATION_PATH) with config files.
+ * Station initialization: creates ~/.atp_station (or STATION_PATH) with config files.
  */
 
 import fs from "node:fs";
@@ -12,9 +12,9 @@ import {
   DEFAULT_CATALOG,
 } from "../config/station-config.js";
 
-const CONFIG_FILE = "ahq_config.yaml";
+const CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
-const CATALOG_FILE = "ahq-catalog.yaml";
+const CATALOG_FILE = "atp-catalog.yaml";
 const MANIFEST_DIR = "manifest";
 
 export async function stationInit(): Promise<void> {

@@ -31,7 +31,7 @@ CLI for agentic software development workflows`;
 const program = new Command();
 
 program
-  .name("ahq")
+  .name("atp")
   .description(greetingMessage)
   .version("0.1.0");
 

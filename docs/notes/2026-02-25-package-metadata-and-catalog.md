@@ -31,7 +31,7 @@ packages.
 
 Two straightforward options:
 
-1. **Single manifest file** in the package root, e.g. `ahq-package.yaml` or
+1. **Single manifest file** in the package root, e.g. `atp-package.yaml` or
    `package.yaml`. Tools (and the catalog) read this to know what the package
    contains and how it is versioned.
 
@@ -84,12 +84,12 @@ A minimal catalog could be a YAML or JSON array of entries, e.g.:
 packages:
   - name: doc-guide
     version: 1.0.0
-    description: Markdown documentation style guide for AHQ.
+    description: Markdown documentation style guide for ATP.
     location: file:///path/to/prompt-assets/docs
   - name: clean-code
     version: 1.0.0
-    description: Coding conventions for Agent HQ.
-    location: https://example.com/ahq-packages/clean-code
+    description: Coding conventions for Agent Tool Packager.
+    location: https://example.com/atp-packages/clean-code
 ```
 
 Or the catalog could reference each package’s manifest URL so that the
@@ -99,13 +99,13 @@ for display or resolution.
 
 ### Where the catalog lives
 
-- **User home**: e.g. `~/.ahq_station/catalog.yaml` for packages the user has added
+- **User home**: e.g. `~/.atp_station/catalog.yaml` for packages the user has added
   or subscribed to.
 
-- **Project**: e.g. `./.ahq-station/catalog.yaml` for packages scoped to that
+- **Project**: e.g. `./.atp-local/catalog.yaml` for packages scoped to that
   project.
 
-- **Bundled or remote**: AHQ could ship or point at a default catalog (e.g.
+- **Bundled or remote**: ATP could ship or point at a default catalog (e.g.
   GitHub repo or static JSON) so users see a default set of packages without
   configuring anything.
 
@@ -117,7 +117,7 @@ project overriding) gives flexibility for teams and individuals.
 | Concept        | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
 | Package        | One or more assets (e.g. markdown) plus a manifest with name, version, list. |
-| Manifest       | File in package root (e.g. ahq-package.yaml) describing the package.        |
+| Manifest       | File in package root (e.g. atp-package.yaml) describing the package.        |
 | Versioning     | Semver or similar; bump when assets or manifest change.                     |
 | Catalog        | Index of packages: name, version, location; user/project/remote sources.   |
 

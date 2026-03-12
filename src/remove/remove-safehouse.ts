@@ -84,7 +84,7 @@ export function removeSafehousePackage(
   cwd: string = process.cwd()
 ): void {
   if (!safehouseExists(cwd)) {
-    console.error("No Safehouse found. Run `ahq safehouse init` first.");
+    console.error("No Safehouse found. Run `atp safehouse init` first.");
     process.exit(1);
   }
 

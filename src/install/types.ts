@@ -1,5 +1,5 @@
 /**
- * Package manifest types for ahq-package.yaml / package.yaml.
+ * Package manifest types for atp-package.yaml / package.yaml.
  * Schema from docs/features/1-package-definition-and-installation.md.
  */
 

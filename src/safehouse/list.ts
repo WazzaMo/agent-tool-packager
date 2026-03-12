@@ -1,6 +1,6 @@
 /**
  * List packages installed in the project Safehouse.
- * Reads .ahq_safehouse/manifest.yaml packages array.
+ * Reads .atp_safehouse/manifest.yaml packages array.
  */
 
 import { loadSafehouseManifest } from "../config/load.js";

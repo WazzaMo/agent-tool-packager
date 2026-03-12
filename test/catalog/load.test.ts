@@ -28,7 +28,7 @@ describe("loadUserCatalog", () => {
   });
 
   it("returns empty when Station has no catalog", () => {
-    const tmpDir = path.join(os.tmpdir(), `ahq-load-${Date.now()}`);
+    const tmpDir = path.join(os.tmpdir(), `atp-load-${Date.now()}`);
     fs.mkdirSync(tmpDir, { recursive: true });
     process.env.STATION_PATH = tmpDir;
     const catalog = loadUserCatalog();
@@ -36,11 +36,11 @@ describe("loadUserCatalog", () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  it("loads packages from Station ahq-catalog.yaml", () => {
-    const tmpDir = path.join(os.tmpdir(), `ahq-load2-${Date.now()}`);
+  it("loads packages from Station atp-catalog.yaml", () => {
+    const tmpDir = path.join(os.tmpdir(), `atp-load2-${Date.now()}`);
     fs.mkdirSync(tmpDir, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpDir, "ahq-catalog.yaml"),
+      path.join(tmpDir, "atp-catalog.yaml"),
       `packages:
   - name: my-pkg
     version: 1.0.0
@@ -55,14 +55,14 @@ describe("loadUserCatalog", () => {
 });
 
 describe("loadProjectCatalog", () => {
-  it("returns empty when project has no .ahq-local/catalog.yaml", () => {
+  it("returns empty when project has no .atp-local/catalog.yaml", () => {
     const catalog = loadProjectCatalog(os.tmpdir());
     expect(catalog.packages).toEqual([]);
   });
 
-  it("loads packages from .ahq-local/catalog.yaml", () => {
-    const tmpProj = path.join(os.tmpdir(), `ahq-proj-${Date.now()}`);
-    const catalogDir = path.join(tmpProj, ".ahq-local");
+  it("loads packages from .atp-local/catalog.yaml", () => {
+    const tmpProj = path.join(os.tmpdir(), `atp-proj-${Date.now()}`);
+    const catalogDir = path.join(tmpProj, ".atp-local");
     fs.mkdirSync(catalogDir, { recursive: true });
     fs.writeFileSync(
       path.join(catalogDir, "catalog.yaml"),

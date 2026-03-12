@@ -21,10 +21,10 @@ describe("resolvePackage", () => {
   const originalStationPath = process.env.STATION_PATH;
 
   beforeEach(() => {
-    const tmpStation = path.join(os.tmpdir(), `ahq-test-${Date.now()}`);
+    const tmpStation = path.join(os.tmpdir(), `atp-test-${Date.now()}`);
     fs.mkdirSync(tmpStation, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpStation, "ahq-catalog.yaml"),
+      path.join(tmpStation, "atp-catalog.yaml"),
       `packages:
   - name: test-package
     version: 1.0.0
@@ -55,7 +55,7 @@ describe("resolvePackage", () => {
 });
 
 describe("loadPackageManifest", () => {
-  it("loads ahq-package.yaml", () => {
+  it("loads atp-package.yaml", () => {
     const manifest = loadPackageManifest(FIXTURE_PKG);
     expect(manifest).not.toBeNull();
     expect(manifest!.name).toBe("test-package");

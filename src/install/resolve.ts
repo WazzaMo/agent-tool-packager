@@ -15,7 +15,7 @@ import { mergeCatalogs } from "../catalog/merge.js";
 import type { CatalogPackage } from "../catalog/types.js";
 import type { PackageManifest } from "./types.js";
 
-const MANIFEST_NAMES = ["ahq-package.yaml", "package.yaml"];
+const MANIFEST_NAMES = ["atp-package.yaml", "package.yaml"];
 
 /** Resolve package by name from merged catalog. Returns null if not found. */
 export function resolvePackage(

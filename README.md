@@ -1,4 +1,4 @@
-# Agent HQ
+# Agent Tool Packager (ATP)
 
 A utility for CLI agentic software development workflows.
 

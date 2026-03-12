@@ -88,7 +88,7 @@ export function removeStationPackage(
   opts: { exfiltrate?: boolean } = {}
 ): void {
   if (!stationExists()) {
-    console.error("No Station found. Run `ahq station init` first.");
+    console.error("No Station found. Run `atp station init` first.");
     process.exit(1);
   }
 

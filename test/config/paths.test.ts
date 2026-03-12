@@ -1,6 +1,6 @@
 /**
  * Unit tests for config/paths.
- * Acceptance: Station path from STATION_PATH or ~/.ahq_station, Safehouse path resolution.
+ * Acceptance: Station path from STATION_PATH or ~/.atp_station, Safehouse path resolution.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -50,25 +50,25 @@ describe("getStationPath", () => {
   it("returns DEFAULT_STATION_PATH when STATION_PATH is not set", () => {
     delete process.env.STATION_PATH;
     expect(getStationPath()).toBe(DEFAULT_STATION_PATH);
-    expect(getStationPath()).toBe(path.join(os.homedir(), ".ahq_station"));
+    expect(getStationPath()).toBe(path.join(os.homedir(), ".atp_station"));
   });
 
   it("returns expanded STATION_PATH when set", () => {
-    process.env.STATION_PATH = "~/custom/.ahq_station";
+    process.env.STATION_PATH = "~/custom/.atp_station";
     const result = getStationPath();
-    expect(result).toBe(path.join(os.homedir(), "custom/.ahq_station"));
+    expect(result).toBe(path.join(os.homedir(), "custom/.atp_station"));
   });
 });
 
 describe("getSafehousePath", () => {
-  it("returns .ahq_safehouse relative to cwd by default", () => {
+  it("returns .atp_safehouse relative to cwd by default", () => {
     const cwd = process.cwd();
-    expect(getSafehousePath(cwd)).toBe(path.join(cwd, ".ahq_safehouse"));
+    expect(getSafehousePath(cwd)).toBe(path.join(cwd, ".atp_safehouse"));
   });
 
-  it("returns .ahq_safehouse for given directory", () => {
+  it("returns .atp_safehouse for given directory", () => {
     const dir = "/tmp/test-project";
-    expect(getSafehousePath(dir)).toBe("/tmp/test-project/.ahq_safehouse");
+    expect(getSafehousePath(dir)).toBe("/tmp/test-project/.atp_safehouse");
   });
 });
 
@@ -83,7 +83,7 @@ describe("pathExists", () => {
 
   it("returns false for file (not directory)", async () => {
     const fs = await import("node:fs");
-    const tmpFile = path.join(os.tmpdir(), `ahq-test-${Date.now()}.tmp`);
+    const tmpFile = path.join(os.tmpdir(), `atp-test-${Date.now()}.tmp`);
     try {
       fs.writeFileSync(tmpFile, "");
       expect(pathExists(tmpFile)).toBe(false);

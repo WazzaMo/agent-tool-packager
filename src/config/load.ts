@@ -18,8 +18,8 @@ import type {
 } from "./station-config.js";
 import type { SafehouseConfig, SafehouseManifest } from "./types.js";
 
-const STATION_CONFIG_FILE = "ahq-config.yaml";
-const SAFEHOUSE_CONFIG_FILE = "ahq-config.yaml";
+const STATION_CONFIG_FILE = "atp-config.yaml";
+const SAFEHOUSE_CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_MANIFEST_FILE = "manifest.yaml";
 
 /** Load Station config. Returns null if Station does not exist. */
@@ -137,7 +137,7 @@ export function writeStationPackageManifest(
 
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
 
-/** Load Safehouse list from Station. Returns expanded absolute paths to .ahq_safehouse dirs. */
+/** Load Safehouse list from Station. Returns expanded absolute paths to .atp_safehouse dirs. */
 export function loadSafehouseList(): string[] {
   const stationPath = getStationPath();
   const listPath = path.join(stationPath, SAFEHOUSE_LIST_FILE);
@@ -199,7 +199,7 @@ export function updateSafehousePackageInManifest(
   );
 }
 
-/** Load Safehouse manifest from a Safehouse path (e.g. /path/to/proj/.ahq_safehouse). */
+/** Load Safehouse manifest from a Safehouse path (e.g. /path/to/proj/.atp_safehouse). */
 export function loadSafehouseManifestFromPath(
   safehousePath: string
 ): SafehouseManifest | null {
