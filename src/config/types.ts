@@ -23,6 +23,7 @@ export interface SafehouseManifestPackage {
   version?: string;
   /** "station" when using Station binaries; "local" after exfiltrate or project install */
   source?: "station" | "local";
+  binary_scope?: "user-bin" | "project-bin";
 }
 
 export interface SafehouseManifest {

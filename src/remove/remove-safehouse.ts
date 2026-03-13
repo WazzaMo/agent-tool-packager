@@ -11,8 +11,10 @@ import {
   loadSafehouseConfig,
   loadStationConfig,
   removePackageFromSafehouseManifest,
+  loadSafehouseList,
+  loadSafehouseManifestFromPath,
 } from "../config/load.js";
-import { getSafehousePath } from "../config/paths.js";
+import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
   resolvePackage,
@@ -27,6 +29,64 @@ const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
   "sub-agent": "rules",
   program: "bin",
 };
+
+const LOCAL_BIN = "~/.local/bin";
+const LOCAL_SHARE = "~/.local/share";
+const LOCAL_ETC = "~/.local/etc";
+
+function getLocalBinPath(): string {
+  return path.join(expandHome(LOCAL_BIN));
+}
+
+function getLocalSharePath(): string {
+  return path.join(expandHome(LOCAL_SHARE));
+}
+
+function getLocalEtcPath(): string {
+  return path.join(expandHome(LOCAL_ETC));
+}
+
+/** Remove package binaries and share from Station (~/.local) IF no other Safehouse uses them. */
+function removeUserBinariesIfUnused(pkgName: string, currentCwd: string): void {
+  const safehousePaths = loadSafehouseList();
+  const others = safehousePaths.filter(
+    (p) => path.resolve(p) !== path.resolve(getSafehousePath(currentCwd))
+  );
+
+  let inUse = false;
+  for (const shPath of others) {
+    const manifest = loadSafehouseManifestFromPath(shPath);
+    if (
+      manifest?.packages?.some(
+        (p) => p.name === pkgName && p.binary_scope === "user-bin"
+      )
+    ) {
+      inUse = true;
+      break;
+    }
+  }
+
+  if (!inUse) {
+    const localBin = getLocalBinPath();
+    const shareDir = path.join(getLocalSharePath(), pkgName);
+    const etcDir = path.join(getLocalEtcPath(), pkgName);
+
+    if (pathExists(shareDir)) {
+      fs.rmSync(shareDir, { recursive: true });
+    }
+    if (pathExists(etcDir)) {
+      fs.rmSync(etcDir, { recursive: true });
+    }
+
+    const binFile = path.join(localBin, pkgName);
+    if (fs.existsSync(binFile) && fs.statSync(binFile).isFile()) {
+      fs.unlinkSync(binFile);
+    }
+    console.log(`Removed shared binaries for ${pkgName} as they are no longer in use.`);
+  } else {
+    console.log(`Shared binaries for ${pkgName} kept as they are still in use by other projects.`);
+  }
+}
 
 function removeAgentCopies(
   cwd: string,
@@ -114,7 +174,16 @@ export function removeSafehousePackage(
   }
 
   const safehousePath = getSafehousePath(cwd);
-  removeSafehouseBinariesAndShare(safehousePath, pkgName);
+
+  if (found.binary_scope === "user-bin") {
+    removeUserBinariesIfUnused(pkgName, cwd);
+  } else if (found.binary_scope === "project-bin") {
+    removeSafehouseBinariesAndShare(safehousePath, pkgName);
+  } else {
+    // Default/fallback: just try both if scope unknown
+    removeUserBinariesIfUnused(pkgName, cwd);
+    removeSafehouseBinariesAndShare(safehousePath, pkgName);
+  }
 
   removePackageFromSafehouseManifest(pkgName, cwd);
 

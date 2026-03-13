@@ -111,7 +111,7 @@ export async function installPackage(
   const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
 
   if (opts.promptScope === "project") {
-    addPackageToSafehouseManifest(manifest.name, version, cwd);
+    addPackageToSafehouseManifest(manifest.name, version, opts.binaryScope, cwd);
   } else {
     writeStationPackageManifest(manifest.name, {
       name: manifest.name,
