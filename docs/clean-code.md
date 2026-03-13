@@ -46,3 +46,20 @@ for creating objects with the same protocol.
 
 Polymorphism as a last resort and only when it really
 adds readibility and keeps things simple.
+
+# Clean Tests
+
+## Size versus number priority
+
+Like code it is better to have many smaller files instead
+of a few large files. This makes it easier to find test failures.
+
+This applies to both unit test files and integration tests.
+
+## Small for tests
+
+A suite of tests in a file of 400 lines is small.
+A file of 800 lines for tests becomes harder to manage and should
+be broken into two files with the describe() calls making it very clear.
+
+
