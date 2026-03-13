@@ -460,3 +460,16 @@ on the Station.
 atp remove safehouse vecfs
 ```
 
+Removing a package from the project safehouse should remove the markdown 
+prompt matter from the package from the project's Safehouse and it should
+consider removing the executables that were installed. The install manifest
+needs to indicate the scope of installation for executables that captures
+whether the flag at install time was `--project-bin` or `--user-bin` and when
+the executable scope was --user-bin, the Station needs to be consulted
+about other Safehouses that might use the same package and then check
+whether any of those rely on the --user-bin install of the executable.
+If none of them rely on the --user-bin executable, then the executable
+can be removed.
+
+If the executable scope were --project-bin, the executables can be removed
+with extreme prejudice.
