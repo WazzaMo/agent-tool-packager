@@ -72,7 +72,14 @@ Checking for installed packages...
 
 Exit 0
 
-The manifest file located at `${CWD}/.atp_safehouse/manifest.yaml` looks like this:
+## Example manifest files
+
+The manifest file located at `${CWD}/.atp_safehouse/manifest.yaml` looks like these
+examples.
+
+### Prompt matter only - file components without executables
+
+For a package that only has file components, the manifest entry would look like this.
 
 ```yaml
 Safehouse-Manifest:
@@ -81,7 +88,34 @@ Safehouse-Manifest:
             - version: 0.1.0
             - developer: Warwick Molloy
             - type: rule
-            - location: .cursor/rules/clean-code-rule
+            - provided_executables: 0
+            - install_scope:
+              - prompt_matter: --project-bin
+              - executables: --user-bin
+            - location:
+              - prompt_matter: .cursor/rules/clean-code-rule
+#              - executables: # field should be omitted when no execs included.
+```
+### Package with file components and executables
+
+For a package providing both file components and executables.
+
+```yaml
+Safehouse-Manifest:
+    packages-installed:
+        - wonderful-mcp-server:
+            - version: 0.1.0
+            - developer: Warwick Molloy
+            - type: rule
+            - provided_executables: 0
+            - install_scope:
+              - prompt_matter: --project-bin
+              - executables: --user-bin
+            - location:
+              - prompt_matter: .cursor/rules/clean-code-rule
+              - executables:
+                - bin_files: .atp_safehouse/bin
+                - share_files: .atp_safehouse/share
 ```
 
 ## Installation process that achieved the result
