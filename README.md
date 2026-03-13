@@ -80,7 +80,7 @@ npx atp station init
 npx atp safehouse init
 npx atp agent cursor
 npx atp catalog list
-npx atp install <package> [--project|--user] [--dependencies]
+npx atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
 npx atp station list
 npx atp safehouse list
 npx atp remove station <pkg> [--exfiltrate]

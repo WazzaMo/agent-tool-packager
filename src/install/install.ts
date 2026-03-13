@@ -22,10 +22,12 @@ import type { PackageManifest } from "./types.js";
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
-export type InstallScope = "project" | "user";
+export type PromptScope = "project" | "station";
+export type BinaryScope = "user-bin" | "project-bin";
 
 export interface InstallOptions {
-  scope: InstallScope;
+  promptScope: PromptScope;
+  binaryScope: BinaryScope;
   dependencies: boolean;
 }
 
@@ -108,7 +110,7 @@ export async function installPackage(
 
   const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
 
-  if (opts.scope === "project") {
+  if (opts.promptScope === "project") {
     addPackageToSafehouseManifest(manifest.name, version, cwd);
   } else {
     writeStationPackageManifest(manifest.name, {
@@ -119,5 +121,7 @@ export async function installPackage(
     });
   }
 
-  console.log(`Installed ${manifest.name} ${version} (${opts.scope})`);
+  const finalLabel = `prompts:${opts.promptScope}, bin:${opts.binaryScope}`;
+
+  console.log(`Installed ${manifest.name} ${version} (${finalLabel})`);
 }

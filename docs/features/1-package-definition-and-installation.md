@@ -71,8 +71,10 @@ be installed at the user level or at the project level.
 
 ## 2. Installation
 
-Utility programs can be installed to the user home directory or the local project.
-The default is the user home directory for easiest reuse.
+Utility programs (executables) are installed to the user home directory by default to allow reuse across many projects. 
+Prompt materials (skills, rules) are installed based on the selected scope (`--project` or `--station`).
+The default for a package installation is the project space for skills and user home for programs (`--user-bin`).
+This ensures the agent can use the skills immediately in the project while keeping the system clean.
 
 Package installation involves:
 
@@ -100,16 +102,27 @@ for the agent or at the project directory level.
 ### Precedence of Station or Safehouse
 
 Where a package has been installed in a Station and version B is available, generally,
-and an older version of the package, version A, has been installed completely within a project's Safehouse 
-the selection of A or B version in the heat of the moment, is up to the agent.
+and an older version of the package, version A, has been installed completely within
+a project's Safehouse the selection of A or B version in the heat of the moment, 
+is up to the agent.
 
 ATP cannot decide which tool is used by the agent when possibly two versions of the same
 tool is available to the agent. Therefore, this is not a concern for ATP and not
 something ATP can control, nor test.
 
+That said, the install command assumes "project", which means Safehouse, by default.
+
+So these commands are technically equivalent:
+
+1.  `atp install vecfs-ts`
+
+2.  `atp install vecfs-ts --project`
+
 ### Assumption of independence
 
-Packages are assumed to include all components needed to get off at least one shot.
+Packages are assumed to include all components needed to get off at least
+one shot. Our agent needs to be able to rely on that much, in the field.
+
 If a package has dependencies, installation will either:
 
 1.  include a parameter indicating dependencies must be installed; or
@@ -123,8 +136,8 @@ The installation command with dependency will be given the parameter like this:
 atp install vecfs-ts --project --dependencies
 ```
 
-The dependencies flag acts as a pre-approval to installd dependencies. Without this,
-lacking dependencies will cause installation to fail.
+The dependencies flag acts as a pre-approval to installed dependencies.
+Without this, lacking dependencies will cause installation to fail.
 
 ### Package Manifest
 
@@ -185,15 +198,18 @@ Where ${utility} might be `vecfs-mcp-ts` as an example.
 
 ### Project path
 
+For isolated installation or testing, binary files and supplementary materials can be kept within the project.
+
 Utility Binary: ${PROJECT}/.atp_safehouse/bin
 
 Supplementary files: ${PROJECT}/.atp_safehouse/share/${utility}/
 
 Where ${PROJECT} is the path of the local project.
+The project's Safehouse holds configuration and local binaries when using the --project-bin flag.
 
 The project's Safehouse holds configuration.
 
-The `.atp_safehouse/config.yaml` file should record:
+The `.atp_safehouse/atp-config.yaml` file should record:
 1.  Project agent for handover
 2.  Path to project agent's files.
 
@@ -359,14 +375,18 @@ atp agent cursor
 atp install vecfs-ts --{scope}
 ```
 
-Where {scope} can be either:
+Where {scope} can be:
 
-1. user
+1. station - Install skills and rules into the user's Station area (~/.atp_station).
 
-2. project (default)
+2. project (default) - Install skills and rules into the project's agent directory.
 
-If scope is not indicated, project scope is assumed because this
-has less impact.
+3. user-bin (default) - Install binaries into the user's home area for reuse across projects.
+
+4. project-bin - Install binaries into the project's Safehouse bin directory for testing or avoiding version conflicts.
+
+If no prompt scope is indicated, project scope is assumed.
+If no binary scope is indicated, user-bin is assumed.
 
 
 Must install vecfs executables for the vecfs-embed-ts and vecfs-ts
@@ -407,9 +427,9 @@ atp remove station vecfs --{scope}
 
 Where {scope} can be:
 
-1.  user
+1. station
 
-2.  project (default)
+2. project (default)
 
 
 ```bash

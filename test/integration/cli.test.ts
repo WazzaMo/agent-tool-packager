@@ -278,29 +278,39 @@ describe("Integration: install and list", () => {
       env: { STATION_PATH: stationDir },
     });
     expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:project, bin:user-bin)");
     const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
-  it("atp safehouse list shows installed package", () => {
-    runAtp(["install", "test-package", "--project"], {
+  it("atp install test-package --station installs to station area", () => {
+    const out = runAtp(["install", "test-package", "--station"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAtp(["safehouse", "list"], {
-      cwd: projectDir,
-      env: { STATION_PATH: stationDir },
-    });
-    expect(out).toContain("test-package");
+    expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:station, bin:user-bin)");
+    // Station list should show it
+    const listOut = runAtp(["station", "list"], { env: { STATION_PATH: stationDir } });
+    expect(listOut).toContain("test-package");
   });
 
-  it("atp install --user records in station manifest", () => {
-    runAtp(["install", "test-package", "--user"], {
+  it("atp install test-package --user-bin records as user-bin scope", () => {
+    const out = runAtp(["install", "test-package", "--user-bin"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAtp(["station", "list"], { env: { STATION_PATH: stationDir } });
-    expect(out).toContain("test-package");
+    expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:project, bin:user-bin)");
+  });
+
+  it("atp install test-package --project-bin records as project-bin scope", () => {
+    const out = runAtp(["install", "test-package", "--project-bin"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:project, bin:project-bin)");
   });
 });
 
@@ -352,15 +362,16 @@ describe("Integration: remove", () => {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    const out = runAtp(["safehouse", "list"], {
+    // safehouse list should report no packages
+    const listOut = runAtp(["safehouse", "list"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    expect(out).toContain("No packages installed");
+    expect(listOut).toContain("No packages installed");
   });
 
   it("atp remove station test-package removes from station", () => {
-    runAtp(["install", "test-package", "--user"], {
+    runAtp(["install", "test-package", "--station"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });

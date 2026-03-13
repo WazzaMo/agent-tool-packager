@@ -86,4 +86,12 @@ Safehouse-Manifest:
 
 ## Installation process that achieved the result
 
+The process performed during package install, when the command
+`atp install clean-code-rule --project`
+was executed will be broken down here, so we can write unit tests, 
+integration tests and implement the code fully.
 
+First note the option `--project` is deemed optional because it is the default
+behaviour - see
+[feaure 1-package-defintion-and-installation](./1-package-definition-and-installation.md)
+ for details.
