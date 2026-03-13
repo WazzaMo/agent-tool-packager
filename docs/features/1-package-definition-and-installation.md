@@ -189,20 +189,78 @@ It also allows people to have multiple, different station configurations.
 
 For execution and compatibility with other user installed programs ~/.local/ is assumed.
 
-Utility Binary: ${HOME}/.local/bin
+#### UNIX conformant bundle dirs
 
-Supplementary files: ${HOME}/.local/share/${utility}/
-Configuration files: ${HOME}/.local/etc/${utility}/
+Executable Binary: ${HOME}/.local/bin
+Supplementary files: ${HOME}/.local/share/${package}/
+Configuration files: ${HOME}/.local/etc/${package}/
 
-Where ${utility} might be `vecfs-mcp-ts` as an example.
+Where ${package} might be `vecfs-mcp-ts` as an example.
+
+This only works where the bundle for the staged executable had
+subdirectories:
+- `bin` for executable files
+- `share` for supplementary files
+- `etc` for general configuration.
+
+That a UNIX-like match can be performed.
+
+#### Non-UNIX conformant directory structure
+
+When a UNIX directory mapping to the bundle directorie cannot
+be performed, the files will be placed in this manner.
+
+Executable files forced to go to this directory:
+`${HOME}/.local/bin/`
+
+All other files in the bundle forced to go this directory:
+`${HOME}/.local/share/{package}/`
+In the directories that were used in the bundle.
+
+Let's give an example, of a non-UNIX type dir structure:
+
+```
+base-dir/
+    scripts/
+        command.sh
+        cleanup.sh
+    docs/
+        how-to-use.md
+        configuration.md
+    config.toml
+```
+
+Whilst being staged, let's say that the executable path
+filter is set to `base-dir/scripts/*.sh` so ATP can find
+the executables, then the package when installed will have
+this structure:
+
+Executable Binary:
+
+    ${HOME}/.local/bin/command.sh
+
+    ${HOME}/.local/bin/cleanup.sh
+
+Supplementary files:
+
+    ${HOME}/.local/share/${package}/docs/how-to-use.md
+    ${HOME}/.local/share/${package}/docs/configuration.md
+    ${HOME}/.local/share/${package}/config.toml
+
+It is possible the executables will conflict with existing scripts
+or files of the same name. This will be resolved in a later feature.
 
 ### Project path
 
 For isolated installation or testing, binary files and supplementary materials can be kept within the project.
 
-Utility Binary: ${PROJECT}/.atp_safehouse/bin
+Utility Binary: ${PROJECT}/.atp_safehouse/{package}-exec/bin
+Supplementary files: ${PROJECT}/.atp_safehouse/${package}-exec/share
 
-Supplementary files: ${PROJECT}/.atp_safehouse/share/${utility}/
+Basically, the package.tar.gz is unpacked at the base directory
+of `${PROJECT}/atp_safehouse/${package}-exec/` and this keeps installation
+simple and consistent regardless of the structure of the bundle.
+
 
 Where ${PROJECT} is the path of the local project.
 The project's Safehouse holds configuration and local binaries when using the --project-bin flag.

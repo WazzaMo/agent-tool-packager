@@ -416,11 +416,64 @@ The bundle is different to an component, where an component is a single file,
 a bundle represents a tree structure and is intended for executables
 and dependency files.
 
+When packaging a bundle, we need to identify the executables and distinguish
+them from the non-executables, such as configuration, schema or other
+supplementary file.
+
+If the bundle has a UNIX-like directory structure, then this can be determined
+from the directories in the bundle base directory {exec-base} from the command.
+
+If the bundle does not follow a UNIX directory convention then an executable
+filter needs to be set using a switch `--exec-filter {path-glob}`
+
+Let's say the bundle has a directory structure like this:
+
+```
+my-utility/
+    util1.sh
+    util2.sh
+    util.js
+
+    config/
+        agent.json
+        test.json
+```
+
+In this situation the bundle staging command should be given as this:
+
+`atp package bundle add my-utility --exec-filter my-utility/util*`
+
+This will ensure that the utility executable files will be packed in the same location,
+where the BASH Shell script invokes `util.js` using NodeJS.
+
+The installed package will have the following structure on install:
+
+```
+bin/
+    util1.sh
+    util2.sh
+    util.js
+
+share/
+    config/
+        agent.json
+        test.json
+```
+
 ### Acceptance Criteria
 
 The bundle and all directories and files under the nominated base directory
 should be added to `stage.tar` and the base directory should be listed as a bundle.
 Bundles, like components, in the YAML are a list entry.
+
+The bundle command determines the path-glob to use or is given one. If the bundle
+does not follow UNIX conventions with a `bin` directory for the executables
+and there is no `--exec-filter` switch given, an error message should be given
+to inform the user
+"Bundle does not have bin/ directory. Either provide --exec-filter option so 
+installation can setup the executables correctly, or place them in a bin/ directory
+in the bundle."
+
 
 Same error codes used for `atp package component add {path}`
 
