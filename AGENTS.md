@@ -4,7 +4,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Project overview
 
-**Agent Tool Packager (ATP)** is a CLI for agentic software development workflows. It standardises how you add prompts, MCP servers, and skills to agentic CLI workflows. Built in **TypeScript** (Node.js 20+); config at `~/.atp_station/atp-config.yaml`; one catalog at `~/.atp_station/atp-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.atp_station` is used. The project safehouse (`./.atp_safehouse`) holds only a manifest of installed packages, not a catalog.
+**Agent Tool Packager (ATP)** is a CLI for agentic software development workflows. It standardises how you add rules, skills, MCP servers, and commands to agentic CLI workflows. Built in **TypeScript** (Node.js v24.14.0); config at `~/.atp_station/atp-config.yaml`; one catalog at `~/.atp_station/atp-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.atp_station` is used. The project safehouse (`./.atp_safehouse`) holds a manifest of installed packages and `atp-config.yaml` (agent, paths, station); it does not hold a catalog.
 
 ## Key commands and behaviour
 
@@ -13,12 +13,12 @@ This file summarises the project’s markdown documentation so agents can work e
 - **`atp agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
 - **`atp agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
 - **`atp catalog list`**: list packages in the station catalog.
-- **`atp install <name>`**: install package from catalog. Use `--project` (default) or `--user`; `--dependencies` to install deps.
+- **`atp install <name>`**: install package from catalog. Use `--project` (default) or `--station` for prompts; `--user-bin` (default) or `--project-bin` for binaries. `--dependencies` to install deps.
 - **`atp station list`** / **`atp safehouse list`**: list installed packages. **`atp remove station <pkg>`** / **`atp remove safehouse <pkg>`**: remove packages; use `--exfiltrate` with station remove to copy to Safehouses first.
 
 ## Build and test
 
-- **Prerequisites:** Node.js 20+
+- **Prerequisites:** Node.js v24.14.0 (the specific version required will change over time; always refer to `.node-version`). If your environment does not match, run `fnm use` to ensure the correct version is active.
 - **Commands:** `npm install`, `npm run build`, `npm run dev` (development)
 
 
@@ -36,10 +36,10 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Concepts (from design notes)
 
-- **Package:** Versioned unit of assets (e.g. markdown) plus a manifest (e.g. `atp-package.yaml`) with name, version, description, and list of assets. Catalog entries point at paths or URLs; install copies from there into the project.
+- **Package:** Versioned unit with manifest (`atp-package.yaml`) containing name, version, type (Rule, Skill, Mcp, Command, Experimental), components (e.g. markdown files), and optionally bundles (e.g. executables). Catalog entries point at paths or URLs; install copies from there into the project.
 - **Catalog:** Single index at the Station (`atp-catalog.yaml`) listing available packages (standard + user). All installs source from this catalog.
 - **Safehouse manifest:** Each project’s `.atp_safehouse` holds `manifest.yaml` listing installed packages for that project; it does not hold a catalog.
-- **Config (prototype):** `~/.atp_station/atp-config.yaml` with `prompt_sources` (dirs or files) and optional `project_prompts_dir` (default e.g. `prompts`). Source dirs are copied one level (no recursion).
+- **Config:** `~/.atp_station/atp-config.yaml` defines version, agent-paths (cursor, claude, etc.), and standard-catalog URL. See [configuration](docs/configuration.md).
 
 ## File references
 
@@ -47,6 +47,8 @@ This file summarises the project’s markdown documentation so agents can work e
 |--------------------      |----------------                                      |
 | CLI usage, catalog       | [README.md](README.md)                               |
 | Configuration            | [docs/configuration.md](docs/configuration.md)       |
+| Package definition & install | [docs/features/1-package-definition-and-installation.md](docs/features/1-package-definition-and-installation.md) |
+| Package developer support    | [docs/features/2-package-developer-support.md](docs/features/2-package-developer-support.md) |
 | Contributing & schema    | [CONTRIBUTING.md](CONTRIBUTING.md)                   |
 | Doc formatting           | [docs/doc-guide.md](docs/doc-guide.md)               |
 | Code style               | [docs/clean-code.md](docs/clean-code.md)             |

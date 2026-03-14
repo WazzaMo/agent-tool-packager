@@ -1,5 +1,5 @@
 /**
- * Install command: atp install <package> [--project|--user] [--dependencies]
+ * Install command: atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
  */
 
 import type { Command } from "commander";
@@ -12,11 +12,19 @@ export function registerInstallCommand(program: Command): void {
     .argument("<package>", "Package name to install")
     .option(
       "--project",
-      "Install to project Safehouse (default: binaries to .atp_safehouse, skills to agent dir)"
+      "Install prompt material into the project's agent directory (default)"
     )
     .option(
-      "--user",
-      "Install binaries to ~/.local/bin, ~/.local/share, ~/.local/etc"
+      "--station",
+      "Install prompt material into the Station area (~/.atp_station)"
+    )
+    .option(
+      "--user-bin",
+      "Install executables into ~/.local/bin (default)"
+    )
+    .option(
+      "--project-bin",
+      "Install executables into the project's Safehouse bin directory"
     )
     .option(
       "--dependencies",
@@ -25,13 +33,21 @@ export function registerInstallCommand(program: Command): void {
     .action(
       async (
         pkgName: string,
-        opts: { project?: boolean; user?: boolean; dependencies?: boolean }
+        opts: {
+          project?: boolean;
+          station?: boolean;
+          userBin?: boolean;
+          projectBin?: boolean;
+          dependencies?: boolean;
+        }
       ) => {
-        const scope = opts.user ? "user" : "project";
+        const promptScope = opts.station ? "station" : "project";
+        const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
         await installPackage(
           pkgName,
           {
-            scope,
+            promptScope,
+            binaryScope,
             dependencies: opts.dependencies ?? false,
           },
           process.cwd()

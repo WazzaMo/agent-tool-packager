@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Agent Tools Packager(ATP) CLI - entry point
  * CLI for agentic dev workflows: installs prompts, MCP servers, skills.
@@ -7,10 +6,13 @@
 import { Command } from "commander";
 import { registerAgentCommands } from "./commands/agent.js";
 import { registerCatalogCommands } from "./commands/catalog.js";
+import { registerCreateCommands } from "./commands/create.js";
 import { registerInstallCommand } from "./commands/install.js";
+import { registerPackageCommands } from "./commands/package.js";
 import { registerRemoveCommands } from "./commands/remove.js";
 import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
+import { registerValidateCommands } from "./commands/validate.js";
 
 const greetingMessage = `
     AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
@@ -41,6 +43,9 @@ registerRemoveCommands(program);
 registerAgentCommands(program);
 registerInstallCommand(program);
 registerCatalogCommands(program);
+registerCreateCommands(program);
+registerPackageCommands(program);
+registerValidateCommands(program);
 
 program.parse();
 

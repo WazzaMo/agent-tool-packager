@@ -224,11 +224,11 @@ Adding the package to the user package catalog should succeed.
 > Package clean-docs-and-code added to user package catalog.
 > It can now be installed at either the Station or into a project's Safehouse.
 
-The atp-package.yaml would be added to the `user-packages` directory in the station
+The atp-package.yaml would be added to the `user_packages` directory in the station
 see [configuration](../configuration.md) for details of the station directory layout.
 The stage file will be gziped and the output called package.tar.gz and it will be placed
 with its corresponding `atp-package.yaml` file under 
-the `user-packages/clean-docs-and-code/` directory.
+the `user_packages/clean-docs-and-code/` directory.
 
 Exit code 0 returned, indicating success.
 
@@ -273,6 +273,34 @@ is a list of strings.
 The `atp package developer` subcommand is adding the author's name to the package.
 
 ### Acceptance Criteria
+
+#### Validating `atp package name {a-name}`
+
+The tool should check the Station catalog to see if this name exists
+in the user package list and return an error message if it does
+except when:
+-   the version being proposed is greater, because we support a developer
+    making new versions; Ask the developer to set the version first,
+    if not yet set.
+-   the name exists in the standard packages list, in which case we
+    should give a warning because they might be making the next version.
+    Also, user packages override standard ones.
+
+#### Validating `atp package version {version-string}`
+
+The version string is preferred to be semantic version but it's
+really up to the developer. We expect `[dev ]{major}.{minor}[.{revision}]`
+where major is one or more digits; minor is one or more digits
+and the second period followed by the revision and the revision
+is one or more digits.
+
+A major of `0` is considered an alpha or beta level version.
+
+A prefix of `dev ` may be used for development versions, example `dev 0.1.0`.
+The dev prefix allows the package list to be quickly scanned with `grep`
+for their presence.
+
+#### All other cases
 
 Sets the correct field value. For type, it should match the keyword
 with one of the known types:
@@ -345,7 +373,8 @@ If the path is invalid, it should show an error message
 If the file does not exist, it should show an error message "Nominated path 
 or file does not exist."
 
-Component paths must be under the package root.
+Component paths must be under the package root, which should be the current
+directory where `atp` has been invoked.
 
 If `stage.tar` cannot be created or appended this is an error.
 
@@ -383,15 +412,79 @@ Exit code:
 ## atp package bundle add exec-base
 
 Add a bundle to the package and stage file. More details below.
-The bundle is different to an component, where an component is a single file,
+The bundle is different to a `component`, where a `component` is a single file,
 a bundle represents a tree structure and is intended for executables
 and dependency files.
+
+When packaging a bundle, we need to identify the executables and distinguish
+them from the non-executables, such as configuration, schema or other
+supplementary file.
+
+If the bundle has a UNIX-like directory structure, then this can be determined
+from the directories in the bundle base directory {exec-base} from the command.
+
+If the bundle is not UNIX conformant in convention then an executable
+filter needs to be set using a switch `--exec-filter {path-glob}`
+
+
+
+"UNIX conformant" is defined in 
+[1-package-definition-and-installation](./1-package-definition-and-installation.md)
+see "#### UNIX conformant bundle dirs".
+
+Let's say the bundle has a directory structure like this:
+
+```
+my-utility/
+    util1.sh
+    util2.sh
+    util.js
+
+    config/
+        agent.json
+        test.json
+```
+
+In this situation the bundle staging command should be given as this:
+
+`atp package bundle add my-utility --exec-filter my-utility/util*`
+
+This will ensure that the utility executable files will be packed in the same location,
+where the BASH Shell script invokes `util.js` using NodeJS.
+
+The installed package will have the following structure on install:
+
+```
+bin/
+    util1.sh
+    util2.sh
+    util.js
+
+share/
+    config/
+        agent.json
+        test.json
+```
 
 ### Acceptance Criteria
 
 The bundle and all directories and files under the nominated base directory
 should be added to `stage.tar` and the base directory should be listed as a bundle.
-Bundles, like components, in the YAML are a list entry.
+Bundles, like components, in the YAML are a list entry of objects.
+
+Each bundle entry contains:
+- `path`: The relative path to the bundle directory.
+- `exec-filter`: A glob pattern for finding executables.
+
+The bundle command determines the path-glob to use or is given one. If no `--exec-filter`
+is given, it defaults to `{path}/bin/*`.
+
+If the bundle does not follow UNIX conventions with a `bin` directory for the executables
+and there is no `--exec-filter` switch given, an error message should be given
+to inform the user
+"Bundle does not have bin/ directory. Either provide --exec-filter option so 
+installation can setup the executables correctly, or place them in a bin/ directory
+in the bundle."
 
 Same error codes used for `atp package component add {path}`
 
@@ -409,7 +502,7 @@ and that the bundle's directory structure was in the stage file `stage.tar`.
 When either of these checks fail to find the bundle, an error message should
 be displayed informing the user that the bundle had not been included in the package.
 
-The bundle base directory should be removed from the bundle list in the package file.
+The bundle entry should be removed from the bundle list in the package file.
 And the bundle tree should be removed from the stage file. Any other staged files
 should remain in `stage.tar`.
 
@@ -459,21 +552,21 @@ See [configuration](../configuration.md) for "atp-package.yaml layout" informati
 An example MCP package:
 
 ```yaml
-Package:
-- Name: doc-reader-mcp
-- Type: Mcp 
-- Developer: Warwick Molloy
-- License: Apache License 2.0
-- Version: 0.1.0
-- Usage:
+name: doc-reader-mcp
+type: Mcp 
+developer: Warwick Molloy
+license: Apache License 2.0
+version: 0.1.0
+usage:
     - Prompt the agent to use the MCP server.
-- Copyright:
+copyright:
     - Warwick Molloy 2026
     - All rights reserved.
-- components:
+components:
    - SKILL.md
-- bundles:
-   - mcp-exec
+bundles:
+   - path: mcp-exec
+     exec-filter: mcp-exec/bin/*
 ```
 
 ## Package Types
@@ -542,7 +635,7 @@ as an MCP server because it has the most elaborate structure.
 
 ## Staging files
 
-Package assembly is an incmental process that works in the current directory.
+Package assembly is an incremental process that works in the current directory.
 Most likely that current directory will be the project directory where the
 package and components are being developed.
 
@@ -603,19 +696,55 @@ So, if this bundle were added to the package above, the YAML should look like th
 atp-package.yaml
 
 ```yaml
-Package:
-- Name: clean-docs-and-code
-- Type: Rule 
-- Developer: Warwick Molloy
-- License: Apache License 2.0
-- Version: 0.1.0
-- Copyright:
+name: clean-docs-and-code
+type: Rule 
+developer: Warwick Molloy
+license: Apache License 2.0
+version: 0.1.0
+copyright:
     - Warwick Molloy 2026
     - All rights reserved.
-- components:
+components:
    - doc-guide.md
    - coding-standard.md
-- bundles:
-   - exec-base
+bundles:
+   - path: exec-base
+     exec-filter: exec-base/bin/*
 ```
 
+# Test Approach
+
+The objective is to use the technique for interactively building a package described above
+and create a test package.
+
+## Steps
+
+1. Create a test station directory - "test-station"
+Init the station in the "test-station" directory using STATION_PATH to override the default.
+
+2. Create a temporary package building directory "pkg-dir"
+
+3. cd to pkg-dir and create a sekeleton package file.
+
+4. Set the name to "test-package-1" that contains a single
+rule type package with a markdown file with this content
+
+Test rule prompt `test-rule.md` - create this file in the directory "pkg-dir"
+
+```markdown
+# Rule Test Package
+
+Being able to install this, means success.
+```
+
+3. Define the package with random strings for all other mandatory field values.
+
+4. Stage the test markdown file "test-rule.md" and add the package to the test station.
+
+5. Add the package to the station's catalog as a user package.
+
+
+Assertion:
+
+Check that the package appears in the user_package part of the catalog in the
+test station with both the `atp-package.yaml` and the `package.tar.gz` file.

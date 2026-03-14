@@ -93,6 +93,7 @@ export function writeSafehouseConfig(
 export function addPackageToSafehouseManifest(
   name: string,
   version: string | undefined,
+  binaryScope: "user-bin" | "project-bin" = "user-bin",
   cwd: string = process.cwd()
 ): void {
   const safehousePath = getSafehousePath(cwd);
@@ -103,7 +104,7 @@ export function addPackageToSafehouseManifest(
   const stationPath = existing?.station_path ?? null;
 
   const filtered = packages.filter((p) => p.name !== name);
-  filtered.push({ name, version });
+  filtered.push({ name, version, binary_scope: binaryScope });
 
   fs.writeFileSync(
     manifestPath,

@@ -1,0 +1,49 @@
+/**
+ * Common helpers for integration tests.
+ */
+
+import { expect } from "vitest";
+import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const PROJECT_ROOT = path.resolve(__dirname, "../..");
+export const CLI_PATH = path.join(PROJECT_ROOT, "dist", "cli.js");
+export const FIXTURE_PKG = path.resolve(__dirname, "../fixtures/test-package");
+
+export function runAtp(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): string {
+  const env = { ...process.env, ...opts?.env };
+  return execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
+    encoding: "utf8",
+    cwd: opts?.cwd ?? PROJECT_ROOT,
+    env,
+  });
+}
+
+export function runAtpExpectExit(
+  args: string[],
+  expectedExit: number,
+  opts?: { cwd?: string; env?: NodeJS.ProcessEnv }
+): { stdout: string; stderr: string } {
+  try {
+    const stdout = execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
+      encoding: "utf8",
+      cwd: opts?.cwd ?? PROJECT_ROOT,
+      env: { ...process.env, ...opts?.env },
+    });
+    if (expectedExit !== 0) {
+      expect.fail(`Expected exit ${expectedExit} but got 0. Output: ${stdout}`);
+    }
+    return { stdout, stderr: "" };
+  } catch (err: unknown) {
+    const e = err as { status?: number; stdout?: string; stderr?: string };
+    if (e.status !== expectedExit) {
+      throw err;
+    }
+    return {
+      stdout: (e.stdout as string) ?? "",
+      stderr: (e.stderr as string) ?? "",
+    };
+  }
+}
