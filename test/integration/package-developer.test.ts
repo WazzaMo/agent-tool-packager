@@ -430,4 +430,75 @@ echo "${msg}"
     const output = execSync(`bash "${scriptInStation}"`, { encoding: "utf8" });
     expect(output.trim()).toBe(msg);
   });
+
+  it("atp package bundle remove removes bundle from stage.tar and manifest", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+
+    const bundleDir = path.join(pkgDir, "echo-cmd", "bin");
+    fs.mkdirSync(bundleDir, { recursive: true });
+    const scriptPath = path.join(bundleDir, "echo-test.sh");
+    fs.writeFileSync(scriptPath, `#!/bin/bash\necho "bundled"\n`, "utf8");
+    fs.chmodSync(scriptPath, 0o755);
+
+    fs.writeFileSync(path.join(pkgDir, "readme.md"), "# Component\n");
+
+    runAtp(["create", "package", "skeleton"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "type", "shell"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "name", "test-bundle-remove"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "version", "0.1.0"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "usage", "Bundle remove test"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "component", "add", "readme.md"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "bundle", "add", "echo-cmd"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
+    const listBefore = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+      encoding: "utf8",
+      cwd: pkgDir,
+    });
+    expect(listBefore).toMatch(/echo-cmd/);
+
+    runAtp(["package", "bundle", "remove", "echo-cmd"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).not.toMatch(/echo-cmd/);
+    const listAfter = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+      encoding: "utf8",
+      cwd: pkgDir,
+    });
+    expect(listAfter).not.toMatch(/echo-cmd/);
+    expect(listAfter).toMatch(/readme.md/);
+
+    runAtp(["catalog", "add", "package"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    const pkgInStation = path.join(stationDir, "user_packages", "test-bundle-remove");
+    expect(fs.existsSync(pkgInStation)).toBe(true);
+    expect(fs.existsSync(path.join(pkgInStation, "echo-cmd"))).toBe(false);
+    expect(fs.existsSync(path.join(pkgInStation, "readme.md"))).toBe(true);
+  });
 });

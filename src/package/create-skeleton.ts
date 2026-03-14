@@ -9,6 +9,11 @@ import path from "node:path";
 const PACKAGE_FILE = "atp-package.yaml";
 const STAGE_FILE = "stage.tar";
 
+/**
+ * Create empty package skeleton. Removes existing atp-package.yaml and stage.tar.
+ *
+ * @param cwd - Package root directory
+ */
 export function createPackageSkeleton(cwd: string): void {
   const pkgPath = path.join(cwd, PACKAGE_FILE);
   const stagePath = path.join(cwd, STAGE_FILE);

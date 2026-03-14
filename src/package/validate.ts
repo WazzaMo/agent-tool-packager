@@ -8,6 +8,7 @@ import { loadDevManifest } from "./load-manifest.js";
 
 const STAGE_FILE = "stage.tar";
 
+/** Result of package validation. */
 export interface ValidateResult {
   ok: boolean;
   exitCode: 0 | 1 | 2;
@@ -15,6 +16,12 @@ export interface ValidateResult {
   message: string;
 }
 
+/**
+ * Validate atp-package.yaml and stage.tar in the package directory.
+ *
+ * @param cwd - Package root directory
+ * @returns Validation result with ok, exitCode, missing fields, and message
+ */
 export function validatePackage(cwd: string): ValidateResult {
   const pkgPath = path.join(cwd, "atp-package.yaml");
   const stagePath = path.join(cwd, STAGE_FILE);

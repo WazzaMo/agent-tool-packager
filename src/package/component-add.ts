@@ -6,60 +6,89 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import type { DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
 
 const STAGE_TAR = "stage.tar";
 
-export function componentAdd(cwd: string, filePath: string): void {
-  const resolved = path.resolve(cwd, filePath);
-  const pkgRoot = path.resolve(cwd);
-
+/** Exit if path is outside pkg root or is absolute. */
+function assertValidComponentPath(filePath: string, pkgRoot: string): void {
+  const resolved = path.resolve(pkgRoot, filePath);
   const rel = path.relative(pkgRoot, resolved);
   if (rel.startsWith("..") || path.isAbsolute(rel)) {
     console.error(`Invalid path to component given: ${filePath}`);
     process.exit(1);
   }
+}
 
+/** Exit if path does not exist or is not a file. */
+function assertComponentExistsAndIsFile(resolved: string, filePath: string): void {
   if (!fs.existsSync(resolved)) {
     console.error("Nominated path or file does not exist.");
     process.exit(1);
   }
-
   if (!fs.statSync(resolved).isFile()) {
     console.error(`Path is not a file: ${filePath}`);
     process.exit(1);
   }
+}
 
+/** Load manifest or exit. */
+function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
     console.error("No atp-package.yaml found. Run `atp create package skeleton` first.");
     process.exit(1);
   }
+  return manifest;
+}
 
+/** Append or create tar with component file. */
+function appendComponentToTar(
+  pkgRoot: string,
+  tarPath: string,
+  fileDir: string,
+  baseName: string
+): void {
+  try {
+    execSync(`tar -rf "${tarPath}" -C "${fileDir}" "${baseName}"`, {
+      cwd: pkgRoot,
+      stdio: "pipe",
+    });
+  } catch {
+    execSync(`tar -cf "${tarPath}" -C "${fileDir}" "${baseName}"`, {
+      cwd: pkgRoot,
+      stdio: "pipe",
+    });
+  }
+}
+
+/**
+ * Add a file component to the package and stage.tar.
+ * Validates path and manifest; updates manifest and tar (flat layout).
+ *
+ * @param cwd - Package root directory
+ * @param filePath - Path to file (relative to cwd)
+ */
+export function componentAdd(cwd: string, filePath: string): void {
+  const pkgRoot = path.resolve(cwd);
+  const resolved = path.resolve(cwd, filePath);
+
+  assertValidComponentPath(filePath, pkgRoot);
+  assertComponentExistsAndIsFile(resolved, filePath);
+
+  const manifest = loadManifestOrExit(cwd);
   const baseName = path.basename(resolved);
   const components = manifest.components ?? [];
 
-  if (components.includes(baseName)) {
-    return; // already added
-  }
+  if (components.includes(baseName)) return;
 
   components.push(baseName);
   manifest.components = components;
   saveDevManifest(cwd, manifest);
 
-  // Append to stage.tar - use base filename only (flat layout per Feature 2)
   const tarPath = path.join(cwd, STAGE_TAR);
-  try {
-    execSync(`tar -rf "${tarPath}" -C "${path.dirname(resolved)}" "${baseName}"`, {
-      cwd: pkgRoot,
-      stdio: "pipe",
-    });
-  } catch {
-    // If tar fails (e.g. file didn't exist), create new
-    execSync(`tar -cf "${tarPath}" -C "${path.dirname(resolved)}" "${baseName}"`, {
-      cwd: pkgRoot,
-      stdio: "pipe",
-    });
-  }
+  const fileDir = path.dirname(resolved);
+  appendComponentToTar(pkgRoot, tarPath, fileDir, baseName);
 }

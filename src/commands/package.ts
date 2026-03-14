@@ -7,6 +7,7 @@ import { loadDevManifest } from "../package/load-manifest.js";
 import { saveDevManifest } from "../package/save-manifest.js";
 import { componentAdd } from "../package/component-add.js";
 import { bundleAdd } from "../package/bundle-add.js";
+import { bundleRemove } from "../package/bundle-remove.js";
 
 export function registerPackageCommands(program: Command): void {
   const pkg = program
@@ -94,5 +95,11 @@ export function registerPackageCommands(program: Command): void {
       bundleAdd(process.cwd(), execBase, {
         execFilter: opts?.execFilter,
       });
+    });
+  bundle
+    .command("remove <execBase>")
+    .description("Remove a bundle from the package and stage.tar")
+    .action((execBase: string) => {
+      bundleRemove(process.cwd(), execBase);
     });
 }

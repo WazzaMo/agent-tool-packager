@@ -20,6 +20,13 @@ function sanitizeYaml(s: string): string {
   return truncate(s, FIELD_MAX_LEN);
 }
 
+/**
+ * Save manifest to atp-package.yaml in flat YAML format.
+ * Truncates string fields to 80 chars; omits empty arrays for bundles.
+ *
+ * @param cwd - Package root directory
+ * @param manifest - Manifest to persist
+ */
 export function saveDevManifest(cwd: string, manifest: DevPackageManifest): void {
   const pkgPath = path.join(cwd, PACKAGE_FILE);
   const out: Record<string, unknown> = {};

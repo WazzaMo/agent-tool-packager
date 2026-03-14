@@ -9,6 +9,13 @@ import type { DevPackageManifest } from "./types.js";
 
 const PACKAGE_FILE = "atp-package.yaml";
 
+/**
+ * Load and parse atp-package.yaml in developer format.
+ * Supports flat YAML and legacy Package list format.
+ *
+ * @param cwd - Package root directory
+ * @returns Parsed manifest or null if file missing; {} for empty/invalid content
+ */
 export function loadDevManifest(cwd: string): DevPackageManifest | null {
   const pkgPath = path.join(cwd, PACKAGE_FILE);
   if (!fs.existsSync(pkgPath)) return null;
