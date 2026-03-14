@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
-import type { DevPackageManifest } from "./types.js";
+import type { BundleDefinition, DevPackageManifest } from "./types.js";
 
 const PACKAGE_FILE = "atp-package.yaml";
 
@@ -46,7 +46,22 @@ function parsePackageList(list: unknown[]): DevPackageManifest {
       if ("Copyright" in obj) out.copyright = Array.isArray(obj.Copyright) ? obj.Copyright.map(String) : [String(obj.Copyright)];
       if ("Usage" in obj) out.usage = Array.isArray(obj.Usage) ? obj.Usage.map(String) : [String(obj.Usage)];
       if ("components" in obj) out.components = Array.isArray(obj.components) ? obj.components.map(String) : [];
-      if ("bundles" in obj) out.bundles = Array.isArray(obj.bundles) ? obj.bundles.map(String) : [];
+      if ("bundles" in obj) {
+        if (Array.isArray(obj.bundles)) {
+          out.bundles = obj.bundles.map((b) => {
+            if (b && typeof b === "object") {
+              const bObj = b as Record<string, unknown>;
+              return {
+                path: String(bObj.path ?? ""),
+                "exec-filter": bObj["exec-filter"] ? String(bObj["exec-filter"]) : undefined,
+              };
+            }
+            return String(b);
+          });
+        } else {
+          out.bundles = [];
+        }
+      }
     }
   }
   return out;

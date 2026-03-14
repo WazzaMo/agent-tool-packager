@@ -7,7 +7,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
+import type { BundleDefinition, DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
 
@@ -91,22 +91,32 @@ export function bundleAdd(
 ): void {
   const pkgRoot = path.resolve(cwd);
   const bundlePath = path.resolve(cwd, execBase);
+  const relBase = path.relative(pkgRoot, bundlePath);
 
   assertValidBundlePath(execBase, pkgRoot);
   assertBundleExistsAndIsDir(execBase, pkgRoot);
 
   const manifest = loadManifestOrExit(cwd);
   const bundles = manifest.bundles ?? [];
-  const baseName = path.basename(execBase);
 
-  if (bundles.includes(baseName)) return;
+  // Check if bundle already exists by path
+  const existing = bundles.find((b) => {
+    if (typeof b === "string") return b === relBase;
+    return b.path === relBase;
+  });
+  if (existing) return;
 
   assertUnixConformantOrExecFilter(bundlePath, opts);
 
-  bundles.push(baseName);
+  const bundleDef: BundleDefinition = {
+    path: relBase,
+    "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
+  };
+
+  bundles.push(bundleDef);
   manifest.bundles = bundles;
   saveDevManifest(cwd, manifest);
 
   const tarPath = path.join(cwd, STAGE_TAR);
-  appendBundleToTar(pkgRoot, tarPath, execBase);
+  appendBundleToTar(pkgRoot, tarPath, relBase);
 }

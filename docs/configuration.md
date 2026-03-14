@@ -156,23 +156,28 @@ The `atp-package.yaml` has mandatory and optional fields
 | Copyright  | optional     | string list |     80  |
 | Usage      | mandatory    | string list |     80  |
 | components | mandatory    | string list |    256  |
-| bundles    | optional     | string list |    256  |
+| bundles    | optional     | bundle list |    256  |
 
+A **bundle list** is a list of objects, where each object contains:
+- `path`: The relative path to the bundle directory.
+- `exec-filter`: A glob pattern (relative to the package root) identifying executable files.
 
 An example:
 
 ```yaml
-Package:
-- Name: clean-docs-and-code
-- Type: Mcp 
-- Developer: Warwick Molloy
-- License: Apache License 2.0
-- Version: 0.1.0
-- Copyright:
+name: clean-docs-and-code
+type: Mcp 
+developer: Warwick Molloy
+license: Apache License 2.0
+version: 0.1.0
+copyright:
     - Warwick Molloy 2026
     - All rights reserved.
-- components:
+usage:
+    - Use this for cleaning docs.
+components:
    - SKILL.md
-- bundles:
-   - mcp-exec
+bundles:
+   - path: mcp-exec
+     exec-filter: mcp-exec/bin/*
 ```

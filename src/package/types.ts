@@ -6,6 +6,11 @@
 export type PackageType = "Rule" | "Skill" | "Mcp" | "Command" | "Experimental";
 
 /** Flat structure we use when reading/writing atp-package.yaml */
+export interface BundleDefinition {
+  path: string;
+  "exec-filter"?: string;
+}
+
 export interface DevPackageManifest {
   name?: string;
   type?: string;
@@ -15,5 +20,5 @@ export interface DevPackageManifest {
   copyright?: string[];
   usage?: string[];
   components?: string[];
-  bundles?: string[];
+  bundles?: (string | BundleDefinition)[];
 }

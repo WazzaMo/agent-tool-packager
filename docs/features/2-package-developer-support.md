@@ -470,16 +470,21 @@ share/
 
 The bundle and all directories and files under the nominated base directory
 should be added to `stage.tar` and the base directory should be listed as a bundle.
-Bundles, like components, in the YAML are a list entry.
+Bundles, like components, in the YAML are a list entry of objects.
 
-The bundle command determines the path-glob to use or is given one. If the bundle
-does not follow UNIX conventions with a `bin` directory for the executables
+Each bundle entry contains:
+- `path`: The relative path to the bundle directory.
+- `exec-filter`: A glob pattern for finding executables.
+
+The bundle command determines the path-glob to use or is given one. If no `--exec-filter`
+is given, it defaults to `{path}/bin/*`.
+
+If the bundle does not follow UNIX conventions with a `bin` directory for the executables
 and there is no `--exec-filter` switch given, an error message should be given
 to inform the user
 "Bundle does not have bin/ directory. Either provide --exec-filter option so 
 installation can setup the executables correctly, or place them in a bin/ directory
 in the bundle."
-
 
 Same error codes used for `atp package component add {path}`
 
@@ -497,7 +502,7 @@ and that the bundle's directory structure was in the stage file `stage.tar`.
 When either of these checks fail to find the bundle, an error message should
 be displayed informing the user that the bundle had not been included in the package.
 
-The bundle base directory should be removed from the bundle list in the package file.
+The bundle entry should be removed from the bundle list in the package file.
 And the bundle tree should be removed from the stage file. Any other staged files
 should remain in `stage.tar`.
 
@@ -547,21 +552,21 @@ See [configuration](../configuration.md) for "atp-package.yaml layout" informati
 An example MCP package:
 
 ```yaml
-Package:
-- Name: doc-reader-mcp
-- Type: Mcp 
-- Developer: Warwick Molloy
-- License: Apache License 2.0
-- Version: 0.1.0
-- Usage:
+name: doc-reader-mcp
+type: Mcp 
+developer: Warwick Molloy
+license: Apache License 2.0
+version: 0.1.0
+usage:
     - Prompt the agent to use the MCP server.
-- Copyright:
+copyright:
     - Warwick Molloy 2026
     - All rights reserved.
-- components:
+components:
    - SKILL.md
-- bundles:
-   - mcp-exec
+bundles:
+   - path: mcp-exec
+     exec-filter: mcp-exec/bin/*
 ```
 
 ## Package Types
@@ -691,20 +696,20 @@ So, if this bundle were added to the package above, the YAML should look like th
 atp-package.yaml
 
 ```yaml
-Package:
-- Name: clean-docs-and-code
-- Type: Rule 
-- Developer: Warwick Molloy
-- License: Apache License 2.0
-- Version: 0.1.0
-- Copyright:
+name: clean-docs-and-code
+type: Rule 
+developer: Warwick Molloy
+license: Apache License 2.0
+version: 0.1.0
+copyright:
     - Warwick Molloy 2026
     - All rights reserved.
-- components:
+components:
    - doc-guide.md
    - coding-standard.md
-- bundles:
-   - exec-base
+bundles:
+   - path: exec-base
+     exec-filter: exec-base/bin/*
 ```
 
 # Test Approach

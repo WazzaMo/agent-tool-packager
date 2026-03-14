@@ -103,14 +103,31 @@ function enrichManifestWithAssets(
     name: path.basename(p, path.extname(p)),
   }));
 
-  const bundles = (outManifest.bundles as string[]) ?? [];
+  const bundles = (outManifest.bundles as (string | { path: string; "exec-filter"?: string })[]) ?? [];
   for (const bundle of bundles) {
-    const binDir = path.join(pkgDir, bundle, "bin");
-    if (fs.existsSync(binDir) && fs.statSync(binDir).isDirectory()) {
-      for (const entry of fs.readdirSync(binDir)) {
-        const fullPath = path.join(binDir, entry);
-        if (fs.statSync(fullPath).isFile()) {
-          assets.push({ path: path.join(bundle, "bin", entry), type: "program", name: entry });
+    const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
+    const execFilter = typeof bundle === "string" ? undefined : bundle["exec-filter"];
+
+    if (execFilter) {
+      // If there's an exec-filter, use it to find binaries
+      // The filter is a glob relative to the bundle
+      try {
+        const binFiles = execSync(`ls -d ${execFilter}`, { cwd: pkgDir, encoding: "utf8", stdio: "pipe" });
+        for (const file of binFiles.split("\n").map(f => f.trim()).filter(Boolean)) {
+          assets.push({ path: file, type: "program", name: path.basename(file) });
+        }
+      } catch {
+        /* no matches */
+      }
+    } else {
+      // Default to bin/ directory for UNIX conformant bundles
+      const binDir = path.join(pkgDir, bundlePath, "bin");
+      if (fs.existsSync(binDir) && fs.statSync(binDir).isDirectory()) {
+        for (const entry of fs.readdirSync(binDir)) {
+          const fullPath = path.join(binDir, entry);
+          if (fs.statSync(fullPath).isFile()) {
+            assets.push({ path: path.join(bundlePath, "bin", entry), type: "program", name: entry });
+          }
         }
       }
     }

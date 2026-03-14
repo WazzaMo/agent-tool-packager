@@ -228,7 +228,8 @@ base-dir/
 
 Whilst being staged, let's say that the executable path
 filter is set to `base-dir/scripts/*.sh` so ATP can find
-the executables, then the package when installed will have
+the executables, and this filter is stored in the bundle's `exec-filter` field in 
+`atp-package.yaml`. Then the package when installed will have
 this structure:
 
 Executable Binary:

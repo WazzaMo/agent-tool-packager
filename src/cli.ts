@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Agent Tools Packager(ATP) CLI - entry point
  * CLI for agentic dev workflows: installs prompts, MCP servers, skills.

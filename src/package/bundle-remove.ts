@@ -30,9 +30,13 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
 /**
  * Exit with code 1 if the bundle is not listed in the manifest.
  */
-function assertBundleInManifest(manifest: DevPackageManifest, baseName: string): void {
+function assertBundleInManifest(manifest: DevPackageManifest, execBase: string): void {
   const bundles = manifest.bundles ?? [];
-  if (!bundles.includes(baseName)) {
+  const found = bundles.find((b) => {
+    if (typeof b === "string") return b === execBase;
+    return b.path === execBase;
+  });
+  if (!found) {
     console.error("Bundle had not been included in the package.");
     process.exit(1);
   }
@@ -54,8 +58,8 @@ function assertStageTarExists(cwd: string): string {
 /**
  * Exit with code 1 if the bundle is not present in the stage tar.
  */
-function assertBundleInTar(tarPath: string, baseName: string, pkgRoot: string): void {
-  const prefix = baseName + "/";
+function assertBundleInTar(tarPath: string, execBase: string, pkgRoot: string): void {
+  const prefix = execBase.endsWith("/") ? execBase : execBase + "/";
   let hasBundleInTar = false;
   try {
     const list = execSync(`tar -tf "${tarPath}"`, {
@@ -77,7 +81,7 @@ function assertBundleInTar(tarPath: string, baseName: string, pkgRoot: string): 
  * Extract stage.tar, remove the bundle directory, and recreate the tar.
  * Uses a temporary directory; cleans up on exit.
  */
-function recreateTarWithoutBundle(tarPath: string, baseName: string, pkgRoot: string): void {
+function recreateTarWithoutBundle(tarPath: string, execBase: string, pkgRoot: string): void {
   const extractDir = path.join(os.tmpdir(), `atp-bundle-rm-${Date.now()}`);
   try {
     fs.mkdirSync(extractDir, { recursive: true });
@@ -86,7 +90,7 @@ function recreateTarWithoutBundle(tarPath: string, baseName: string, pkgRoot: st
       stdio: "pipe",
     });
 
-    const bundleDirInExtract = path.join(extractDir, baseName);
+    const bundleDirInExtract = path.join(extractDir, execBase);
     if (fs.existsSync(bundleDirInExtract)) {
       fs.rmSync(bundleDirInExtract, { recursive: true });
     }
@@ -108,9 +112,12 @@ function recreateTarWithoutBundle(tarPath: string, baseName: string, pkgRoot: st
 /**
  * Remove the bundle from the manifest and save.
  */
-function removeBundleFromManifest(cwd: string, manifest: DevPackageManifest, baseName: string): void {
+function removeBundleFromManifest(cwd: string, manifest: DevPackageManifest, execBase: string): void {
   const bundles = manifest.bundles ?? [];
-  manifest.bundles = bundles.filter((b) => b !== baseName);
+  manifest.bundles = bundles.filter((b) => {
+    if (typeof b === "string") return b !== execBase;
+    return b.path !== execBase;
+  });
   saveDevManifest(cwd, manifest);
 }
 
@@ -120,17 +127,17 @@ function removeBundleFromManifest(cwd: string, manifest: DevPackageManifest, bas
  * the bundle directory, recreates the tar, and updates the manifest.
  *
  * @param cwd - Package root directory (contains atp-package.yaml and stage.tar)
- * @param execBase - Base path of the bundle (directory name; can be full path)
+ * @param execBase - Base path of the bundle (directory name or relative path)
  */
 export function bundleRemove(cwd: string, execBase: string): void {
   const pkgRoot = path.resolve(cwd);
-  const baseName = path.basename(execBase);
+  const relBase = path.relative(pkgRoot, path.resolve(cwd, execBase));
 
   const manifest = loadManifestOrExit(cwd);
-  assertBundleInManifest(manifest, baseName);
+  assertBundleInManifest(manifest, relBase);
   const tarPath = assertStageTarExists(cwd);
-  assertBundleInTar(tarPath, baseName, pkgRoot);
+  assertBundleInTar(tarPath, relBase, pkgRoot);
 
-  recreateTarWithoutBundle(tarPath, baseName, pkgRoot);
-  removeBundleFromManifest(cwd, manifest, baseName);
+  recreateTarWithoutBundle(tarPath, relBase, pkgRoot);
+  removeBundleFromManifest(cwd, manifest, relBase);
 }
