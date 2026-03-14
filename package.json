@@ -8,7 +8,7 @@
     "atp": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "vite build",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "test": "vitest",
@@ -23,7 +23,7 @@
   ],
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.14.0"
   },
   "dependencies": {
     "commander": "^12.1.0",
@@ -34,6 +34,7 @@
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
+    "vite": "^6.4.1",
     "vitest": "^4.0.18"
   }
 }
