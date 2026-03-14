@@ -7,9 +7,9 @@ export default defineConfig({
     target: 'node24',
     ssr: true, // We are building for Node
     lib: {
-      entry: resolve(__dirname, 'src/cli.ts'),
+      entry: resolve(__dirname, 'src/atp.ts'),
       formats: ['es'],
-      fileName: 'cli',
+      fileName: 'atp',
     },
     rollupOptions: {
       external: [

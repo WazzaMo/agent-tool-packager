@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(__dirname, "../..");
-export const CLI_PATH = path.join(PROJECT_ROOT, "dist", "cli.js");
+export const CLI_PATH = path.join(PROJECT_ROOT, "dist", "atp.js");
 export const FIXTURE_PKG = path.resolve(__dirname, "../fixtures/test-package");
 
 export function runAtp(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): string {
