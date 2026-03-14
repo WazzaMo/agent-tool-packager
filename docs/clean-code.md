@@ -47,6 +47,35 @@ for creating objects with the same protocol.
 Polymorphism as a last resort and only when it really
 adds readibility and keeps things simple.
 
+# Self-documenting code
+
+## Code Composition for self-documenting code
+
+The meaningful names in functions or classes act as a description
+and this effect is even stronger when code is composed of functions
+that call other functions because the names of each function gives
+a descriptive break-down of the task.
+
+There's a similar composition effect when a type or an interface
+is built from other types or interfaces, allowing for the smaller
+types to be re-used in code. This is also true of classes that have
+other classes, known as the "have-a" relationship in object-oriented programming.
+
+The other benefit of the above principles are that each component is smaller
+and more dedicated to one purpose, making the code cleaner.
+The composed functions or types are also clean because they build on top
+of well-named entities, making them easier to read. They should also be short.
+
+This means that a function longer than 50 lines should be broken into
+smaller functions with meaningful names. Ideally, each function should be
+as simple and as dedicated as possible.
+
+## Descriptive comments for self-describing code.
+
+In TypeScript the /** ... */ document comment is very useful.
+You can add meaning parameters, return types and other annotations
+on each class, interface and function.
+
 # Clean Tests
 
 ## Size versus number priority

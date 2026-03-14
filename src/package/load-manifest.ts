@@ -1,0 +1,46 @@
+/**
+ * Load and parse atp-package.yaml in package developer format.
+ */
+
+import fs from "node:fs";
+import path from "node:path";
+import yaml from "js-yaml";
+import type { DevPackageManifest } from "./types.js";
+
+const PACKAGE_FILE = "atp-package.yaml";
+
+export function loadDevManifest(cwd: string): DevPackageManifest | null {
+  const pkgPath = path.join(cwd, PACKAGE_FILE);
+  if (!fs.existsSync(pkgPath)) return null;
+
+  const content = fs.readFileSync(pkgPath, "utf8");
+  const data = yaml.load(content) as unknown;
+
+  if (!data || typeof data !== "object") return {};
+
+  // Support both "Package:" list format and flat format
+  if ("Package" in data && Array.isArray((data as { Package: unknown }).Package)) {
+    return parsePackageList((data as { Package: unknown[] }).Package);
+  }
+
+  return data as DevPackageManifest;
+}
+
+function parsePackageList(list: unknown[]): DevPackageManifest {
+  const out: DevPackageManifest = {};
+  for (const item of list) {
+    if (item && typeof item === "object") {
+      const obj = item as Record<string, unknown>;
+      if ("Name" in obj && obj.Name != null) out.name = String(obj.Name);
+      if ("Type" in obj && obj.Type != null) out.type = String(obj.Type);
+      if ("Developer" in obj && obj.Developer != null) out.developer = String(obj.Developer);
+      if ("License" in obj && obj.License != null) out.license = String(obj.License);
+      if ("Version" in obj && obj.Version != null) out.version = String(obj.Version);
+      if ("Copyright" in obj) out.copyright = Array.isArray(obj.Copyright) ? obj.Copyright.map(String) : [String(obj.Copyright)];
+      if ("Usage" in obj) out.usage = Array.isArray(obj.Usage) ? obj.Usage.map(String) : [String(obj.Usage)];
+      if ("components" in obj) out.components = Array.isArray(obj.components) ? obj.components.map(String) : [];
+      if ("bundles" in obj) out.bundles = Array.isArray(obj.bundles) ? obj.bundles.map(String) : [];
+    }
+  }
+  return out;
+}

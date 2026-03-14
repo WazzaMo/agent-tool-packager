@@ -10,6 +10,7 @@ import {
   loadUserCatalog,
 } from "../catalog/load.js";
 import type { CatalogPackage } from "../catalog/types.js";
+import { catalogAddPackage } from "../package/catalog-add.js";
 
 function formatPackage(pkg: CatalogPackage): string {
   if (pkg.version) {
@@ -57,5 +58,12 @@ export function registerCatalogCommands(program: Command): void {
           console.log(formatPackage(pkg));
         }
       }
+    });
+
+  catalog
+    .command("add package")
+    .description("Add current package to Station user catalog (run from package directory)")
+    .action(() => {
+      catalogAddPackage(process.cwd());
     });
 }
