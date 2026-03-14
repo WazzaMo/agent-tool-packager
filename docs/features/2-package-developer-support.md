@@ -423,8 +423,14 @@ supplementary file.
 If the bundle has a UNIX-like directory structure, then this can be determined
 from the directories in the bundle base directory {exec-base} from the command.
 
-If the bundle does not follow a UNIX directory convention then an executable
+If the bundle is not UNIX conformant in convention then an executable
 filter needs to be set using a switch `--exec-filter {path-glob}`
+
+
+
+"UNIX conformant" is defined in 
+[1-package-definition-and-installation](./1-package-definition-and-installation.md)
+see "#### UNIX conformant bundle dirs".
 
 Let's say the bundle has a directory structure like this:
 
@@ -701,3 +707,32 @@ Package:
    - exec-base
 ```
 
+# Test Approach
+
+The objective is to use the technique for interactively building a package described above
+and create a test package.
+
+## Steps
+
+Create a test station directory - "test-station"
+Init the station in the "test-station" directory.
+
+For this test, create a package called "test-package-1" that contains a single
+rule type package with a markdown file with this content:
+
+Test rule prompt `test-rule.md`
+
+```markdown
+# Rule Test Package
+
+Being able to install this, means success.
+```
+
+Define the package with random strings for all mandatory field values.
+
+Stage the test markdown file "test-rule.md" and add the package to the test station.
+
+Add the package to the station's catalog as a user package.
+
+Check that the package appears in the user_package part of the catalog in the
+test station with both the `atp-package.yaml` and the `package.tar.gz` file.
