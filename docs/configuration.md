@@ -45,11 +45,11 @@ The station will have two files:
 ~/.atp_station/
     atp-config.yaml
     atp-catalog.yaml
-    standard-packages/
+    standard_packages/
         vecfs/
             atp-package.yaml
             package.tar.gz
-    user-packages/
+    user_packages/
         special-prompt-set/
             atp-package.yaml
             package.tar.gz
@@ -89,8 +89,8 @@ configuration:
 
 ```yaml
 catalog:
-    - standard-packages-path: ./standard-packages/
-    - user-packages-path: ./user-packages/
+    - standard_packages-path: ./standard_packages/
+    - user_packages-path: ./user_packages/
     - packages:
         - standard:
             - vecfs

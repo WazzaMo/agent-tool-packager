@@ -39,7 +39,7 @@ STATION_PATH="~/alternate/.atp_station" atp station init
 
 ### Safehouse init
 
-When the current directory is a project base directory, run station init
+When the current directory is a project base directory, run this command
 to configure the ATP Safehouse in the project.
 
 ```bash
@@ -51,11 +51,14 @@ atp safehouse init
 
 Define packages containing one or more products.
 The product types are:
-    1.  Rules - markdown as a standard prompt file.
-    2.  Skills - markdown
-    3.  MCP Servers in any language, packaged as a tar.gz file
-    4.  Shell scripts to support tools
-    5.  Other utilities that skills provide instruction.
+
+| Package Type  | Description                               |
+| ------------  | ------------                              |
+| Rule          | Markdown as a prompt file.                |
+| Skill         | SKILL.md file                             |
+| MCP servers   | in any language, packed as a tar.gz file  |
+| Command       | Shell scripts or programs as support tools |
+| Experimental  | Payloads that are yet to be defined by industry |
 
 A package may contain one or more of these product types that can
 be installed at the user level or at the project level.
@@ -139,46 +142,39 @@ atp install vecfs-ts --project --dependencies
 The dependencies flag acts as a pre-approval to installed dependencies.
 Without this, lacking dependencies will cause installation to fail.
 
-### Package Manifest
+### Package metadata in general
 
-The package manifest that is stored in the Station and Safehouse holds package metadata
-which includes:
+Package metadata that is stored in the Station and the package as two
+different levels. The station may need a URL to download the package
+from a package source to the Station's manifest, ready to be installed.
+
+The package will have details of its own that may change over time
+that are part of the package, in a file called `atp-package.yaml`.
+
+I am not being specific yet, because the details will come later
+and this is part of a roadmap.
+
+Fields to consider are:
 
 1. Name - name of package
 
-2. Repo_source : 
-    - path : if package defined in filesystem
-    - url : if package defined in Git repo - Gitlab, Github etc
+2. package : 
+    - group: "standard" | "user"
+    - source: path : {path} | url : {link}
     - version : semantic version assumed Major.Minor.Revision
 
 3. Provider : 
     - author: name text
     - organisation: company, team or git project name, text.
 
-4. Asset list
-
-5. Asset definition (in list)
-    - path: text, relative path to file
-    - type: skill, program, rule, sub-agent file
-    - name: text
-
-6. List of program dependencies
-
-7. Program definition (in list)
-    - asset_name: text name, matches text in asset record.
-    - runtime: node | deno | bun | python | x64 | arm
-    - command: e.g. `npm vecfs-ts` | `python vecfs-py` | tar
-    - included : boolean - true means the package provides the program (self-hosting) and false flags a dependency
-    - dependency : package name and version to meet dependency
-        - name : package name
-        - version : semantic version - major.minor.revision
+4. List of package dependencies
 
 
 ### Installation Manifest
 
 The user, central manifest of installed packages will be stored in:
 
-    ${HOME}/.atp_station/manifest/${package}.yaml
+    ${HOME}/.atp_station/manifest/${package}/atp-package.yaml
 
 Through environment variable [see configuration](../configuration.md) the
 station path can be overriden and this makes integration testing work.
@@ -207,7 +203,7 @@ That a UNIX-like match can be performed.
 
 #### Non-UNIX conformant directory structure
 
-When a UNIX directory mapping to the bundle directorie cannot
+When a UNIX directory mapping to the bundle directory cannot
 be performed, the files will be placed in this manner.
 
 Executable files forced to go to this directory:
@@ -258,7 +254,7 @@ Utility Binary: ${PROJECT}/.atp_safehouse/{package}-exec/bin
 Supplementary files: ${PROJECT}/.atp_safehouse/${package}-exec/share
 
 Basically, the package.tar.gz is unpacked at the base directory
-of `${PROJECT}/atp_safehouse/${package}-exec/` and this keeps installation
+of `${PROJECT}/.atp_safehouse/${package}-exec/` and this keeps installation
 simple and consistent regardless of the structure of the bundle.
 
 
@@ -270,6 +266,18 @@ The project's Safehouse holds configuration.
 The `.atp_safehouse/atp-config.yaml` file should record:
 1.  Project agent for handover
 2.  Path to project agent's files.
+3.  Path to the Station used, in case multiple stations exist.
+4.  ATP version used.
+
+Example:
+
+```yaml
+SafehouseConfig:
+ - AtpVersion: 0.1.0
+ - StationPath: ~/.atp_station
+ - PathToAgentFiles: ../.cursor
+ - Agent: cursor
+```
 
 
 ### Skills updates
@@ -335,7 +343,7 @@ reference or association with the Station.
 
 ## Safehouse discovery for exfiltrate
 
-See [configuration](../configuration.md) for the safehoust list. This is the
+See [configuration](../configuration.md) for the safehouse list. This is the
 registry of safehouses trusted by the Station.
 
 ## Exfiltrate semantics 
@@ -345,7 +353,7 @@ registry of safehouses trusted by the Station.
 ## Manifest richness
 
 For Station/Safehouse manifests, the manifest will store the fields per-package
-as defined earlier in "### Package Manifest"
+as defined earlier in "### Package metadata in general"
 
 ## Agent mapping configuration
 
@@ -359,7 +367,7 @@ On atp agent handover to <new-agent-name>, ATP must proactively re-install and r
 
 ## Dependency auto-install UX
 
-Dependencies are assumed to be not needed. They can be pre-approved using `--dependences` see above.
+Dependencies are assumed to be not needed. They can be pre-approved using `--dependencies` see above.
 
 ## Tarball concurrency
 It is acceptable to use /tmp/{YYYY-MM-DD-package-name} with a unique suffix (PID/UUID) for concurrent tarball extractions. 
@@ -416,7 +424,7 @@ can be affected like this:
 atp agent handover to claude
 ```
 
-The Safehouse would have known the past agent in its configuratoin
+The Safehouse would have known the past agent in its configuration
 and so it is possible to convert a project to a new agent this way.
 
 
@@ -494,7 +502,7 @@ Where {scope} can be:
 atp remove station vecfs --exfiltrate
 ```
 
-The exfiltrate option means to move the binaries. Exhiltrate
+The exfiltrate option means to move the binaries. Exfiltrate
 requires, and therefore signifies, that user scoped agent installation
 is undone and converted to work in the project.
 
@@ -509,7 +517,7 @@ in the Safehouse and project's agent, refer to binaries and dependencies
 located in the Station.
 
 Projects that have packages installed only into their Safehouse and local
-agent do not qualilfy for exfiltration because they have no dependency
+agent do not qualify for exfiltration because they have no dependency
 on the Station.
 
 ### Removing package from project safehouse

@@ -224,11 +224,11 @@ Adding the package to the user package catalog should succeed.
 > Package clean-docs-and-code added to user package catalog.
 > It can now be installed at either the Station or into a project's Safehouse.
 
-The atp-package.yaml would be added to the `user-packages` directory in the station
+The atp-package.yaml would be added to the `user_packages` directory in the station
 see [configuration](../configuration.md) for details of the station directory layout.
 The stage file will be gziped and the output called package.tar.gz and it will be placed
 with its corresponding `atp-package.yaml` file under 
-the `user-packages/clean-docs-and-code/` directory.
+the `user_packages/clean-docs-and-code/` directory.
 
 Exit code 0 returned, indicating success.
 
@@ -412,7 +412,7 @@ Exit code:
 ## atp package bundle add exec-base
 
 Add a bundle to the package and stage file. More details below.
-The bundle is different to an component, where an component is a single file,
+The bundle is different to a `component`, where a `component` is a single file,
 a bundle represents a tree structure and is intended for executables
 and dependency files.
 
@@ -624,7 +624,7 @@ as an MCP server because it has the most elaborate structure.
 
 ## Staging files
 
-Package assembly is an incmental process that works in the current directory.
+Package assembly is an incremental process that works in the current directory.
 Most likely that current directory will be the project directory where the
 package and components are being developed.
 
