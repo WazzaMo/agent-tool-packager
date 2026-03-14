@@ -714,13 +714,17 @@ and create a test package.
 
 ## Steps
 
-Create a test station directory - "test-station"
-Init the station in the "test-station" directory.
+1. Create a test station directory - "test-station"
+Init the station in the "test-station" directory using STATION_PATH to override the default.
 
-For this test, create a package called "test-package-1" that contains a single
-rule type package with a markdown file with this content:
+2. Create a temporary package building directory "pkg-dir"
 
-Test rule prompt `test-rule.md`
+3. cd to pkg-dir and create a sekeleton package file.
+
+4. Set the name to "test-package-1" that contains a single
+rule type package with a markdown file with this content
+
+Test rule prompt `test-rule.md` - create this file in the directory "pkg-dir"
 
 ```markdown
 # Rule Test Package
@@ -728,11 +732,14 @@ Test rule prompt `test-rule.md`
 Being able to install this, means success.
 ```
 
-Define the package with random strings for all mandatory field values.
+3. Define the package with random strings for all other mandatory field values.
 
-Stage the test markdown file "test-rule.md" and add the package to the test station.
+4. Stage the test markdown file "test-rule.md" and add the package to the test station.
 
-Add the package to the station's catalog as a user package.
+5. Add the package to the station's catalog as a user package.
+
+
+Assertion:
 
 Check that the package appears in the user_package part of the catalog in the
 test station with both the `atp-package.yaml` and the `package.tar.gz` file.
