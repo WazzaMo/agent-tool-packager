@@ -59,14 +59,28 @@ List of labelled infos:
 
 ## Notes
 
+Notes can have one of the following kinds...
+
+{kind} in the convention below refers to one of these.
+
+1. plan - ideas, concerns and risks for implementing a feature, epic or a user story.
+2. coding - a summary of what code changes were recently made.
+3. bug - a bug that was found that needs to be addressed, the root cause and acceptance criteria
+4. todo - a deferred thought or path for exploration
+5. concern - a question that explores a possible limitation and may result in a plan or coding change.
+6. test - unit or integration tests that were added with a summary of coverage and pass rate.
+7. other - when nothing else fits
+
+
 Notes are held in the `docs/notes` directory and follow this document guide for formatting.
-A note should be prefixed with the date in YYYY-MM-DD format and have
+A note should be prefixed with the date in YYYY-MM-DD format, the kind (above) and have
 a meaningful name indicating the essential topic of the note.
 
-This means that notes should follow the naming convention docs/notes/{YYYY-MM-DD}-{meaningful-short-name}.md
+This means that notes should follow the naming convention docs/notes/{YYYY-MM-DD}-{kind}-{meaningful-short-name}.md
 
 This way notes will be more unique and easy to understand when they were
 produced in the planning and development cycle.
+
 
 ## Release Notes
 
@@ -75,6 +89,14 @@ guide. Their naming convention is {semver}-Release-{date}.md where "semver" mean
 with Major.Minor.Revision numbers and date is in YYYY-MM-DD format.
 
 Describe what new features was added in the commits that resulted in this release.
+
+Release notes can collect information from a sequence of notes (docs/notes) where there are
+notes of kinds in a series:
+1. [todo] -> [plan] -> coding -> test to flag
+  - what work was completed, where [x] was an optional kind step; and
+2. bug -> test
+  - to collect information about bugs found and fixed.
+
 
 ## Features
 
@@ -103,7 +125,7 @@ which is part of the final system.
 Some sub agents are directed to find bugs during unit and integration
 testing and work to validate that the bugs are repeatable.
 
-When bugs are found, write it up in docs/bugs/{YYYY-MM-DD-id}-{short-description}.md
+When bugs are found, write it up in a bugs note (see kind above) docs/notes/{YYYY-MM-DD-id}-bug-{short-description}.md
 
 It should cover:
 
