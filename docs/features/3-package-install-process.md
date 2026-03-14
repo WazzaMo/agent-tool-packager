@@ -141,14 +141,14 @@ Steps:
     respectively.
     In this example, we expect "safehouse" house scope and user executable scope.
 
-1.  Find the project's safehouse directory in `${PROJECT_DIR}/.atp_safehouse/` and 
+2.  Find the project's safehouse directory in `${PROJECT_DIR}/.atp_safehouse/` and 
     use the configfile to access the configured station.
 
-2.  Check if the Station has the package in its catalog as either a standard
+3.  Check if the Station has the package in its catalog as either a standard
     or user package (we expect user in this example) and find the packages
     files - `atp-package.yaml` and `package.tar.gz`
 
-3.  Each bundle directory in `package.tar.gz` is unpacked into the executable path
+4.  Each bundle directory in `package.tar.gz` is unpacked into the executable path
     where that path depends on the executable install scope user or project.
 
     a:  `package.tar.gz` is not UNIX conformant, use the `bin_files` field to copy
@@ -161,22 +161,31 @@ UNIX conformant is defined in
 [1-package-definition-and-installation](./1-package-definition-and-installation.md)
 see "#### UNIX conformant bundle dirs".
 
-For point (3) above, this means that there is an installation mapping that when installed
+For point (4) above, this means that there is an installation mapping that when installed
 to a project Safehouse, this structure is unpacked directly.
 When installed to ~/.local/, the installer uses the exec-filter to pull
 scripts into bin/ while placing the remaining hierarchy into share/.
 
-4.  Depending on the package type, look up the station's configuration agent-paths object
+5.  Depending on the package type, look up the station's configuration agent-paths object
     for the agent configured in the Safehouse to then find the agent's `home_path`
     and type relative path component by type, `rule` field for a rule type, `command` for command
     type and so on. The proper path for the file components (markdown prompt matter)
     can be copied into is composed using ${home_path}/{type_relative_path}.
 
-5.  Any prompt markdown files, especially SKILL.md skill file or markdown in rules,
+6.  Any prompt markdown component files, especially SKILL.md skill file or markdown in rules,
     will require adjustment depending on the executable path used, depending
     on the exec scope at install time. Adjusting the path in the markdown makes
     it easier for the agent to call the executable correctly in a single attempt
     and this compensates for the different exec scope at install time.
+
+7.  Assuming previous steps succeeded, add the package to the Safehouse's manifest
+    of installed packages.
+
+In these 6 points, we are assuming specific install scopes and have laid out the general
+process for unpacking any executable files in their respective directories, unpacking
+prompt matter such as rules and skills, adjusting prompt matter if the exec scope
+installs to the project so the agent can find the executables and lastly add
+the installed package to the Safehouse's manifest.
 
 
 # Test Approach
