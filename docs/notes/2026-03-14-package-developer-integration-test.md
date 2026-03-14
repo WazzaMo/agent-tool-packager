@@ -6,7 +6,7 @@
 
 ## Summary
 
-The Feature 2 Test Approach was implemented as integration tests. The tests initially failed because the package developer commands did not exist. After implementing `atp create package skeleton`, `atp package type|name|version|usage`, `atp package component add`, `atp validate package`, and `atp catalog add package`, all tests pass.
+The Feature 2 Test Approach was implemented as integration tests. The tests initially failed because the package developer commands did not exist. After implementing `atp create package skeleton`, `atp package type|name|version|usage`, `atp package component add`, `atp package bundle add`, `atp package bundle remove`, `atp validate package`, and `atp catalog add package`, all 19 integration tests pass. Eleven Feature 2 acceptance tests were added to cover catalog-add failure, stage.tar cleanup, validate success, multi-component add, catalog entry, skeleton reset, error paths, MCP type, and bundle structure.
 
 ## Test Plan Execution
 
@@ -32,6 +32,8 @@ The Feature 2 Test Approach was implemented as integration tests. The tests init
 
 7. **atp package bundle add** — Adds a directory tree (bundle) to `stage.tar`. Requires UNIX-conformant structure (`bin/` for executables) or `--exec-filter <glob>`. Same tar append/create pattern as component add.
 
+8. **atp package bundle remove** — Removes a bundle from the manifest and `stage.tar`. Extracts tar to temp dir, deletes bundle subtree, recreates tar, updates manifest.
+
 ### Test Fixes
 
 - **Station init** — Stopped pre-creating `stationDir`; let `atp station init` create it.
@@ -48,6 +50,9 @@ The Feature 2 Test Approach was implemented as integration tests. The tests init
 | Experimental| payload.txt    | Pass   |
 | Command (bundle) | echo-cmd/bin/echo-test.sh | Pass   |
 | Command (bundle, non-UNIX) | scripts-util/scripts/run.sh + `--exec-filter` | Pass   |
+| Command (bundle remove) | add then remove echo-cmd, catalog add with component only | Pass   |
+| MCP | SKILL.md component | Pass   |
+| Command (bundle bin+share) | exec-base/bin + exec-base/share/schema | Pass   |
 
 ### Bundle with Executable (UNIX conformant)
 
@@ -72,7 +77,7 @@ Validation was updated to accept packages with `components` **or** `bundles` (pr
 ## Test Results
 
 ```
- ✓ test/integration/package-developer.test.ts (7 tests) ~2.7s
+ ✓ test/integration/package-developer.test.ts (19 tests) ~7.5s
      ✓ builds a Rule package and adds it to the station catalog
      ✓ atp validate package exits non-zero when only type is set
      ✓ builds a Skill package with SKILL.md and adds to catalog
@@ -80,9 +85,39 @@ Validation was updated to accept packages with `components` **or** `bundles` (pr
      ✓ builds an Experimental package and adds to catalog
      ✓ builds a Command package with a bundle containing an executable shell script and script outputs expected message
      ✓ builds a Command package with a non-UNIX-conformant bundle (--exec-filter) and script outputs expected message
+     ✓ atp package bundle remove removes bundle from stage.tar and manifest
+     ✓ catalog add package fails with exit 1 when package is incomplete
+     ✓ stage.tar is deleted from cwd after successful catalog add package
+     ✓ validate package exits 0 with success message when package complete
+     ✓ component add accepts multiple paths in one call
+     ✓ package appears in atp-catalog.yaml with name, version, location after catalog add
+     ✓ create package skeleton deletes previous atp-package.yaml and stage.tar
+     ✓ component add with invalid path exits 1
+     ✓ bundle remove when bundle not in package exits 1
+     ✓ builds MCP type package and adds to catalog
+     ✓ bundle with bin/ and share/ structure is staged correctly
+     ✓ component add produces flat layout in stage.tar (base names only)
 ```
 
-Full suite: 56 tests pass across 10 files.
+Full suite: 121 tests pass across 19 files.
+
+### Feature 2 Acceptance Tests (11 added)
+
+The following tests were added to cover Feature 2 acceptance criteria explicitly:
+
+|       Test                                | Criterion |
+|--------------------                       |-----------|
+| catalog add package fails when incomplete | Validation blocks catalog add |
+| stage.tar deleted after catalog add       | Cleanup per Feature 2         |
+| validate package exits 0 when complete    | Success path                  |
+| multiple components in one add            | `component add a.md b.md`     |
+| package in atp-catalog.yaml               | Name, version, file location  |
+| skeleton deletes previous work            | Fresh start on re-run         |
+| component add invalid path exits 1        | Path validation               |
+| bundle remove when not in package exits 1 | Error message                 |
+| MCP type package                          | Type mcp workflow             |
+| bundle with bin/ and share/               | UNIX-style structure          |
+| flat layout in stage.tar                  | Base filenames only           |
 
 ## Files Added/Changed
 
@@ -95,6 +130,7 @@ Full suite: 56 tests pass across 10 files.
 - `src/package/component-add.ts`
 - `src/package/catalog-add.ts`
 - `src/package/bundle-add.ts`
+- `src/package/bundle-remove.ts`
 - `src/commands/create.ts`
 - `src/commands/package.ts`
 - `src/commands/validate.ts`
@@ -106,7 +142,6 @@ Full suite: 56 tests pass across 10 files.
 
 ## Gaps / Future Work
 
-- **atp package bundle remove** — Not implemented.
 - **atp package summary** — Not implemented.
 - **atp package component remove** — Not implemented.
 - **atp package developer|copyright|license** — Not implemented.
@@ -120,3 +155,5 @@ Full suite: 56 tests pass across 10 files.
 4. Manifest needs both `components` (dev workflow) and `assets` (install); catalog-add derives assets from components and type.
 5. Avoid `--` in `atp package usage` strings; Commander parses hyphenated segments as options. Use "exec-filter option" instead of `--exec-filter`.
 6. Run bundled executables from the extracted package dir to verify packaging.
+7. Unit tests for package modules (validate, load-manifest, save-manifest, bundle-add, component-add, bundle-remove) and config/load, install/copy-assets provide fast feedback during refactoring.
+8. Refactoring per clean-code: bundle-remove, catalog-add, bundle-add, component-add split into smaller functions with JSDoc; files kept under ~150 lines.

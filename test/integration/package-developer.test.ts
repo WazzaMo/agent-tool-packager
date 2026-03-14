@@ -502,3 +502,252 @@ echo "${msg}"
     expect(fs.existsSync(path.join(pkgInStation, "readme.md"))).toBe(true);
   });
 });
+
+describe("Integration: package developer - Feature 2 acceptance", () => {
+  let stationDir: string;
+  let pkgDir: string;
+  let base: string;
+
+  beforeEach(() => {
+    base = path.join(os.tmpdir(), `atp-f2-${Date.now()}`);
+    fs.mkdirSync(base, { recursive: true });
+    stationDir = path.join(base, "station");
+    pkgDir = path.join(base, "pkg");
+    fs.mkdirSync(pkgDir, { recursive: true });
+    process.env.STATION_PATH = stationDir;
+  });
+
+  afterEach(() => {
+    try {
+      fs.rmSync(base, { recursive: true });
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it("catalog add package fails with exit 1 when package is incomplete", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    runAtp(["create", "package", "skeleton"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "type", "rule"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const result = runAtpExpectExit(
+      ["catalog", "add", "package"],
+      1,
+      { cwd: pkgDir, env: { STATION_PATH: stationDir } }
+    );
+    const output = result.stdout + result.stderr;
+    expect(output).toMatch(/Package definition is not yet complete|validation/i);
+    expect(output).toMatch(/name|component|usage/i);
+  });
+
+  it("stage.tar is deleted from cwd after successful catalog add package", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "a.md"), "# A\n");
+    runAtp(["create", "package", "skeleton"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "stage-cleanup-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "a.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
+
+    runAtp(["catalog", "add", "package"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(false);
+  });
+
+  it("validate package exits 0 with success message when package complete", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "rule.md"), "# Rule\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "validate-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Validate test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "rule.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    runAtp(["validate", "package"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+  });
+
+  it("component add accepts multiple paths in one call", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "doc-guide.md"), "# Doc guide\n");
+    fs.writeFileSync(path.join(pkgDir, "coding-standard.md"), "# Coding\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "multi-comp-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Multi component"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    runAtp(["package", "component", "add", "doc-guide.md", "coding-standard.md"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const list = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+      encoding: "utf8",
+      cwd: pkgDir,
+    });
+    expect(list).toMatch(/doc-guide\.md/);
+    expect(list).toMatch(/coding-standard\.md/);
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(/doc-guide\.md/);
+    expect(manifest).toMatch(/coding-standard\.md/);
+  });
+
+  it("package appears in atp-catalog.yaml with name, version, location after catalog add", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "x.md"), "# X\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "catalog-entry-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "1.2.3"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Catalog entry test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "x.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    runAtp(["catalog", "add", "package"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    const catalogPath = path.join(stationDir, "atp-catalog.yaml");
+    const catalog = fs.readFileSync(catalogPath, "utf8");
+    expect(catalog).toMatch(/catalog-entry-pkg/);
+    expect(catalog).toMatch(/1\.2\.3/);
+    expect(catalog).toMatch(/file:\/\//);
+  });
+
+  it("create package skeleton deletes previous atp-package.yaml and stage.tar", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "old.md"), "# Old\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "skeleton-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "old.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
+    const manifestBefore = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifestBefore).toMatch(/skeleton-pkg/);
+
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(false);
+    const manifestAfter = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifestAfter).not.toMatch(/skeleton-pkg/);
+  });
+
+  it("component add with invalid path exits 1", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "x"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "x"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    const result = runAtpExpectExit(
+      ["package", "component", "add", "../other/file.md"],
+      1,
+      { cwd: pkgDir, env: { STATION_PATH: stationDir } }
+    );
+    expect(result.stdout + result.stderr).toMatch(/Invalid path/);
+  });
+
+  it("bundle remove when bundle not in package exits 1", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "only.md"), "# Only component\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "no-bundle-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "No bundle"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "only.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    const result = runAtpExpectExit(
+      ["package", "bundle", "remove", "nonexistent-bundle"],
+      1,
+      { cwd: pkgDir, env: { STATION_PATH: stationDir } }
+    );
+    expect(result.stdout + result.stderr).toMatch(/had not been included|not.*included/i);
+  });
+
+  it("builds MCP type package and adds to catalog", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "SKILL.md"), "# MCP skill\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "mcp"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "test-mcp-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "MCP test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "SKILL.md"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    runAtp(["catalog", "add", "package"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    const pkgInStation = path.join(stationDir, "user_packages", "test-mcp-pkg");
+    expect(fs.existsSync(pkgInStation)).toBe(true);
+    expect(fs.existsSync(path.join(pkgInStation, "atp-package.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(pkgInStation, "package.tar.gz"))).toBe(true);
+  });
+
+  it("bundle with bin/ and share/ structure is staged correctly", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    const binDir = path.join(pkgDir, "exec-base", "bin");
+    const shareDir = path.join(pkgDir, "exec-base", "share", "schema");
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.mkdirSync(shareDir, { recursive: true });
+    fs.writeFileSync(path.join(binDir, "parser"), "#!/bin/bash\necho parser\n");
+    fs.writeFileSync(path.join(shareDir, "schema.schm"), "schema content\n");
+    fs.chmodSync(path.join(binDir, "parser"), 0o755);
+
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "shell"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "bin-share-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Bin and share test"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "bundle", "add", "exec-base"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+
+    const list = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+      encoding: "utf8",
+      cwd: pkgDir,
+    });
+    expect(list).toMatch(/exec-base\/bin\/parser/);
+    expect(list).toMatch(/exec-base\/share\/schema\/schema\.schm/);
+
+    runAtp(["catalog", "add", "package"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    const pkgInStation = path.join(stationDir, "user_packages", "bin-share-pkg");
+    expect(fs.existsSync(path.join(pkgInStation, "exec-base", "bin", "parser"))).toBe(true);
+    expect(fs.existsSync(path.join(pkgInStation, "exec-base", "share", "schema", "schema.schm"))).toBe(true);
+  });
+
+  it("component add produces flat layout in stage.tar (base names only)", () => {
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    fs.writeFileSync(path.join(pkgDir, "doc-guide.md"), "# Doc\n");
+    fs.writeFileSync(path.join(pkgDir, "coding-standard.md"), "# Coding\n");
+    runAtp(["create", "package", "skeleton"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "type", "rule"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "name", "flat-pkg"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "version", "0.1.0"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "usage", "Flat layout"], { cwd: pkgDir, env: { STATION_PATH: stationDir } });
+    runAtp(["package", "component", "add", "doc-guide.md", "coding-standard.md"], {
+      cwd: pkgDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const list = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+      encoding: "utf8",
+      cwd: pkgDir,
+    });
+    const lines = list.split("\n").map((l) => l.trim()).filter(Boolean);
+    expect(lines).toContain("doc-guide.md");
+    expect(lines).toContain("coding-standard.md");
+  });
+});
+
