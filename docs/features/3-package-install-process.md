@@ -129,3 +129,71 @@ First note the option `--project` is deemed optional because it is the default
 behaviour - see
 [feaure 1-package-defintion-and-installation](./1-package-definition-and-installation.md)
  for details.
+
+The process steps are as follows, if any of these fail the process halts with an error
+message indicating any as many of these steps that could not complete successfully
+and why. Giving this level of detail allows the user to take corrective action.
+
+Steps:
+
+1.  Check the installation house scope - "station" or "safehouse" (default) and the
+    executable scope "user" (default) or "project".
+    In this example, we expect "safehouse" house scope and user executable scope.
+
+1.  Find the project's safehouse directory in `${PROJECT_DIR}/.atp_safehouse/` and 
+    use the configfile to access the configured station.
+
+2.  Check if the Station has the package in its catalog as either a standard
+    or user package (we expect user in this example) and find the packages
+    files - `atp-package.yaml` and `package.tar.gz`
+
+3.  Check the package for executables - these will be installed first in one of two cases:
+
+    a:  `package.tar.gz` is not UNIX conformant, use the `bin_files` field to copy
+        the executables to the user bin directory.
+    
+    b:  `package.tar.gz` package file is UNIX conformant, the exec_base directory in the
+        package file can be unpacked to ~/.local/ such that bin -> bin, share -> share etc.
+
+
+UNIX conformant is defined in 
+[1-package-definition-and-installation](./1-package-definition-and-installation.md)
+see "#### UNIX conformant bundle dirs".
+
+
+
+# Test Approach
+
+Use the technique for interactively building a package described
+in [feature 2](./2-package-developer-support.md) and create a test package.
+
+Create a test station directory - "test-station"
+Init the station in the "test-station" directory.
+
+For this test, create a package called "test-package-1" that contains a single
+rule type package with a markdown file with this content:
+
+Test rule prompt `test-rule.md`
+
+```markdown
+# Rule Test Package
+
+Being able to install this, means success.
+```
+
+Define the package with random strings for all mandatory field values.
+
+Stage the test markdown file "test-rule.md" and add the package to the test station.
+
+Add the package to the station's catalog.
+
+Create a directoy as the supposed project directory.
+
+Init a Safehouse in that new project.
+Set the agent to "cursor"
+
+Attempt installing the test package into the safehouse.
+
+There are no executables, so all file components will be written to the safehouse.
+
+Check that the rule appears in the .cursor directory in the test project directory.
