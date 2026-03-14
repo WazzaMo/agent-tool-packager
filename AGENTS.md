@@ -4,7 +4,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Project overview
 
-**Agent Tool Packager (ATP)** is a CLI for agentic software development workflows. It standardises how you add rules, skills, MCP servers, and commands to agentic CLI workflows. Built in **TypeScript** (Node.js 20+); config at `~/.atp_station/atp-config.yaml`; one catalog at `~/.atp_station/atp-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.atp_station` is used. The project safehouse (`./.atp_safehouse`) holds a manifest of installed packages and `atp-config.yaml` (agent, paths, station); it does not hold a catalog.
+**Agent Tool Packager (ATP)** is a CLI for agentic software development workflows. It standardises how you add rules, skills, MCP servers, and commands to agentic CLI workflows. Built in **TypeScript** (Node.js v24.14.0); config at `~/.atp_station/atp-config.yaml`; one catalog at `~/.atp_station/atp-catalog.yaml` (index of available packages, standard + user). **`STATION_PATH`**: set this env var to override the Station location (e.g. for testing); when unset, `~/.atp_station` is used. The project safehouse (`./.atp_safehouse`) holds a manifest of installed packages and `atp-config.yaml` (agent, paths, station); it does not hold a catalog.
 
 ## Key commands and behaviour
 
@@ -18,7 +18,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Build and test
 
-- **Prerequisites:** Node.js 20+
+- **Prerequisites:** Node.js v24.14.0 (the specific version required will change over time; always refer to `.node-version`). If your environment does not match, run `fnm use` to ensure the correct version is active.
 - **Commands:** `npm install`, `npm run build`, `npm run dev` (development)
 
 
