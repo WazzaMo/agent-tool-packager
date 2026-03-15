@@ -66,7 +66,7 @@ be installed at the user level or at the project level.
 ### Terminology (aligned with package-metadata)
 
 - **Rules**: Product type for prompt markdown files. In
-  [package-metadata](../notes/2026-02-25-package-metadata-and-catalog.md) and
+  [package-metadata](../notes/2026-02-25-plan-package-metadata-and-catalog.md) and
   code, these are "assets" or "prompts."
 
 - **Station**: Main config area at `~/.atp_station` (or `STATION_PATH`); see

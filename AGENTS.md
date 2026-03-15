@@ -52,7 +52,7 @@ This file summarises the project’s markdown documentation so agents can work e
 | Contributing & schema    | [CONTRIBUTING.md](CONTRIBUTING.md)                   |
 | Doc formatting           | [docs/doc-guide.md](docs/doc-guide.md)               |
 | Code style               | [docs/clean-code.md](docs/clean-code.md)             |
-| Package & catalog        | [docs/notes/2026-02-25-package-metadata-and-catalog.md](docs/notes/2026-02-25-package-metadata-and-catalog.md) |
+| Package & catalog        | [docs/notes/2026-02-25-plan-package-metadata-and-catalog.md](docs/notes/2026-02-25-plan-package-metadata-and-catalog.md) |
 
 ## Attribution
 
