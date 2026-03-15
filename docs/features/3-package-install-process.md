@@ -223,3 +223,31 @@ Attempt installing the test package into the safehouse.
 There are no executables, so all file components will be written to the safehouse.
 
 Check that the rule appears in the .cursor directory in the test project directory.
+
+--------------------------------------------------------------------------
+
+# ATP Command Specifics
+
+# atp agent {agent-name}
+
+This command is specific to project work because it's here that
+you will choose and agent to get things done.
+
+If the Safehouse has not been created in that project, it must fail, but
+when it is present, this command updates the `Agent` field 
+in the `.atp_safehouse/atp-config.yaml` file to the agent value.
+
+It will only accept agent names where the Station config has an `agent-paths` object with entries
+for that agent.
+
+## Acceptance Criteria
+
+Examines the current directory and the parent to a dir radius of at least 2 directories,
+to identify the base project directory, looking for dot files/dirs as evidence of project base,
+such as `.git` directory or `.vscode` directory. If the project base cannot be found, it must inform the user.
+
+Checks for the presence of the Safehouse directory and configuration files, if not found, it must inform the user.
+
+Checks the current value of `selected-agent`, if the same as the given {agent-name} then inform the user and stop successfully. Check if the {agent-name} is one registered in the Station's 
+
+

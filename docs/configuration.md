@@ -63,7 +63,7 @@ The station directory found either at:
 
 Will hold information about the Agent Tool Packager (ATP) Station.
 
-It will contain at minimum:
+The Station configuration will contain at minimum:
 
 ```yaml
 configuration:
