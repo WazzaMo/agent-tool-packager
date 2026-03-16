@@ -90,18 +90,11 @@ For a package that only has file components, the manifest entry would look like 
 
 ```yaml
 Safehouse-Manifest:
-    packages-installed:
-        - clean-code-rule:
-            - version: 0.1.0
-            - developer: Warwick Molloy
-            - type: rule
-            - provided_executables: 0
-            - install_scope:
-              - prompt_matter: --project-bin
-              - executables: --user-bin
-            - location:
-              - prompt_matter: .cursor/rules/clean-code-rule
-#              - executables: # field should be omitted when no execs included.
+    packages:
+        - name: clean-code-rule
+          version: 0.1.0
+          source: local
+          binary_scope: user-bin
 ```
 ### Package with file components and executables
 
@@ -109,20 +102,11 @@ For a package providing both file components and executables.
 
 ```yaml
 Safehouse-Manifest:
-    packages-installed:
-        - wonderful-mcp-server:
-            - version: 0.1.0
-            - developer: Warwick Molloy
-            - type: rule
-            - provided_executables: 0
-            - install_scope:
-              - prompt_matter: --project-bin
-              - executables: --user-bin
-            - location:
-              - prompt_matter: .cursor/rules/clean-code-rule
-              - executables:
-                - bin_files: .atp_safehouse/bin
-                - share_files: .atp_safehouse/share
+    packages:
+        - name: wonderful-mcp-server
+          version: 0.1.0
+          source: local
+          binary_scope: project-bin
 ```
 
 ## Installation process that achieved the result
