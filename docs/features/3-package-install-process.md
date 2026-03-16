@@ -250,4 +250,50 @@ Checks for the presence of the Safehouse directory and configuration files, if n
 
 Checks the current value of `selected-agent`, if the same as the given {agent-name} then inform the user and stop successfully. Check if the {agent-name} is one registered in the Station's 
 
+# atp package bundle add {exec-base} [exec-filter {filter-path}]
 
+The Non-UNIX compliant versus UNIX style staged bundle directory structure is detected in this manner of checks:
+
+## UNIX compliance bundle criteria
+
+Relative to the bundle base directory {exec-base} the following pattern of directories satisfies UNIX compliance.
+
+- bin/{executables} - ideally with the executable filesystem flag set as confirmed by fstat.
+- etc/{text-files} - optional
+- share/{text-files} - optional
+
+The minimal criteria is the presenc of the bin/ directory with executable files.
+
+stage.tar: {exec-bin}/bin/{files}
+
+## Usable Non-UNIX compliant bundle criteria
+
+The minimum criteria is that the bundle exec-base directory contains executable files somewhere
+in its structure and that the exec-filter value has a path glob pattern that can isolate the
+executables.
+
+An example would be:
+
+1. the {exec-base} flag has the value `scripts`
+2. the {exec-filter} flag has the value scripts/*.sh
+
+stage.tar:
+    /scripts/run-mcp.sh
+    /scripts/check-status.sh
+
+This allows the packaging solution to convert this staged file into a UNIX compliant package
+when adding it to the Station catalog by mapping.
+
+| script.tar path           | package.tar.gz path   |
+|-------------------        |-------------------    |
+| scripts/run-mcp.sh        | bin/run-mcp.sh        |
+| scripts/check-status.sh   | bin/check-status.sh   |
+
+Having made that conversion once creating the final package.tar.gz, the file is much easier
+to install in the user's ~/.local directory.
+
+Exit code:
+0 = when either UNIX-compliance is found or usable Non-UNIX compliance is found and the
+`exec-filter` option locates the executables.
+1 = when bundle's exec-filter does not find executable files meaning that the exec-filter
+is blank or globbing finds no files, or no files are present in the bundle.
