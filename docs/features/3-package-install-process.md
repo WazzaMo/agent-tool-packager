@@ -3,6 +3,13 @@
 Focusing on the details of the process for installing a package into a project
 directory, into the Safehouse linked with a project.
 
+## Copyright
+
+(c) Copyright 2026 Warwick Molloy.
+Contribution to this project is supported and contributors will be recognised.
+Created by Warwick Molloy Feb 2026.
+
+
 # Start with example workflows and actions
 
 ## Assumptions
@@ -187,6 +194,7 @@ prompt matter such as rules and skills, adjusting prompt matter if the exec scop
 installs to the project so the agent can find the executables and lastly add
 the installed package to the Safehouse's manifest.
 
+--------------------------------------------------------------------------
 
 # Test Approach
 
@@ -226,6 +234,53 @@ Check that the rule appears in the .cursor directory in the test project directo
 
 --------------------------------------------------------------------------
 
+# Markdown prompt matter format
+
+The markdown files for rules and skills need to know where the executable
+parts of the package will be installed but the actual location on disk
+may vary.
+
+## Keep the convention simple
+
+Markdown needs to instruct an agent how to run a command, it needs a variable
+that represents the executable's path. For bundle "text_util" that path
+variable should be {text_util} so then upon package installation, the
+variable will be replaced, using something like sed "s/var/value/g",
+so that the installed markdown is exactly correct.
+
+## Example 1
+
+A package called "copyrighter" comes with a skill and a command
+to patch copyright messages into text files.
+
+SKILL.md for a copyright header tool that adds a head banner to source
+code with a copyright message on demand, for the agent.
+
+The bundle with the shell script, called "patch_tool" has
+a shell script called "file-patch.sh" that takes
+a filename to patch, a string to replace as the patch target within the file
+and the message to insert.
+
+SKILL.md text would read like this:
+
+```markdown
+---
+name: copyrighter
+description: Use this when the agent needs to patch a copyright message into a text file.
+---
+You need to know these parameters before starting:
+1. {filepath} = the file path to patch
+2. {target} = the patch target (string to replace)
+3. {message} = the copyright message that will replace the target.
+Run {patch_tool}/file-patch.sh {filepath} {target} {message}
+```
+
+Upon installation of this package, the {patch_tool} text in SKILL.md is replaced
+with the path of the executable, wherever on disk it may be, and the skill
+works.
+
+--------------------------------------------------------------------------
+
 # ATP Command Specifics
 
 # atp agent {agent-name}
@@ -250,9 +305,33 @@ Checks for the presence of the Safehouse directory and configuration files, if n
 
 Checks the current value of `selected-agent`, if the same as the given {agent-name} then inform the user and stop successfully. Check if the {agent-name} is one registered in the Station's 
 
-# atp package bundle add {exec-base} [exec-filter {filter-path}]
+# atp package bundle add {bundle_name} [exec-filter {filter-path}]
 
-The Non-UNIX compliant versus UNIX style staged bundle directory structure is detected in this manner of checks:
+`atp package bundle add {bundle_name} [exec-filter {filter-path}]`
+
+Where exec-filter is needed for non-UNIX conformant bundles, thus optional.
+The value {bundle_name} was called {exec_base} before but it is MUCH BETTER
+to think of it as a "bundle name" because that allows multiple bundles
+to be added to a package and clearly assumes the bundle name is unique.
+
+It makes giving instructions to developers easier and more consistent
+for their workflow to say "Create a directory for your bundle, using that name
+of that bundle for the directory."
+
+The Non-UNIX compliant versus UNIX style staged bundle directory structure is detected
+using two criteria for compliant or proper, non-compliant.
+
+"proper" means the exec-filter was given and the packager can resolve the executables
+within the non-compliant bundle.
+
+If the bundle is NOT PROPER, this triggers failure of the bundle add command.
+We cannot add a bundle where the executable files cannot be resolved.
+
+Bundles are not intended to be a collection of text files because
+multiple file components can be added, that's how that problem is solved.
+So the defining thing about bundles is that they contain ONE OR MORE EXECUTABLES
+that the packager knows how to find and can associate with the name
+of the bundle.
 
 ## UNIX compliance bundle criteria
 
@@ -262,9 +341,23 @@ Relative to the bundle base directory {exec-base} the following pattern of direc
 - etc/{text-files} - optional
 - share/{text-files} - optional
 
-The minimal criteria is the presenc of the bin/ directory with executable files.
+The minimal criteria is the presence of the bin/ directory with executable files.
+The path criteria that detects UNIX compliance is this:
+  `stage.tar: {exec-bin}/bin/{files}`
 
-stage.tar: {exec-bin}/bin/{files}
+
+A UNIX compliant stage.tar and its corresponding package.tar.gz that results:
+
+| script.tar path             | package.tar.gz path          |
+|-------------------          |----------------------------  |
+| base_dir/bin/run-mcp.sh     | base_dir/bin/run-mcp.sh      |
+| base_dir/bin/check-status.sh| base_dir/bin/check-status.sh |
+| base_dir/etc/config.json    | base_dir/etc/config.json     |
+
+Meaning the variable {exec_base} has the value `base_dir`.
+
+We can see the point that UNIX compliant set up makes the whole thing easier
+and more predictable.
 
 ## Usable Non-UNIX compliant bundle criteria
 
@@ -284,16 +377,40 @@ stage.tar:
 This allows the packaging solution to convert this staged file into a UNIX compliant package
 when adding it to the Station catalog by mapping.
 
-| script.tar path           | package.tar.gz path   |
-|-------------------        |-------------------    |
-| scripts/run-mcp.sh        | bin/run-mcp.sh        |
-| scripts/check-status.sh   | bin/check-status.sh   |
+| script.tar path           | package.tar.gz path             |
+|-------------------        |----------------------------     |
+| scripts/run-mcp.sh        | bundle_base/bin/run-mcp.sh      |
+| scripts/check-status.sh   | bundle_base/bin/check-status.sh |
+
+Meaning the variable {exec_base} has the value `bundle_base` in the final package.
 
 Having made that conversion once creating the final package.tar.gz, the file is much easier
 to install in the user's ~/.local directory.
 
+## Note
+
+The package.tar.gz file is not created when adding the bundle, it is created
+and the layout produced, when the package is added to the Station's catalog.
+The tables above show `package.tar.gz` to indicate the ultimae packaging
+goal or target.
+
+## Return codes and error handling.
+
+The command should print messages to reassure that the bundle has been
+processed correctly.
+
+```text
+ Bundle {exec_base} found
+ Bundle executable files filtered with string "scripts/*.sh"
+ Executables packed to:
+   - scripts/run-mcp.sh
+   - scripts/check-status.sh
+```
+
 Exit code:
+
 0 = when either UNIX-compliance is found or usable Non-UNIX compliance is found and the
 `exec-filter` option locates the executables.
+
 1 = when bundle's exec-filter does not find executable files meaning that the exec-filter
 is blank or globbing finds no files, or no files are present in the bundle.
