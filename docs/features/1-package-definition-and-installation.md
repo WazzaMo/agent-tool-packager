@@ -387,10 +387,10 @@ To list packages in the catalog that can be installed.
 ## Agent nomination
 
 ATP needs to know which agent requires the weapons (the package) 
-because every agent is different. It is to be assumed that there
-will be no safehouse path in the project file until one is created.
+because every agent is different. The Safehouse must be initialised
+before nominating an agent.
 
-The `atp agent` command creates the safehouse path in the project.
+The `atp agent` command assigns the agent to the project's Safehouse.
 When the agent name is given, it configures the safehouse
 for that agent so that weapons can be installed into the proper place
 for that agent.
