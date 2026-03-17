@@ -3,7 +3,17 @@
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 Created 2026-03-15.
-Updated 2026-03-16, 2026-03-17.
+Updated 2026-03-16, 2026-03-17, 2026-03-18.
+
+---------------------------------------------------------------------------
+
+## Updates (2026-03-18)
+
+### Project Base Discovery Wired
+
+- **findProjectBase wired:** `findProjectBase` in `src/config/paths.ts` updated to respect `SAFEHOUSE_PROJECT_PATH`.
+- **isHomeDirectory:** Added to `src/config/paths.ts` to detect home directory anti-pattern during `atp safehouse init`.
+- **Command updates:** `atp agent`, `atp safehouse init`, `atp safehouse list`, `atp install`, and `atp remove safehouse` now use `findProjectBase` to resolve the project root. This allows running these commands from subdirectories and correctly identifies the Safehouse location.
 
 ---------------------------------------------------------------------------
 
@@ -46,7 +56,7 @@ Updated 2026-03-16, 2026-03-17.
 
 ---------------------------------------------------------------------------
 
-## Current Status (as of 2026-03-17)
+## Current Status (as of 2026-03-18)
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -57,13 +67,13 @@ Updated 2026-03-16, 2026-03-17.
 | 5. Safehouse registration | Resolved | Implemented in safehouse-init. |
 | 6. Dependencies | Resolved | Feature 1: `--dependencies` pre-approval, user in control |
 | 7. Program asset installation | Resolved | Executables copied to user-bin or project-bin. |
-| 8. atp agent project base discovery | Pending | findProjectBase in paths.ts; agent command not yet wired. |
+| 8. atp agent project base discovery | Resolved | findProjectBase in paths.ts; wired into agent, safehouse, install, remove commands. |
 
 ---------------------------------------------------------------------------
 
 ## Overview
 
-Following a review of `docs/features/3-package-install-process.md` and the current implementation, most gaps have been resolved. The manifest schema is aligned; text patching (`{bundle_name}`) and program asset copying are implemented. Unit and integration tests added for Feature 3. Remaining: wire `findProjectBase` into `atp agent` so it resolves project base when run from a subdirectory.
+Following a review of `docs/features/3-package-install-process.md` and the current implementation, all identified gaps have been resolved. The manifest schema is aligned; text patching (`{bundle_name}`) and program asset copying are implemented. Project base discovery (`findProjectBase`) is wired into all relevant commands, allowing them to work correctly from subdirectories and respect `SAFEHOUSE_PROJECT_PATH`.
 
 ## Summary of Todos
 
@@ -77,4 +87,4 @@ Following a review of `docs/features/3-package-install-process.md` and the curre
 - [x] Manifest schema: implementation updated to match Feature 3 (Safehouse-Manifest wrapper, package fields).
 - [x] Implement text material patching in `src/install/copy-assets.ts`.
 - [x] Implement program asset copying (executables to user-bin or project-bin).
-- [ ] Wire `findProjectBase` into `atp agent` command for project base discovery from subdirectories.
+- [x] Wire `findProjectBase` into `atp agent` command for project base discovery from subdirectories.
