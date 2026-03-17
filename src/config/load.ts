@@ -16,11 +16,40 @@ import type {
   StationConfig,
   SafehouseListConfig,
 } from "./station-config.js";
-import type { SafehouseConfig, SafehouseManifest } from "./types.js";
+import type {
+  SafehouseConfig,
+  SafehouseManifest,
+  PackageSource,
+  BinaryScope,
+} from "./types.js";
 
 const STATION_CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_MANIFEST_FILE = "manifest.yaml";
+
+/** Top-level key in manifest.yaml per docs/features/3-package-install-process.md */
+const SAFEHOUSE_MANIFEST_KEY = "Safehouse-Manifest";
+
+function parseManifest(raw: unknown): SafehouseManifest | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const inner = obj[SAFEHOUSE_MANIFEST_KEY] ?? obj;
+  if (!inner || typeof inner !== "object") return null;
+  const m = inner as Record<string, unknown>;
+  const packages = Array.isArray(m.packages) ? m.packages : [];
+  return {
+    packages: packages as SafehouseManifest["packages"],
+    station_path: (m.station_path as string | null) ?? null,
+  };
+}
+
+/** Serialize manifest with Safehouse-Manifest wrapper for manifest.yaml. */
+export function writeManifestContent(manifest: SafehouseManifest): string {
+  return yaml.dump(
+    { [SAFEHOUSE_MANIFEST_KEY]: manifest },
+    { lineWidth: 80 }
+  );
+}
 
 /** Load Station config. Returns null if Station does not exist. */
 export function loadStationConfig(): StationConfig | null {
@@ -62,7 +91,8 @@ export function loadSafehouseManifest(
   }
 
   const content = fs.readFileSync(manifestPath, "utf8");
-  return yaml.load(content) as SafehouseManifest;
+  const raw = yaml.load(content);
+  return parseManifest(raw);
 }
 
 /** Check if Station is initialized */
@@ -93,7 +123,8 @@ export function writeSafehouseConfig(
 export function addPackageToSafehouseManifest(
   name: string,
   version: string | undefined,
-  binaryScope: "user-bin" | "project-bin" = "user-bin",
+  binaryScope: BinaryScope = "user-bin",
+  source: PackageSource = "station",
   cwd: string = process.cwd()
 ): void {
   const safehousePath = getSafehousePath(cwd);
@@ -104,14 +135,16 @@ export function addPackageToSafehouseManifest(
   const stationPath = existing?.station_path ?? null;
 
   const filtered = packages.filter((p) => p.name !== name);
-  filtered.push({ name, version, binary_scope: binaryScope });
+  filtered.push({
+    name,
+    version,
+    source,
+    binary_scope: binaryScope,
+  });
 
   fs.writeFileSync(
     manifestPath,
-    yaml.dump(
-      { packages: filtered, station_path: stationPath },
-      { lineWidth: 80 }
-    ),
+    writeManifestContent({ packages: filtered, station_path: stationPath }),
     "utf8"
   );
 }
@@ -166,10 +199,7 @@ export function removePackageFromSafehouseManifest(
   const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
   fs.writeFileSync(
     manifestPath,
-    yaml.dump(
-      { packages, station_path: stationPath },
-      { lineWidth: 80 }
-    ),
+    writeManifestContent({ packages, station_path: stationPath }),
     "utf8"
   );
 }
@@ -177,7 +207,7 @@ export function removePackageFromSafehouseManifest(
 /** Update a package entry in Safehouse manifest (e.g. set source: "local"). */
 export function updateSafehousePackageInManifest(
   name: string,
-  updates: { source?: "station" | "local" },
+  updates: { source?: PackageSource },
   cwd: string = process.cwd()
 ): void {
   const existing = loadSafehouseManifest(cwd);
@@ -192,10 +222,7 @@ export function updateSafehousePackageInManifest(
   const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
   fs.writeFileSync(
     manifestPath,
-    yaml.dump(
-      { packages, station_path: stationPath },
-      { lineWidth: 80 }
-    ),
+    writeManifestContent({ packages, station_path: stationPath }),
     "utf8"
   );
 }
@@ -207,7 +234,8 @@ export function loadSafehouseManifestFromPath(
   const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
   if (!fs.existsSync(manifestPath)) return null;
   const content = fs.readFileSync(manifestPath, "utf8");
-  return yaml.load(content) as SafehouseManifest | null;
+  const raw = yaml.load(content);
+  return parseManifest(raw);
 }
 
 /** Check if Station has a package manifest for the given name. */

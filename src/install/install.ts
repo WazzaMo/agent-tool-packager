@@ -10,6 +10,7 @@ import {
   addPackageToSafehouseManifest,
   writeStationPackageManifest,
 } from "../config/load.js";
+import { expandHome } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
   resolvePackage,
@@ -45,6 +46,29 @@ function checkDependencies(
     }
   }
   return missing;
+}
+
+/** Build bundle name -> install path map for text patching. Feature 3: {bundle_name} placeholder. */
+function buildBundlePathMap(
+  manifest: PackageManifest,
+  binaryScope: "user-bin" | "project-bin",
+  cwd: string
+): Record<string, string> {
+  const bundles = manifest.bundles ?? [];
+  if (bundles.length === 0) return {};
+
+  const binDir =
+    binaryScope === "user-bin"
+      ? expandHome("~/.local/bin")
+      : path.join(cwd, ".atp_safehouse", `${manifest.name}-exec`, "bin");
+
+  const map: Record<string, string> = {};
+  for (const b of bundles) {
+    const bundlePath = typeof b === "string" ? b : b.path;
+    const bundleName = path.basename(bundlePath) || bundlePath;
+    map[bundleName] = binDir;
+  }
+  return map;
 }
 
 /** Resolve agent base path (project agent dir) for skills/rules. */
@@ -106,12 +130,32 @@ export async function installPackage(
   }
 
   const agentBase = getAgentBasePath(cwd);
-  copyPackageAssets(pkgDir, manifest, agentBase);
+  const bundlePathMap = buildBundlePathMap(manifest, opts.binaryScope, cwd);
+
+  const hasProgramAssets = (manifest.assets ?? []).some(
+    (a) => a.type === "program"
+  );
+  const installBinDir =
+    hasProgramAssets && opts.promptScope === "project"
+      ? opts.binaryScope === "user-bin"
+        ? expandHome("~/.local/bin")
+        : path.join(cwd, ".atp_safehouse", `${manifest.name}-exec`, "bin")
+      : undefined;
+
+  copyPackageAssets(pkgDir, manifest, agentBase, bundlePathMap, installBinDir);
 
   const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
 
   if (opts.promptScope === "project") {
-    addPackageToSafehouseManifest(manifest.name, version, opts.binaryScope, cwd);
+    const source =
+      opts.binaryScope === "user-bin" ? "station" : "local";
+    addPackageToSafehouseManifest(
+      manifest.name,
+      version,
+      opts.binaryScope,
+      source,
+      cwd
+    );
   } else {
     writeStationPackageManifest(manifest.name, {
       name: manifest.name,

@@ -1,0 +1,3 @@
+agent: claude
+station_path: null
+agent_path: .claude/

@@ -66,13 +66,35 @@ describe("copyPackageAssets", () => {
     expect(fs.existsSync(dest)).toBe(false);
   });
 
-  it("skips program assets (TODO)", () => {
+  it("copies program assets to installBinDir when provided (Feature 3)", () => {
+    const binDir = path.join(path.dirname(pkgDir), "bin");
+    fs.mkdirSync(path.join(pkgDir, "patch_tool", "bin"), { recursive: true });
+    const scriptPath = path.join(pkgDir, "patch_tool", "bin", "file-patch.sh");
+    fs.writeFileSync(scriptPath, "#!/bin/sh\necho patching");
+    copyPackageAssets(
+      pkgDir,
+      {
+        name: "copyrighter",
+        assets: [{ path: "patch_tool/bin/file-patch.sh", type: "program", name: "file-patch" }],
+      },
+      agentBase,
+      undefined,
+      binDir
+    );
+
+    const dest = path.join(binDir, "file-patch.sh");
+    expect(fs.existsSync(dest)).toBe(true);
+    expect(fs.readFileSync(dest, "utf8")).toBe("#!/bin/sh\necho patching");
+  });
+
+  it("skips program assets when installBinDir not provided", () => {
     fs.mkdirSync(path.join(pkgDir, "bin"), { recursive: true });
     fs.writeFileSync(path.join(pkgDir, "bin", "cmd"), "#!/bin/sh");
-    copyPackageAssets(pkgDir, {
-      name: "test",
-      assets: [{ path: "bin/cmd", type: "program", name: "cmd" }],
-    }, agentBase);
+    copyPackageAssets(
+      pkgDir,
+      { name: "test", assets: [{ path: "bin/cmd", type: "program", name: "cmd" }] },
+      agentBase
+    );
 
     const dest = path.join(agentBase, "bin", "cmd");
     expect(fs.existsSync(dest)).toBe(false);
@@ -96,5 +118,69 @@ describe("copyPackageAssets", () => {
   it("handles empty assets array", () => {
     copyPackageAssets(pkgDir, { name: "test", assets: [] }, agentBase);
     expect(fs.existsSync(agentBase)).toBe(false);
+  });
+
+  describe("text patching (Feature 3: {bundle_name} placeholder)", () => {
+    it("replaces {bundle_name} with install path in skill when bundlePathMap provided", () => {
+      const skillContent = `---
+name: copyrighter
+---
+Run {patch_tool}/file-patch.sh {filepath} {target} {message}
+`;
+      fs.writeFileSync(path.join(pkgDir, "SKILL.md"), skillContent);
+      copyPackageAssets(
+        pkgDir,
+        { name: "copyrighter", assets: [{ path: "SKILL.md", type: "skill", name: "SKILL" }] },
+        agentBase,
+        { patch_tool: "/home/user/.local/bin" }
+      );
+      const dest = path.join(agentBase, "skills", "SKILL.md");
+      expect(fs.existsSync(dest)).toBe(true);
+      const patched = fs.readFileSync(dest, "utf8");
+      expect(patched).toContain("/home/user/.local/bin/file-patch.sh");
+      expect(patched).not.toContain("{patch_tool}");
+    });
+
+    it("replaces {bundle_name} in rule when bundlePathMap provided", () => {
+      const ruleContent = `# Rule
+Use {my_util} to process files.
+`;
+      fs.writeFileSync(path.join(pkgDir, "RULE.md"), ruleContent);
+      copyPackageAssets(
+        pkgDir,
+        { name: "test", assets: [{ path: "RULE.md", type: "rule", name: "RULE" }] },
+        agentBase,
+        { my_util: "/project/.atp_safehouse/pkg-exec/bin" }
+      );
+      const dest = path.join(agentBase, "rules", "RULE.md");
+      const patched = fs.readFileSync(dest, "utf8");
+      expect(patched).toContain("/project/.atp_safehouse/pkg-exec/bin");
+      expect(patched).not.toContain("{my_util}");
+    });
+
+    it("leaves placeholders unchanged when bundlePathMap is empty or not provided", () => {
+      const skillContent = "Run {patch_tool}/script.sh";
+      fs.writeFileSync(path.join(pkgDir, "SKILL.md"), skillContent);
+      copyPackageAssets(
+        pkgDir,
+        { name: "test", assets: [{ path: "SKILL.md", type: "skill", name: "SKILL" }] },
+        agentBase
+      );
+      const dest = path.join(agentBase, "skills", "SKILL.md");
+      expect(fs.readFileSync(dest, "utf8")).toBe("Run {patch_tool}/script.sh");
+    });
+
+    it("replaces multiple bundle placeholders in one file", () => {
+      const content = "Tool A: {tool_a}, Tool B: {tool_b}";
+      fs.writeFileSync(path.join(pkgDir, "SKILL.md"), content);
+      copyPackageAssets(
+        pkgDir,
+        { name: "test", assets: [{ path: "SKILL.md", type: "skill", name: "SKILL" }] },
+        agentBase,
+        { tool_a: "/path/a", tool_b: "/path/b" }
+      );
+      const patched = fs.readFileSync(path.join(agentBase, "skills", "SKILL.md"), "utf8");
+      expect(patched).toBe("Tool A: /path/a, Tool B: /path/b");
+    });
   });
 });

@@ -87,10 +87,18 @@ describe("config/load", () => {
         "agent: cursor\nstation_path: null"
       );
 
-      addPackageToSafehouseManifest("pkg-a", "1.0", "user-bin", path.dirname(safehouse));
+      addPackageToSafehouseManifest(
+        "pkg-a",
+        "1.0",
+        "user-bin",
+        "station",
+        path.dirname(safehouse)
+      );
       let manifest = loadSafehouseManifest(path.dirname(safehouse));
       expect(manifest?.packages).toHaveLength(1);
       expect(manifest?.packages[0].name).toBe("pkg-a");
+      expect(manifest?.packages[0].source).toBe("station");
+      expect(manifest?.packages[0].binary_scope).toBe("user-bin");
 
       removePackageFromSafehouseManifest("pkg-a", path.dirname(safehouse));
       manifest = loadSafehouseManifest(path.dirname(safehouse));
@@ -152,11 +160,37 @@ describe("config/load", () => {
       const sh = createTempDir();
       fs.writeFileSync(
         path.join(sh, "manifest.yaml"),
-        yaml.dump({ packages: [{ name: "x", version: "1" }], station_path: null })
+        yaml.dump({
+          "Safehouse-Manifest": {
+            packages: [
+              {
+                name: "x",
+                version: "1",
+                source: "local",
+                binary_scope: "project-bin",
+              },
+            ],
+            station_path: null,
+          },
+        })
       );
       const m = loadSafehouseManifestFromPath(sh);
       expect(m?.packages).toHaveLength(1);
       expect(m?.packages[0].name).toBe("x");
+      expect(m?.packages[0].source).toBe("local");
+      expect(m?.packages[0].binary_scope).toBe("project-bin");
+      fs.rmSync(sh, { recursive: true });
+    });
+
+    it("loads legacy flat manifest (backward compat)", () => {
+      const sh = createTempDir();
+      fs.writeFileSync(
+        path.join(sh, "manifest.yaml"),
+        yaml.dump({ packages: [{ name: "legacy", version: "1" }], station_path: null })
+      );
+      const m = loadSafehouseManifestFromPath(sh);
+      expect(m?.packages).toHaveLength(1);
+      expect(m?.packages[0].name).toBe("legacy");
       fs.rmSync(sh, { recursive: true });
     });
   });

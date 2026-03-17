@@ -16,6 +16,7 @@ import {
   DEFAULT_SAFEHOUSE_CONFIG,
   DEFAULT_SAFEHOUSE_MANIFEST,
 } from "../config/safehouse-config.js";
+import { writeManifestContent } from "../config/load.js";
 import type { SafehouseListConfig } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";
@@ -71,10 +72,10 @@ export async function safehouseInit(): Promise<void> {
   );
   fs.writeFileSync(
     manifestPath,
-    yaml.dump(
-      { ...DEFAULT_SAFEHOUSE_MANIFEST, station_path: stationPath },
-      { lineWidth: 80 }
-    ),
+    writeManifestContent({
+      ...DEFAULT_SAFEHOUSE_MANIFEST,
+      station_path: stationPath,
+    }),
     "utf8"
   );
 

@@ -6,11 +6,13 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 import {
   expandHome,
   getStationPath,
   getSafehousePath,
   pathExists,
+  findProjectBase,
   DEFAULT_STATION_PATH,
 } from "../../src/config/paths.js";
 

@@ -31,6 +31,8 @@ export interface PackageManifest {
     organisation?: string;
   };
   assets?: PackageAsset[];
+  /** Bundle paths for text patching {bundle_name} placeholders. From atp-package.yaml. */
+  bundles?: Array<string | { path: string; "exec-filter"?: string }>;
   program_dependencies?: string[];
   program_definitions?: ProgramDefinition[];
 }

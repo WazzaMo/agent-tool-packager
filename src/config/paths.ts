@@ -48,3 +48,27 @@ export function pathExists(dir: string): boolean {
     return false;
   }
 }
+
+const PROJECT_BASE_MARKERS = [".git", ".vscode"];
+const PROJECT_BASE_RADIUS = 2;
+
+/**
+ * Find project base directory by examining cwd and parents (radius 2).
+ * Looks for .git or .vscode as evidence of project base. Feature 3 acceptance criteria.
+ * @returns Project base path or null if not found
+ */
+export function findProjectBase(cwd: string = process.cwd()): string | null {
+  let dir = path.resolve(cwd);
+  for (let i = 0; i <= PROJECT_BASE_RADIUS; i++) {
+    for (const marker of PROJECT_BASE_MARKERS) {
+      const markerPath = path.join(dir, marker);
+      if (fs.existsSync(markerPath)) {
+        return dir;
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
