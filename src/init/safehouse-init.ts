@@ -11,6 +11,8 @@ import {
   getSafehousePath,
   getStationPath,
   pathExists,
+  findProjectBase,
+  isHomeDirectory,
 } from "../config/paths.js";
 import {
   DEFAULT_SAFEHOUSE_CONFIG,
@@ -52,7 +54,26 @@ function registerSafehouseInStation(safehousePath: string): void {
 
 export async function safehouseInit(): Promise<void> {
   const cwd = process.cwd();
-  const safehousePath = getSafehousePath(cwd);
+  const projectBase = findProjectBase(cwd);
+
+  if (!projectBase) {
+    if (isHomeDirectory(cwd)) {
+      console.error("Error: It looks like you are in your home directory.");
+      console.error("Initializing a Safehouse here is an anti-pattern.");
+      console.error("Please run this from a project directory, or set SAFEHOUSE_PROJECT_PATH.");
+      process.exit(1);
+    }
+
+    console.error(
+      "Error: Could not confirm this is a project directory (no .git or .vscode markers found)."
+    );
+    console.error(
+      "To force initialization, set the SAFEHOUSE_PROJECT_PATH environment variable."
+    );
+    process.exit(1);
+  }
+
+  const safehousePath = getSafehousePath(projectBase);
 
   if (fs.existsSync(safehousePath)) {
     console.log(`Safehouse already exists at ${safehousePath}`);

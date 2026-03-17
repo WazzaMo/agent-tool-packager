@@ -30,6 +30,8 @@ describe("Integration: install and list", () => {
 `;
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+    // Add project marker so safehouse init succeeds
+    fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
     runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });

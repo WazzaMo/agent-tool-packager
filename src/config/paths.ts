@@ -54,10 +54,20 @@ const PROJECT_BASE_RADIUS = 2;
 
 /**
  * Find project base directory by examining cwd and parents (radius 2).
+ * Respects SAFEHOUSE_PROJECT_PATH environment variable if set.
  * Looks for .git or .vscode as evidence of project base. Feature 3 acceptance criteria.
  * @returns Project base path or null if not found
  */
 export function findProjectBase(cwd: string = process.cwd()): string | null {
+  // Check environment variable override first
+  const envPath = process.env.SAFEHOUSE_PROJECT_PATH;
+  if (envPath) {
+    const resolvedEnvPath = path.resolve(expandHome(envPath));
+    if (fs.existsSync(resolvedEnvPath) && fs.statSync(resolvedEnvPath).isDirectory()) {
+      return resolvedEnvPath;
+    }
+  }
+
   let dir = path.resolve(cwd);
   for (let i = 0; i <= PROJECT_BASE_RADIUS; i++) {
     for (const marker of PROJECT_BASE_MARKERS) {
@@ -71,4 +81,22 @@ export function findProjectBase(cwd: string = process.cwd()): string | null {
     dir = parent;
   }
   return null;
+}
+
+/**
+ * Check if a directory looks like a user's home directory (anti-pattern).
+ */
+export function isHomeDirectory(dir: string): boolean {
+  const resolved = path.resolve(dir);
+  const home = os.homedir();
+  if (resolved === home) return true;
+
+  // Additional heuristic checks from Feature 3
+  const parent = path.dirname(resolved);
+  if (path.basename(parent) === "home") {
+    // If it's something like /home/user
+    if (fs.existsSync(path.join(resolved, ".ssh"))) return true;
+    if (fs.existsSync(path.join(resolved, ".bashrc"))) return true;
+  }
+  return false;
 }

@@ -10,7 +10,7 @@ import {
   addPackageToSafehouseManifest,
   writeStationPackageManifest,
 } from "../config/load.js";
-import { expandHome } from "../config/paths.js";
+import { expandHome, findProjectBase } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
   resolvePackage,
@@ -35,12 +35,12 @@ export interface InstallOptions {
 /** Check for missing dependencies. Returns list of missing package names. */
 function checkDependencies(
   manifest: PackageManifest,
-  cwd: string
+  projectBase: string
 ): string[] {
   const deps = manifest.program_dependencies ?? [];
   const missing: string[] = [];
   for (const dep of deps) {
-    const resolved = resolvePackage(dep, cwd);
+    const resolved = resolvePackage(dep, projectBase);
     if (!resolved) {
       missing.push(dep);
     }
@@ -52,7 +52,7 @@ function checkDependencies(
 function buildBundlePathMap(
   manifest: PackageManifest,
   binaryScope: "user-bin" | "project-bin",
-  cwd: string
+  projectBase: string
 ): Record<string, string> {
   const bundles = manifest.bundles ?? [];
   if (bundles.length === 0) return {};
@@ -60,7 +60,7 @@ function buildBundlePathMap(
   const binDir =
     binaryScope === "user-bin"
       ? expandHome("~/.local/bin")
-      : path.join(cwd, ".atp_safehouse", `${manifest.name}-exec`, "bin");
+      : path.join(projectBase, ".atp_safehouse", `${manifest.name}-exec`, "bin");
 
   const map: Record<string, string> = {};
   for (const b of bundles) {
@@ -72,12 +72,12 @@ function buildBundlePathMap(
 }
 
 /** Resolve agent base path (project agent dir) for skills/rules. */
-function getAgentBasePath(cwd: string): string {
-  const config = loadSafehouseConfig(cwd);
+function getAgentBasePath(projectBase: string): string {
+  const config = loadSafehouseConfig(projectBase);
   const stationConfig = loadStationConfig();
   const agentName = config?.agent ?? "cursor";
   const projectPath = resolveAgentProjectPath(agentName, stationConfig);
-  return path.join(cwd, projectPath);
+  return path.join(projectBase, projectPath);
 }
 
 /** Run install for a single package. */
@@ -86,18 +86,19 @@ export async function installPackage(
   opts: InstallOptions,
   cwd: string = process.cwd()
 ): Promise<void> {
-  if (!safehouseExists(cwd)) {
+  const projectBase = findProjectBase(cwd);
+  if (!projectBase || !safehouseExists(projectBase)) {
     console.error(SAFEHOUSE_REQUIRED_MSG);
     process.exit(1);
   }
 
-  const catalogPkg = resolvePackage(packageName, cwd);
+  const catalogPkg = resolvePackage(packageName, projectBase);
   if (!catalogPkg) {
     console.error(`Package not found in catalog: ${packageName}`);
     process.exit(1);
   }
 
-  const pkgDir = resolvePackagePath(catalogPkg.location, cwd);
+  const pkgDir = resolvePackagePath(catalogPkg.location, projectBase);
   if (!pkgDir) {
     console.error(
       `Package location not supported (file:// only): ${catalogPkg.location ?? "(none)"}`
@@ -113,7 +114,7 @@ export async function installPackage(
     process.exit(1);
   }
 
-  const missing = checkDependencies(manifest, cwd);
+  const missing = checkDependencies(manifest, projectBase);
   if (missing.length > 0) {
     if (!opts.dependencies) {
       console.error(
@@ -125,12 +126,12 @@ export async function installPackage(
       process.exit(1);
     }
     for (const dep of missing) {
-      await installPackage(dep, opts, cwd);
+      await installPackage(dep, opts, projectBase);
     }
   }
 
-  const agentBase = getAgentBasePath(cwd);
-  const bundlePathMap = buildBundlePathMap(manifest, opts.binaryScope, cwd);
+  const agentBase = getAgentBasePath(projectBase);
+  const bundlePathMap = buildBundlePathMap(manifest, opts.binaryScope, projectBase);
 
   const hasProgramAssets = (manifest.assets ?? []).some(
     (a) => a.type === "program"
@@ -139,7 +140,7 @@ export async function installPackage(
     hasProgramAssets && opts.promptScope === "project"
       ? opts.binaryScope === "user-bin"
         ? expandHome("~/.local/bin")
-        : path.join(cwd, ".atp_safehouse", `${manifest.name}-exec`, "bin")
+        : path.join(projectBase, ".atp_safehouse", `${manifest.name}-exec`, "bin")
       : undefined;
 
   copyPackageAssets(pkgDir, manifest, agentBase, bundlePathMap, installBinDir);
@@ -154,7 +155,7 @@ export async function installPackage(
       version,
       opts.binaryScope,
       source,
-      cwd
+      projectBase
     );
   } else {
     writeStationPackageManifest(manifest.name, {

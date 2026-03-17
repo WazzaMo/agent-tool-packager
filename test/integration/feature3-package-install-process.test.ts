@@ -34,6 +34,8 @@ describe("Integration: Feature 3 - Package Install Process", () => {
 
     projectDir = path.join(base, "sdl_c++_game");
     fs.mkdirSync(projectDir, { recursive: true });
+    // Add project marker so safehouse init succeeds
+    fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
 
     // Station needs agent-paths for cursor (Feature 3 workflow)
     runAtp(["station", "init"], atpCwd(pkgDir, stationDir));

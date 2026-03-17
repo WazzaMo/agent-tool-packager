@@ -6,6 +6,8 @@ import type { Command } from "commander";
 import { removeSafehousePackage } from "../remove/remove-safehouse.js";
 import { removeStationPackage } from "../remove/remove-station.js";
 
+import { findProjectBase } from "../config/paths.js";
+
 export function registerRemoveCommands(program: Command): void {
   const remove = program
     .command("remove")
@@ -15,7 +17,9 @@ export function registerRemoveCommands(program: Command): void {
     .command("safehouse <package>")
     .description("Remove package from current project's Safehouse")
     .action(async (pkgName: string) => {
-      removeSafehousePackage(pkgName, process.cwd());
+      const cwd = process.cwd();
+      const projectBase = findProjectBase(cwd) || cwd;
+      removeSafehousePackage(pkgName, projectBase);
     });
 
   remove
