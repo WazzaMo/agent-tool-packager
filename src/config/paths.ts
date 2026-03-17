@@ -93,8 +93,9 @@ export function isHomeDirectory(dir: string): boolean {
 
   // Additional heuristic checks from Feature 3
   const parent = path.dirname(resolved);
-  if (path.basename(parent) === "home") {
-    // If it's something like /home/user
+  const parentName = path.basename(parent);
+  if (parentName === "home" || parentName === "Users") {
+    // If it's something like /home/user or /Users/user
     if (fs.existsSync(path.join(resolved, ".ssh"))) return true;
     if (fs.existsSync(path.join(resolved, ".bashrc"))) return true;
   }

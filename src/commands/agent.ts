@@ -16,6 +16,7 @@ import {
   findProjectBase,
   getSafehousePath,
 } from "../config/paths.js";
+import { reinstallSafehousePackages } from "../install/reinstall.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
@@ -47,7 +48,7 @@ export function registerAgentCommands(program: Command): void {
     .argument("to", "'to' (literal)")
     .argument("<name>", "Agent to hand over to")
     .description("Hand over from current agent to a new agent")
-    .action((_to: string, name: string) => {
+    .action(async (_to: string, name: string) => {
       const cwd = process.cwd();
       const projectBase = ensureSafehouse(cwd);
 
@@ -69,7 +70,8 @@ export function registerAgentCommands(program: Command): void {
       };
       writeSafehouseConfig(updated, projectBase);
 
-      // TODO Phase 5: skill re-install/patching when switching agents
+      await reinstallSafehousePackages(projectBase);
+
       console.log(`Handed over to ${name} (${agentPath})`);
     });
 

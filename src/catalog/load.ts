@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
-import { getStationPath, pathExists } from "../config/paths.js";
+import { getStationPath, pathExists, findProjectBase } from "../config/paths.js";
 import type { Catalog, CatalogPackage } from "./types.js";
 
 const USER_CATALOG_FILE = "atp-catalog.yaml";
@@ -39,7 +39,8 @@ export function loadUserCatalog(): Catalog {
 
 /** Project catalog from ./.atp-local/catalog.yaml */
 export function loadProjectCatalog(cwd: string = process.cwd()): Catalog {
-  const catalogPath = path.join(cwd, PROJECT_CATALOG_DIR, PROJECT_CATALOG_FILE);
+  const projectBase = findProjectBase(cwd) || cwd;
+  const catalogPath = path.join(projectBase, PROJECT_CATALOG_DIR, PROJECT_CATALOG_FILE);
 
   if (!fs.existsSync(catalogPath)) {
     return { packages: [] };
