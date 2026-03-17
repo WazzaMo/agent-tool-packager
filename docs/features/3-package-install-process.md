@@ -267,6 +267,61 @@ works.
 
 # ATP Command Specifics
 
+# atp safehouse init
+
+It is assumed that this is being executed from the intended project
+directory but confirmation should be sought.
+
+If the `SAFEHOUSE_PROJECT_PATH` environment variable is set, this overrides
+path checking logic, provided the path is valid. This can assist with integration
+testing, where a test "project" directory can be created and used for the
+`SAFEHOUSE_PROJECT_PATH` to then init a Safehouse for testing.
+
+The init subcommand should use the findProjectBase algorithm (below) to confirm
+whether the current directory (CWD) is a viable project directory and not the
+home directory and if it cannot be confirmed, ask the user to explicity confirm
+or set the `SAFEHOUSE_PROJECT_PATH` as an override.
+
+
+## findProjectBase algorithm
+
+The signs confirming that it is the project directory include:
+
+1.  The presence of a version management tool, such as `.git` directory and `.gitigore`
+    file.
+
+2.  The presence of a VS Code config dir `.vscode`
+
+3.  Other, less confirming signals are other directories whose name starts
+    with a leading dot.
+
+4.  A valid path was given in the `SAFEHOUSE_PROJECT_PATH` environment variable.
+
+
+A sign the current directory is a user home directory, an anti-pattern, are:
+
+1.  Parent directory is called `home`
+
+2.  A `.ssh` directory is present
+
+3.  A `.bashrc` file or other .bash* files are present
+
+## Acceptance Criteria
+
+Start with the CWD as a guess to the project path.
+Use the findProjectBase algorithm to check or eliminate that guess.
+If uncertain, prompt the user to confirm or set the SAFEHOUSE_PROJECT_PATH and try again.
+
+Exit Codes:
+
+0  =  Success, path was confirmed using findProjectBase and the Station's directory was
+      successfully created and configured.
+
+1 =   Failure, the path could not be confirmed and the user did not provide confirmation.
+      The user has been prompted to set the SAFEHOUSE_PROJECT_PATH environment variable and try again.
+
+------
+
 # atp agent {agent-name}
 
 This command is specific to project work because it's here that
