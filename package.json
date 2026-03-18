@@ -1,12 +1,13 @@
 {
-  "name": "atp",
+  "name": "agent-tool-packager",
   "version": "0.1.0",
   "description": "CLI for agentic software development workflows",
   "type": "module",
   "main": "dist/atp.js",
   "bin": {
-    "atp": "dist/atp.js"
+    "atp": "bin/atp"
   },
+  "homepage": "https://github.com/WazzaMo/agent-tool-packager",
   "scripts": {
     "build": "vite build",
     "dev": "tsx src/atp.ts",
@@ -21,7 +22,7 @@
     "mcp",
     "catalog"
   ],
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=24.14.0"
   },
