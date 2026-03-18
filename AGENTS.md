@@ -26,7 +26,7 @@ This file summarises the project’s markdown documentation so agents can work e
 ## Documentation and conventions
 
 - **Markdown (doc-guide):** Use `#` for sections; empty line after headings; headings over bold; tables with rows under ~60 chars; Mermaid for diagrams. Notes in `docs/notes/` with date prefix `YYYY-MM-DD-topic.md`; release notes in `docs/release-notes` as `{semver}-Release-{date}.md`.
-- **Code (clean-code):** Prefer many small files (about 100–300 lines). Single responsibility; composition and dependency injection; interfaces over inheritance; Liskov substitutability; polymorphism only when it helps clarity.
+- **Code (clean-code):** Prefer many small files (about 100–300 lines). Single responsibility; composition and dependency injection; interfaces over inheritance; Liskov substitutability; polymorphism only when it helps clarity. Functions under ~50 lines—break into smaller named functions. Use JSDoc (`/** ... */`) for params, returns, and annotations. TypeScript: add a blank line after multi-line imports to aid readability. Build types and interfaces from smaller re-usable types. Tests: prefer many smaller test files (≈400 lines ok; split at ~800 lines).
 - **Contributing:** Fork and pull request; no secrets or generated dirs in repo; run tests before PR. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/doc-guide.md](docs/doc-guide.md). Implementation plans and architecture notes go in `docs/notes/`; CONTRIBUTING also references `docs/goals.md` and `docs/requirements.md`.
 
 ## Naming convention
