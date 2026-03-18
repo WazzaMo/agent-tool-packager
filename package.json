@@ -1,5 +1,5 @@
 {
-  "name": "agent-tool-packager",
+  "name": "@agent-tools/packager",
   "version": "0.1.0",
   "description": "CLI for agentic software development workflows",
   "type": "module",
