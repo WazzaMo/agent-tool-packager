@@ -168,4 +168,22 @@ describe("Integration: agent nomination", () => {
     });
     expect(out).toContain("Handed over to claude");
   });
+
+  it("atp agent unknown-agent fails when agent not in agent-paths (Feature 3)", () => {
+    const { stderr } = runAtpExpectExit(["agent", "unknown-agent"], 1, {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(stderr).toContain("Agent 'unknown-agent' is not configured in the Station");
+    expect(stderr).toContain("agent-paths");
+  });
+
+  it("atp agent handover to unknown-agent fails when agent not in agent-paths", () => {
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    const { stderr } = runAtpExpectExit(["agent", "handover", "to", "unknown-agent"], 1, {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(stderr).toContain("Agent 'unknown-agent' is not configured in the Station");
+  });
 });

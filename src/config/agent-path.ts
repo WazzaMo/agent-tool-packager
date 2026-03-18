@@ -9,6 +9,23 @@
 
 import type { StationConfig } from "./station-config.js";
 
+/**
+ * Check if agent is registered in Station's agent-paths.
+ * Feature 3: only agents with entries in agent-paths should be accepted.
+ *
+ * @param agentName - Agent name to check.
+ * @param stationConfig - Station config. May be null.
+ * @returns True if agent has an entry in agent-paths.
+ */
+export function isAgentInStationConfig(
+  agentName: string,
+  stationConfig: StationConfig | null
+): boolean {
+  const paths = stationConfig?.configuration?.["agent-paths"];
+  if (!paths || typeof paths !== "object") return false;
+  return Object.prototype.hasOwnProperty.call(paths, agentName);
+}
+
 export function resolveAgentProjectPath(
   agentName: string,
   stationConfig: StationConfig | null

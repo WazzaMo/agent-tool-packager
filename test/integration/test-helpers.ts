@@ -12,9 +12,16 @@ export const PROJECT_ROOT = path.resolve(__dirname, "../..");
 export const CLI_PATH = path.join(PROJECT_ROOT, "dist", "atp.js");
 export const FIXTURE_PKG = path.resolve(__dirname, "../fixtures/test-package");
 
+/** Quote arg for shell if it contains space. */
+function shellArgs(args: string[]): string {
+  return args
+    .map((a) => (a.includes(" ") || a.includes('"') ? `"${a.replace(/"/g, '\\"')}"` : a))
+    .join(" ");
+}
+
 export function runAtp(args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): string {
   const env = { ...process.env, ...opts?.env };
-  return execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
+  return execSync(`node "${CLI_PATH}" ${shellArgs(args)}`, {
     encoding: "utf8",
     cwd: opts?.cwd ?? PROJECT_ROOT,
     env,
@@ -27,7 +34,7 @@ export function runAtpExpectExit(
   opts?: { cwd?: string; env?: NodeJS.ProcessEnv }
 ): { stdout: string; stderr: string } {
   try {
-    const stdout = execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
+    const stdout = execSync(`node "${CLI_PATH}" ${shellArgs(args)}`, {
       encoding: "utf8",
       cwd: opts?.cwd ?? PROJECT_ROOT,
       env: { ...process.env, ...opts?.env },

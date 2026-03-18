@@ -203,4 +203,115 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     expect(lines).toContain("doc-guide.md");
     expect(lines).toContain("coding-standard.md");
   });
+
+  it("atp package summary lists set items and missing (Feature 2)", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["package", "type", "rule"], o);
+    runAtp(["package", "name", "summary-pkg"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    runAtp(["package", "usage", "Test usage"], o);
+    runAtp(["package", "developer", "Warwick Molloy"], o);
+    runAtp(["package", "license", "Apache 2.0"], o);
+    runAtp(["package", "copyright", "Copyright 2026"], o);
+
+    const result = runAtpExpectExit(["package", "summary"], 1, o);
+    const out = result.stdout + result.stderr;
+    expect(out).toMatch(/Name.*summary-pkg|name.*summary-pkg/i);
+    expect(out).toMatch(/Type.*Rule|type.*Rule/i);
+    expect(out).toMatch(/Developer|developer/i);
+    expect(out).toMatch(/License|license/i);
+    expect(out).toMatch(/Copyright|copyright/i);
+    expect(out).toMatch(/Missing|missing/i);
+    expect(out).toMatch(/components|component/i);
+  });
+
+  it("atp package component remove removes from manifest and stage.tar (Feature 2)", () => {
+    fs.writeFileSync(path.join(pkgDir, "keep.md"), "# Keep\n");
+    fs.writeFileSync(path.join(pkgDir, "remove.md"), "# Remove\n");
+    initPackage(pkgDir, stationDir, {
+      type: "rule",
+      name: "comp-remove-pkg",
+      usage: "Component remove test",
+      components: ["keep.md", "remove.md"],
+    });
+    expect(listStageTar(pkgDir)).toMatch(/remove\.md/);
+    runAtp(["package", "component", "remove", "remove.md"], atpCwd(pkgDir, stationDir));
+    const list = listStageTar(pkgDir);
+    expect(list).not.toMatch(/remove\.md/);
+    expect(list).toMatch(/keep\.md/);
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).not.toMatch(/remove\.md/);
+    expect(manifest).toMatch(/keep\.md/);
+  });
+
+  it("atp package component remove when not in package exits 1 (Feature 2)", () => {
+    fs.writeFileSync(path.join(pkgDir, "only.md"), "# Only\n");
+    initPackage(pkgDir, stationDir, {
+      type: "rule",
+      name: "no-remove-pkg",
+      usage: "No remove",
+      components: ["only.md"],
+    });
+    const result = runAtpExpectExit(
+      ["package", "component", "remove", "never-added.md"],
+      1,
+      atpCwd(pkgDir, stationDir)
+    );
+    expect(result.stdout + result.stderr).toMatch(/had not been included|not.*included|not listed/i);
+  });
+
+  it("atp package developer, copyright, license set fields (Feature 2)", () => {
+    fs.writeFileSync(path.join(pkgDir, "x.md"), "# X\n");
+    initPackage(pkgDir, stationDir, {
+      type: "rule",
+      name: "metadata-pkg",
+      usage: "Metadata test",
+      components: ["x.md"],
+    });
+    runAtp(["package", "developer", "Jane Doe"], atpCwd(pkgDir, stationDir));
+    runAtp(
+      ["package", "copyright", "Jane Doe 2026", "All rights reserved"],
+      atpCwd(pkgDir, stationDir)
+    );
+    runAtp(["package", "license", "MIT"], atpCwd(pkgDir, stationDir));
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(/developer.*Jane|Jane Doe/);
+    expect(manifest).toMatch(/copyright/);
+    expect(manifest).toMatch(/Jane Doe 2026/);
+    expect(manifest).toMatch(/All rights reserved/);
+    expect(manifest).toMatch(/license.*MIT|MIT/);
+  });
+
+  it("atp package add copyright appends to list (Feature 2)", () => {
+    fs.writeFileSync(path.join(pkgDir, "y.md"), "# Y\n");
+    initPackage(pkgDir, stationDir, {
+      type: "rule",
+      name: "add-copyright-pkg",
+      usage: "Add copyright",
+      components: ["y.md"],
+    });
+    runAtp(["package", "copyright", "Line one"], atpCwd(pkgDir, stationDir));
+    runAtp(["package", "add", "copyright", "Line two"], atpCwd(pkgDir, stationDir));
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(/Line one/);
+    expect(manifest).toMatch(/Line two/);
+  });
+
+  it("validate package exit 1 when stage.tar missing but mandatory fields set (Feature 2)", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    fs.writeFileSync(path.join(pkgDir, "ref.md"), "# Ref\n");
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["package", "type", "rule"], o);
+    runAtp(["package", "name", "exit1-pkg"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    runAtp(["package", "usage", "Test"], o);
+    runAtp(["package", "component", "add", "ref.md"], o);
+    fs.unlinkSync(path.join(pkgDir, "stage.tar"));
+
+    const result = runAtpExpectExit(["validate", "package"], 1, o);
+    expect(result.stdout + result.stderr).toMatch(/stage\.tar|not complete|missing/i);
+  });
 });

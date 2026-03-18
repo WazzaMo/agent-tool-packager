@@ -13,7 +13,10 @@ import {
   writeSafehouseConfig,
 } from "../config/load.js";
 
-import { resolveAgentProjectPath } from "../config/agent-path.js";
+import {
+  isAgentInStationConfig,
+  resolveAgentProjectPath,
+} from "../config/agent-path.js";
 
 import { findProjectBase } from "../config/paths.js";
 
@@ -21,6 +24,10 @@ import { reinstallSafehousePackages } from "../install/reinstall.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
+
+const AGENT_NOT_CONFIGURED_MSG =
+  (name: string) =>
+  `Agent '${name}' is not configured in the Station. Add it to agent-paths in atp-config.yaml.`;
 
 /**
  * Ensure Safehouse exists. Uses findProjectBase to resolve project from cwd.
@@ -75,6 +82,10 @@ export function registerAgentCommands(program: Command): void {
       }
 
       const stationConfig = loadStationConfig();
+      if (!isAgentInStationConfig(name, stationConfig)) {
+        console.error(AGENT_NOT_CONFIGURED_MSG(name));
+        process.exit(1);
+      }
       const agentPath = resolveAgentProjectPath(name, stationConfig);
 
       ensureAgentDir(agentPath, projectBase);
@@ -111,6 +122,10 @@ export function registerAgentCommands(program: Command): void {
       }
 
       const stationConfig = loadStationConfig();
+      if (!isAgentInStationConfig(name, stationConfig)) {
+        console.error(AGENT_NOT_CONFIGURED_MSG(name));
+        process.exit(1);
+      }
       const agentPath = resolveAgentProjectPath(name, stationConfig);
 
       ensureAgentDir(agentPath, projectBase);

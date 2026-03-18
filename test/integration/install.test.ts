@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG } from "./test-helpers.js";
+import { runAtp, runAtpExpectExit, FIXTURE_PKG } from "./test-helpers.js";
 
 describe("Integration: install and list", () => {
   let stationDir: string;
@@ -45,6 +45,17 @@ describe("Integration: install and list", () => {
     }
   });
 
+  it("atp install test-package defaults to project scope (Feature 1)", () => {
+    const out = runAtp(["install", "test-package"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:project");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    expect(fs.existsSync(skillPath)).toBe(true);
+  });
+
   it("atp install test-package --project installs to safehouse", () => {
     const out = runAtp(["install", "test-package", "--project"], {
       cwd: projectDir,
@@ -84,5 +95,49 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project, bin:project-bin)");
+  });
+
+  it("atp install fails with meaningful error when dependency missing (Feature 1)", () => {
+    const depPkgDir = path.join(os.tmpdir(), `atp-dep-pkg-${Date.now()}`);
+    fs.mkdirSync(depPkgDir, { recursive: true });
+    fs.mkdirSync(path.join(depPkgDir, "skills"), { recursive: true });
+    fs.writeFileSync(
+      path.join(depPkgDir, "atp-package.yaml"),
+      `name: pkg-with-deps
+version: 1.0.0
+program_dependencies:
+  - nonexistent-dep
+assets:
+  - path: skills/skill.md
+    type: skill
+    name: skill
+`
+    );
+    fs.writeFileSync(path.join(depPkgDir, "skills", "skill.md"), "# Skill\n");
+    const catalogPath = path.join(stationDir, "atp-catalog.yaml");
+    const catalog = fs.readFileSync(catalogPath, "utf8");
+    fs.writeFileSync(
+      catalogPath,
+      catalog +
+        `
+  - name: pkg-with-deps
+    version: 1.0.0
+    location: file://${depPkgDir.replace(/\\/g, "/")}
+`
+    );
+    try {
+      const result = runAtpExpectExit(["install", "pkg-with-deps"], 1, {
+        cwd: projectDir,
+        env: { STATION_PATH: stationDir },
+      });
+      expect(result.stderr + result.stdout).toMatch(/unmet dependencies|nonexistent-dep/);
+      expect(result.stderr + result.stdout).toMatch(/--dependencies/);
+    } finally {
+      try {
+        fs.rmSync(depPkgDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
   });
 });

@@ -6,8 +6,10 @@ import type { Command } from "commander";
 import { loadDevManifest } from "../package/load-manifest.js";
 import { saveDevManifest } from "../package/save-manifest.js";
 import { componentAdd } from "../package/component-add.js";
+import { componentRemove } from "../package/component-remove.js";
 import { bundleAdd } from "../package/bundle-add.js";
 import { bundleRemove } from "../package/bundle-remove.js";
+import { packageSummary } from "../package/package-summary.js";
 
 export function registerPackageCommands(program: Command): void {
   const pkg = program
@@ -75,6 +77,81 @@ export function registerPackageCommands(program: Command): void {
       saveDevManifest(process.cwd(), m);
     });
 
+  pkg
+    .command("developer <name>")
+    .description("Set package developer (author)")
+    .action((name: string) => {
+      const m = loadDevManifest(process.cwd());
+      if (!m) {
+        console.error("No atp-package.yaml. Run `atp create package skeleton` first.");
+        process.exit(1);
+      }
+      m.developer = name.slice(0, 80);
+      saveDevManifest(process.cwd(), m);
+    });
+
+  pkg
+    .command("copyright <lines...>")
+    .description("Set package copyright (overwrites)")
+    .action((...args: unknown[]) => {
+      const m = loadDevManifest(process.cwd());
+      if (!m) {
+        console.error("No atp-package.yaml. Run `atp create package skeleton` first.");
+        process.exit(1);
+      }
+      const lines = (Array.isArray(args[0]) ? args[0] : args).filter(
+        (a): a is string => typeof a === "string"
+      );
+      m.copyright = lines.map((s) => String(s).slice(0, 80));
+      saveDevManifest(process.cwd(), m);
+    });
+
+  pkg
+    .command("license <license>")
+    .description("Set package license")
+    .action((license: string) => {
+      const m = loadDevManifest(process.cwd());
+      if (!m) {
+        console.error("No atp-package.yaml. Run `atp create package skeleton` first.");
+        process.exit(1);
+      }
+      m.license = license.slice(0, 80);
+      saveDevManifest(process.cwd(), m);
+    });
+
+  pkg
+    .command("summary")
+    .description("Print package summary and missing fields")
+    .action(() => {
+      packageSummary(process.cwd());
+    });
+
+  pkg
+    .command("add <what> <values...>")
+    .description("Add to list (e.g. add copyright 'line2')")
+    .action((what: string, ...rest: unknown[]) => {
+      const m = loadDevManifest(process.cwd());
+      if (!m) {
+        console.error("No atp-package.yaml. Run `atp create package skeleton` first.");
+        process.exit(1);
+      }
+      const raw = Array.isArray(rest[0]) ? (rest[0] as unknown[]) : rest;
+      const vals = raw
+        .filter((a): a is string => typeof a === "string")
+        .map((s) => String(s).slice(0, 80));
+      if (what === "copyright") {
+        const existing = m.copyright ?? [];
+        m.copyright = [...existing, ...vals];
+      } else if (what === "usage") {
+        const existing = m.usage ?? [];
+        m.usage = [...existing, ...vals];
+      } else {
+        console.error(`Unknown add target: ${what}. Use 'copyright' or 'usage'.`);
+        process.exit(1);
+      }
+      saveDevManifest(process.cwd(), m);
+    });
+
   const component = pkg.command("component").description("Manage package components");
   component
     .command("add <paths...>")
@@ -84,6 +161,12 @@ export function registerPackageCommands(program: Command): void {
       for (const p of paths) {
         componentAdd(process.cwd(), p);
       }
+    });
+  component
+    .command("remove <path>")
+    .description("Remove a component from the package and stage.tar")
+    .action((filePath: string) => {
+      componentRemove(process.cwd(), filePath);
     });
 
   const bundle = pkg.command("bundle").description("Manage package bundles");

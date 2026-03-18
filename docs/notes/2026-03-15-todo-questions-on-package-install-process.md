@@ -9,6 +9,10 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 
 ## Updates (2026-03-18)
 
+### Agent Name Validation (Feature 3)
+
+- **Implemented.** Feature 3 (lines 332–334) requires that only agents with entries in `agent-paths` be accepted. Added `isAgentInStationConfig()` in `src/config/agent-path.ts` and validation in `src/commands/agent.ts` for both `atp agent <name>` and `atp agent handover to <name>`. Unknown agents now exit with code 1 and message: "Agent 'X' is not configured in the Station. Add it to agent-paths in atp-config.yaml." Integration tests added in `test/integration/init.test.ts`.
+
 ### Coding Standards Applied (docs/clean-code.md)
 
 - **JSDoc:** Added `@param`, `@returns`, and descriptions to exported and key internal functions in Feature 3 sources: `install.ts`, `copy-assets.ts`, `agent.ts`, `paths.ts`, `load.ts`, `safehouse-init.ts`, `resolve.ts`, `reinstall.ts`.
@@ -31,7 +35,7 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 
 ### atp agent project base discovery (Feature 3 acceptance criteria)
 
-- **findProjectBase:** Added to `src/config/paths.ts`. Examines cwd and parents (radius 2) for `.git` or `.vscode` markers. **Not yet wired:** `src/commands/agent.ts` still uses `process.cwd()` directly; agent command does not yet use findProjectBase to resolve project base when run from a subdirectory.
+- **findProjectBase:** Added to `src/config/paths.ts`. Examines cwd and parents (radius 2) for `.git` or `.vscode` markers. Wired into agent command in 2026-03-18 updates.
 
 ---------------------------------------------------------------------------
 
@@ -74,6 +78,7 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 | 6. Dependencies | Resolved | Feature 1: `--dependencies` pre-approval, user in control |
 | 7. Program asset installation | Resolved | Executables copied to user-bin or project-bin. |
 | 8. atp agent project base discovery | Resolved | findProjectBase in paths.ts; wired into agent, safehouse, install, remove commands. |
+| 9. Agent name validation | Resolved | `isAgentInStationConfig`; `atp agent` and `atp agent handover` reject unknown agents. |
 
 ---------------------------------------------------------------------------
 
@@ -83,7 +88,6 @@ Review of Feature 3 source (`src/install/*`, `src/commands/agent.ts`, `src/confi
 
 | Gap | Severity | Description |
 |-----|----------|-------------|
-| Agent name validation | Medium | Feature 3 (lines 332–334) states: "It will only accept agent names where the Station config has an `agent-paths` object with entries for that agent." The implementation accepts any agent name; `resolveAgentProjectPath` falls back to `.${agentName}/` when no entry exists. Consider validating agent presence in `agent-paths` before accepting. |
 | Interactive confirmation for safehouse init | Low | Feature 3 (lines 279–283) suggests prompting the user to "explicitly confirm" when project base is uncertain. Current behaviour exits with an error and instructs the user to set `SAFEHOUSE_PROJECT_PATH`. No interactive stdin prompt. May be intentional (non-interactive CLI). |
 | Param naming in load.ts | Low | Functions such as `loadSafehouseConfig(cwd)`, `addPackageToSafehouseManifest(..., cwd)` use `cwd` but expect the **project base** directory. Callers now pass `projectBase` from `findProjectBase`. Consider renaming to `projectBase` for API clarity. |
 | Bundle vs package.tar.gz layout | Info | Feature 3 (step 4) describes unpacking bundle directories from `package.tar.gz` with UNIX conformant / exec-filter handling. The implementation copies from `manifest.assets` (program type) and uses `manifest.bundles` for `{bundle_name}` path mapping. Package layout is assumed correct from catalog add; UNIX conformant handling is in the packager (Feature 2). Install assumes catalog already produced the desired structure. |
@@ -107,3 +111,4 @@ Following a review of `docs/features/3-package-install-process.md` and the curre
 - [x] Implement text material patching in `src/install/copy-assets.ts`.
 - [x] Implement program asset copying (executables to user-bin or project-bin).
 - [x] Wire `findProjectBase` into `atp agent` command for project base discovery from subdirectories.
+- [x] Agent name validation: reject unknown agents in `atp agent` and `atp agent handover` (Feature 3 lines 332–334).
