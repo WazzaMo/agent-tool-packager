@@ -5,17 +5,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Command } from "commander";
+
 import {
   loadSafehouseConfig,
   loadStationConfig,
   safehouseExists,
   writeSafehouseConfig,
 } from "../config/load.js";
+
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+
 import {
   findProjectBase,
-  getSafehousePath,
 } from "../config/paths.js";
+
 import { reinstallSafehousePackages } from "../install/reinstall.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
@@ -37,6 +40,12 @@ function ensureAgentDir(projectPath: string, projectBase: string): void {
   }
 }
 
+/**
+ * Registers agent subcommands.
+ * 
+ * @param program Command object to register.
+ * @returns void
+ */
 export function registerAgentCommands(program: Command): void {
   const agent = program
     .command("agent")
