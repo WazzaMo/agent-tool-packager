@@ -30,11 +30,49 @@ export function loadDevManifest(cwd: string): DevPackageManifest | null {
     return parsePackageList((data as { Package: unknown[] }).Package);
   }
 
-  return data as DevPackageManifest;
+  return normalizeDevManifest(data as Record<string, unknown>);
 }
 
+function normalizeDevManifest(data: Record<string, unknown>): DevPackageManifest {
+  return {
+    name: String(data.name ?? ""),
+    type: String(data.type ?? ""),
+    version: String(data.version ?? ""),
+    usage: Array.isArray(data.usage)
+      ? data.usage.map(String)
+      : data.usage != null
+      ? [String(data.usage)]
+      : [],
+    components: Array.isArray(data.components)
+      ? data.components.map(String)
+      : data.components != null
+      ? [String(data.components)]
+      : [],
+    developer: data.developer != null ? String(data.developer) : undefined,
+    license: data.license != null ? String(data.license) : undefined,
+    copyright: Array.isArray(data.copyright) ? data.copyright.map(String) : undefined,
+    bundles: Array.isArray(data.bundles) ? data.bundles.map((b) => {
+      if (b && typeof b === "object") {
+        const bObj = b as Record<string, unknown>;
+        return {
+          path: String(bObj.path ?? ""),
+          "exec-filter": bObj["exec-filter"] ? String(bObj["exec-filter"]) : undefined,
+        };
+      }
+      return String(b);
+    }) : undefined,
+  };
+}
+
+
 function parsePackageList(list: unknown[]): DevPackageManifest {
-  const out: DevPackageManifest = {};
+  const out: DevPackageManifest = {
+    name: "",
+    type: "",
+    version: "",
+    usage: [],
+    components: [],
+  };
   for (const item of list) {
     if (item && typeof item === "object") {
       const obj = item as Record<string, unknown>;

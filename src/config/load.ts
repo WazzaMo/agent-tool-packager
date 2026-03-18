@@ -196,7 +196,7 @@ export function writeStationPackageManifest(
   );
 }
 
-const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
+const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 
 /**
  * Load Safehouse list from Station. Returns expanded absolute paths to .atp_safehouse directories.

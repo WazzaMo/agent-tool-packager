@@ -13,7 +13,7 @@ import {
 } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";
-const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
+const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 const CATALOG_FILE = "atp-catalog.yaml";
 const MANIFEST_DIR = "manifest";
 

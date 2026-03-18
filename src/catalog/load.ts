@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
 import { getStationPath, pathExists, findProjectBase } from "../config/paths.js";
-import type { Catalog, CatalogPackage } from "./types.js";
+import type { Catalog, CatalogPackage, CatalogRoot, CatalogPackages } from "./types.js";
 
 const USER_CATALOG_FILE = "atp-catalog.yaml";
 const PROJECT_CATALOG_FILE = "catalog.yaml";
@@ -15,6 +15,34 @@ const PROJECT_CATALOG_DIR = ".atp-local";
 /** Global catalog. Empty for now; can point to bundled catalog if one exists. */
 export function loadGlobalCatalog(): Catalog {
   return { packages: [] };
+}
+
+function resolveCatalogData(data: unknown): Catalog | null {
+  if (!data || typeof data !== "object") return null;
+  const root = data as Record<string, unknown>;
+  if ("catalog" in root && typeof root.catalog === "object") {
+    return root.catalog as Catalog;
+  }
+  return data as Catalog;
+}
+
+function flattenPackages(packages: CatalogPackage[] | CatalogPackages | undefined): CatalogPackage[] {
+  if (!packages) return [];
+  if (Array.isArray(packages)) {
+    return packages.map(normalizePackage);
+  }
+  
+  const flat: CatalogPackage[] = [];
+  const p = packages as CatalogPackages;
+  
+  if (Array.isArray(p.standard)) {
+    flat.push(...p.standard.map(normalizePackage));
+  }
+  if (Array.isArray(p.user)) {
+    flat.push(...p.user.map(normalizePackage));
+  }
+  
+  return flat;
 }
 
 /** User catalog from Station (~/.atp_station/atp-catalog.yaml). */
@@ -27,13 +55,14 @@ export function loadUserCatalog(): Catalog {
   }
 
   const content = fs.readFileSync(catalogPath, "utf8");
-  const data = yaml.load(content) as Catalog | null;
-  if (!data || !Array.isArray(data.packages)) {
-    return { packages: [] };
-  }
+  const raw = yaml.load(content);
+  const data = resolveCatalogData(raw);
+  
+  if (!data) return { packages: [] };
 
   return {
-    packages: data.packages.map(normalizePackage),
+    ...data,
+    packages: flattenPackages(data.packages),
   };
 }
 
@@ -51,17 +80,21 @@ export function loadProjectCatalog(cwd: string = process.cwd()): Catalog {
   }
 
   const content = fs.readFileSync(catalogPath, "utf8");
-  const data = yaml.load(content) as Catalog | null;
-  if (!data || !Array.isArray(data.packages)) {
-    return { packages: [] };
-  }
+  const raw = yaml.load(content);
+  const data = resolveCatalogData(raw);
+
+  if (!data) return { packages: [] };
 
   return {
-    packages: data.packages.map(normalizePackage),
+    ...data,
+    packages: flattenPackages(data.packages),
   };
 }
 
 function normalizePackage(entry: unknown): CatalogPackage {
+  if (typeof entry === "string") {
+    return { name: entry };
+  }
   if (entry && typeof entry === "object" && "name" in entry) {
     const p = entry as Record<string, unknown>;
     return {

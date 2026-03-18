@@ -129,17 +129,17 @@ describe("config/load", () => {
   });
 
   describe("loadSafehouseList", () => {
-    it("returns empty when no safehouse_list.yaml", () => {
+    it("returns empty when no atp-safehouse-list.yaml", () => {
       const tmp = createTempDir();
       process.env.STATION_PATH = tmp;
       expect(loadSafehouseList()).toEqual([]);
       fs.rmSync(tmp, { recursive: true });
     });
 
-    it("returns expanded paths from safehouse_list.yaml", () => {
+    it("returns expanded paths from atp-safehouse-list.yaml", () => {
       const tmp = createTempDir();
       fs.writeFileSync(
-        path.join(tmp, "safehouse_list.yaml"),
+        path.join(tmp, "atp-safehouse-list.yaml"),
         "safehouse_paths:\n  - /abs/path/to/safe"
       );
       process.env.STATION_PATH = tmp;
