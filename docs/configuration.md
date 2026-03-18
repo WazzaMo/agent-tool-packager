@@ -66,36 +66,52 @@ Will hold information about the Agent Tool Packager (ATP) Station.
 The Station configuration will contain at minimum:
 
 ```yaml
+# ATP Station Configuration
+# Version: 0.1.0
+
 configuration:
-    - version: 0.1.0
-    - agent-paths:
-        - cursor:
-            - home_path: ~/.cursor/
-            - project_path: .cursor/
-            - rule: rules/
-            - commands: commands/
-            - skills: skills/
-        - codex:
-            - home_path: ~/.codex
-        - claude:
-            - home_path: ~/.claude
-        - gemini:
-            - home_path: ~/.gemini
-    - standard-catalog:
-        url: https://agent-tool-packager.example.com/packages/0.1.0/
+  # The version of the configuration schema
+  version: "0.1.0"
+
+  # Path configurations for different AI agents supported by ATP.
+  # These define where the agents expect their rules, commands, and skills.
+  agent-paths:
+    cursor:
+      home_path: "~/.cursor/"
+      project_path: ".cursor/"
+      rule: "rules/"
+      commands: "commands/"
+      skills: "skills/"
+    
+    codex:
+      home_path: "~/.codex"
+      
+    claude:
+      home_path: "~/.claude"
+      
+    gemini:
+      home_path: "~/.gemini"
+      project_path: ".gemini/"
+      rule: "rules/"
+      skills: "skills/"
+
+  # The standard catalog URL provides the default source for package updates.
+  standard-catalog:
+    url: "https://agent-tool-packager.example.com/packages/0.1.0/"
 ```
+
 
 #### Station Catalog `atp-catalog.yaml`
 
 ```yaml
 catalog:
-    - standard_packages-path: ./standard_packages/
-    - user_packages-path: ./user_packages/
-    - packages:
-        - standard:
-            - vecfs
-        - user:
-            - special-prompt-set
+  standard_packages-path: ./standard_packages/
+  user_packages-path: ./user_packages/
+  packages:
+    standard:
+      - vecfs
+    user:
+      - special-prompt-set
 ```
 
 #### The Station's Safehouse list
