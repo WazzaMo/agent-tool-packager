@@ -1,6 +1,7 @@
 /**
- * Copy package assets (skills, rules) to project agent directory.
- * Programs (tar.gz/bin) extraction is TODO.
+ * Copy package assets (skills, rules, programs) to project agent directory.
+ * Programs are copied to user-bin (~/.local/bin) or project-bin (.atp_safehouse/{pkg}-exec/bin).
+ * Patches {bundle_name} placeholders in markdown per Feature 3.
  */
 
 import fs from "node:fs";
@@ -14,7 +15,13 @@ const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
   program: "bin",
 };
 
-/** Patch {bundle_name} placeholders in markdown content. Feature 3: docs/features/3-package-install-process.md */
+/**
+ * Patch {bundle_name} placeholders in markdown content.
+ * Feature 3: replaces {bundle_name} with absolute install path for executables.
+ * @param content - Markdown or text content.
+ * @param bundlePathMap - Map of bundle name to install path.
+ * @returns Content with placeholders replaced.
+ */
 function patchPlaceholders(
   content: string,
   bundlePathMap: Record<string, string>
@@ -26,11 +33,20 @@ function patchPlaceholders(
   return result;
 }
 
+/** Escape special regex characters for safe use in RegExp. */
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Copy asset file from package dir to agent dir or bin dir. Creates target dirs as needed. */
+/**
+ * Copy a single asset from package dir to agent dir or bin dir.
+ * Patches placeholders in markdown skills/rules. Creates target dirs as needed.
+ * @param pkgDir - Package directory.
+ * @param agentBase - Agent base path (e.g. .cursor/).
+ * @param asset - Asset definition from manifest.
+ * @param bundlePathMap - Optional map for {bundle_name} patching.
+ * @param installBinDir - Optional bin directory for program assets.
+ */
 function copyAsset(
   pkgDir: string,
   agentBase: string,
@@ -69,7 +85,14 @@ function copyAsset(
   }
 }
 
-/** Copy all markdown/assets from manifest to agent directory. */
+/**
+ * Copy all assets from manifest to agent directory (skills, rules) and optionally to bin.
+ * @param pkgDir - Package directory.
+ * @param manifest - Package manifest with assets.
+ * @param agentBase - Agent base path.
+ * @param bundlePathMap - Optional map for {bundle_name} placeholder patching.
+ * @param installBinDir - Optional bin directory for program assets.
+ */
 export function copyPackageAssets(
   pkgDir: string,
   manifest: PackageManifest,

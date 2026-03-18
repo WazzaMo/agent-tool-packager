@@ -11,13 +11,19 @@ import {
   loadProjectCatalog,
   loadUserCatalog,
 } from "../catalog/load.js";
+
 import { mergeCatalogs } from "../catalog/merge.js";
 import type { CatalogPackage } from "../catalog/types.js";
 import type { PackageManifest } from "./types.js";
 
 const MANIFEST_NAMES = ["atp-package.yaml", "package.yaml"];
 
-/** Resolve package by name from merged catalog. Returns null if not found. */
+/**
+ * Resolve package by name from merged catalog.
+ * @param name - Package name.
+ * @param cwd - Project base directory. Defaults to process.cwd().
+ * @returns Catalog package or null if not found.
+ */
 export function resolvePackage(
   name: string,
   cwd: string = process.cwd()
@@ -31,7 +37,11 @@ export function resolvePackage(
   return pkg ?? null;
 }
 
-/** Parse file:// URL to filesystem path */
+/**
+ * Parse file:// URL to filesystem path.
+ * @param location - URL string (e.g. file:///path/to/pkg).
+ * @returns Absolute path or null if not a file URL.
+ */
 function parseFileUrl(location: string): string | null {
   if (!location.startsWith("file://")) {
     return null;
@@ -43,7 +53,11 @@ function parseFileUrl(location: string): string | null {
   return rest;
 }
 
-/** Load package manifest from package directory. Returns null if not found. */
+/**
+ * Load package manifest from package directory.
+ * @param pkgDir - Package directory path.
+ * @returns Package manifest or null if not found.
+ */
 export function loadPackageManifest(pkgDir: string): PackageManifest | null {
   for (const name of MANIFEST_NAMES) {
     const manifestPath = path.join(pkgDir, name);
@@ -58,7 +72,12 @@ export function loadPackageManifest(pkgDir: string): PackageManifest | null {
   return null;
 }
 
-/** Resolve package location to absolute path. Returns null for non-file locations. */
+/**
+ * Resolve package location to absolute path.
+ * @param location - File URL (file://) or path.
+ * @param cwd - Project base for relative paths. Defaults to process.cwd().
+ * @returns Absolute path or null for non-file locations.
+ */
 export function resolvePackagePath(
   location: string | undefined,
   cwd: string = process.cwd()

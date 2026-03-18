@@ -7,7 +7,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-/** Expand ~ to home directory */
+/**
+ * Expand ~ or $HOME to absolute home directory path.
+ * @param p - Path that may start with ~/ or $HOME.
+ * @returns Resolved path.
+ */
 export function expandHome(p: string): string {
   if (p.startsWith("~/") || p === "~") {
     return path.join(os.homedir(), p.slice(1));
@@ -24,6 +28,7 @@ export const DEFAULT_STATION_PATH = path.join(os.homedir(), ".atp_station");
 /**
  * Resolve the Station directory path.
  * Uses STATION_PATH env var if set; otherwise ~/.atp_station.
+ * @returns Absolute path to Station directory.
  */
 export function getStationPath(): string {
   const env = process.env.STATION_PATH;
@@ -34,13 +39,19 @@ export function getStationPath(): string {
 }
 
 /**
- * Resolve the Safehouse path for the current working directory.
+ * Resolve the Safehouse path (.atp_safehouse) under the project directory.
+ * @param cwd - Project base directory (not necessarily process.cwd(); use findProjectBase for subdirs).
+ * @returns Path to .atp_safehouse directory.
  */
 export function getSafehousePath(cwd: string = process.cwd()): string {
   return path.join(cwd, ".atp_safehouse");
 }
 
-/** Check if a path exists and is a directory */
+/**
+ * Check if a path exists and is a directory.
+ * @param dir - Path to check.
+ * @returns True if directory exists.
+ */
 export function pathExists(dir: string): boolean {
   try {
     return fs.existsSync(dir) && fs.statSync(dir).isDirectory();
@@ -56,7 +67,8 @@ const PROJECT_BASE_RADIUS = 2;
  * Find project base directory by examining cwd and parents (radius 2).
  * Respects SAFEHOUSE_PROJECT_PATH environment variable if set.
  * Looks for .git or .vscode as evidence of project base. Feature 3 acceptance criteria.
- * @returns Project base path or null if not found
+ * @param cwd - Directory to start from. Defaults to process.cwd().
+ * @returns Project base path or null if not found.
  */
 export function findProjectBase(cwd: string = process.cwd()): string | null {
   // Check environment variable override first
@@ -85,6 +97,9 @@ export function findProjectBase(cwd: string = process.cwd()): string | null {
 
 /**
  * Check if a directory looks like a user's home directory (anti-pattern).
+ * Feature 3: used during safehouse init to avoid init in home dir.
+ * @param dir - Path to check.
+ * @returns True if directory appears to be home (parent is "home"/"Users", .ssh/.bashrc present).
  */
 export function isHomeDirectory(dir: string): boolean {
   const resolved = path.resolve(dir);

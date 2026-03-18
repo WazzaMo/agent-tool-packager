@@ -10,13 +10,16 @@ import {
   addPackageToSafehouseManifest,
   writeStationPackageManifest,
 } from "../config/load.js";
+
 import { expandHome, findProjectBase } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "./resolve.js";
+
 import { copyPackageAssets } from "./copy-assets.js";
 import type { PackageManifest } from "./types.js";
 
@@ -32,7 +35,12 @@ export interface InstallOptions {
   dependencies: boolean;
 }
 
-/** Check for missing dependencies. Returns list of missing package names. */
+/**
+ * Check for missing dependencies.
+ * @param manifest - Package manifest with program_dependencies.
+ * @param projectBase - Project root directory.
+ * @returns List of missing package names.
+ */
 function checkDependencies(
   manifest: PackageManifest,
   projectBase: string
@@ -48,7 +56,14 @@ function checkDependencies(
   return missing;
 }
 
-/** Build bundle name -> install path map for text patching. Feature 3: {bundle_name} placeholder. */
+/**
+ * Build bundle name -> install path map for text patching.
+ * Feature 3: {bundle_name} placeholder in rules/skills.
+ * @param manifest - Package manifest with bundles.
+ * @param binaryScope - user-bin or project-bin.
+ * @param projectBase - Project root directory.
+ * @returns Map of bundle name to absolute install path.
+ */
 function buildBundlePathMap(
   manifest: PackageManifest,
   binaryScope: "user-bin" | "project-bin",
@@ -71,7 +86,11 @@ function buildBundlePathMap(
   return map;
 }
 
-/** Resolve agent base path (project agent dir) for skills/rules. */
+/**
+ * Resolve agent base path (project agent dir) for skills/rules.
+ * @param projectBase - Project root directory.
+ * @returns Absolute path to agent directory (e.g. .cursor/).
+ */
 function getAgentBasePath(projectBase: string): string {
   const config = loadSafehouseConfig(projectBase);
   const stationConfig = loadStationConfig();
@@ -80,7 +99,13 @@ function getAgentBasePath(projectBase: string): string {
   return path.join(projectBase, projectPath);
 }
 
-/** Run install for a single package. */
+/**
+ * Run install for a single package.
+ * Feature 3: resolve scope, find safehouse, copy assets, patch placeholders, update manifest.
+ * @param packageName - Name of package to install.
+ * @param opts - Install scope options (promptScope, binaryScope, dependencies).
+ * @param cwd - Current working directory (default process.cwd()).
+ */
 export async function installPackage(
   packageName: string,
   opts: InstallOptions,

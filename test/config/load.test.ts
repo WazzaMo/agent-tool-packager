@@ -9,7 +9,6 @@ import os from "node:os";
 import yaml from "js-yaml";
 import {
   loadStationConfig,
-  loadSafehouseConfig,
   loadSafehouseManifest,
   stationExists,
   safehouseExists,

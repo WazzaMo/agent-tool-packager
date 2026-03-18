@@ -12,12 +12,12 @@ const USER_CATALOG_FILE = "atp-catalog.yaml";
 const PROJECT_CATALOG_FILE = "catalog.yaml";
 const PROJECT_CATALOG_DIR = ".atp-local";
 
-/** Global catalog - empty for now; can point to bundled catalog if one exists */
+/** Global catalog. Empty for now; can point to bundled catalog if one exists. */
 export function loadGlobalCatalog(): Catalog {
   return { packages: [] };
 }
 
-/** User catalog from Station (~/.atp_station/atp-catalog.yaml) */
+/** User catalog from Station (~/.atp_station/atp-catalog.yaml). */
 export function loadUserCatalog(): Catalog {
   const stationPath = getStationPath();
   const catalogPath = path.join(stationPath, USER_CATALOG_FILE);
@@ -37,7 +37,11 @@ export function loadUserCatalog(): Catalog {
   };
 }
 
-/** Project catalog from ./.atp-local/catalog.yaml */
+/**
+ * Project catalog from ./.atp-local/catalog.yaml.
+ * @param cwd - Directory to start from. Defaults to process.cwd().
+ * @returns Merged catalog from project.
+ */
 export function loadProjectCatalog(cwd: string = process.cwd()): Catalog {
   const projectBase = findProjectBase(cwd) || cwd;
   const catalogPath = path.join(projectBase, PROJECT_CATALOG_DIR, PROJECT_CATALOG_FILE);

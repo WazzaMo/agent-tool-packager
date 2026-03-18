@@ -9,8 +9,10 @@ import {
   loadStationConfig,
   loadSafehouseConfig,
 } from "../config/load.js";
+
 import { expandHome } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+
 import {
   resolvePackage,
   resolvePackagePath,
@@ -19,7 +21,13 @@ import {
 import { copyPackageAssets } from "./copy-assets.js";
 import type { PackageManifest } from "./types.js";
 
-/** Build bundle name -> install path map for text patching. */
+/**
+ * Build bundle name -> install path map for text patching.
+ * @param manifest - Package manifest with bundles.
+ * @param binaryScope - user-bin or project-bin.
+ * @param projectBase - Project root directory.
+ * @returns Map of bundle name to bin directory path.
+ */
 function buildBundlePathMap(
   manifest: PackageManifest,
   binaryScope: "user-bin" | "project-bin",
@@ -42,14 +50,23 @@ function buildBundlePathMap(
   return map;
 }
 
-/** Resolve agent base path (project agent dir) for the GIVEN agent. */
+/**
+ * Resolve agent base path for the given agent.
+ * @param projectBase - Project root directory.
+ * @param agentName - Agent name (e.g. cursor).
+ * @returns Absolute path to agent directory (e.g. .cursor/).
+ */
 function getAgentBasePath(projectBase: string, agentName: string): string {
   const stationConfig = loadStationConfig();
   const projectPath = resolveAgentProjectPath(agentName, stationConfig);
   return path.join(projectBase, projectPath);
 }
 
-/** Re-install all packages in the Safehouse manifest for the currently configured agent. */
+/**
+ * Re-install all packages in the Safehouse manifest for the currently configured agent.
+ * Used during agent handover to copy skills/rules to the new agent directory.
+ * @param projectBase - Project root directory.
+ */
 export async function reinstallSafehousePackages(
   projectBase: string
 ): Promise<void> {

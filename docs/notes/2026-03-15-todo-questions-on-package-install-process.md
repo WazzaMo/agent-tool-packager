@@ -9,6 +9,12 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 
 ## Updates (2026-03-18)
 
+### Coding Standards Applied (docs/clean-code.md)
+
+- **JSDoc:** Added `@param`, `@returns`, and descriptions to exported and key internal functions in Feature 3 sources: `install.ts`, `copy-assets.ts`, `agent.ts`, `paths.ts`, `load.ts`, `safehouse-init.ts`, `resolve.ts`, `reinstall.ts`.
+- **Import formatting:** Added blank lines after multi-line imports (install.ts, reinstall.ts) per clean-code convention.
+- **copy-assets.ts header:** Updated; removed outdated "TODO" for tar.gz extraction; clarified programs are copied to user-bin or project-bin.
+
 ### Project Base Discovery Wired
 
 - **findProjectBase wired:** `findProjectBase` in `src/config/paths.ts` updated to respect `SAFEHOUSE_PROJECT_PATH`.
@@ -71,9 +77,22 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 
 ---------------------------------------------------------------------------
 
+## Implementation Gaps (as of 2026-03-18)
+
+Review of Feature 3 source (`src/install/*`, `src/commands/agent.ts`, `src/config/*`, `src/init/safehouse-init.ts`) against the spec and clean-code standards. The following gaps or clarifications remain:
+
+| Gap | Severity | Description |
+|-----|----------|-------------|
+| Agent name validation | Medium | Feature 3 (lines 332–334) states: "It will only accept agent names where the Station config has an `agent-paths` object with entries for that agent." The implementation accepts any agent name; `resolveAgentProjectPath` falls back to `.${agentName}/` when no entry exists. Consider validating agent presence in `agent-paths` before accepting. |
+| Interactive confirmation for safehouse init | Low | Feature 3 (lines 279–283) suggests prompting the user to "explicitly confirm" when project base is uncertain. Current behaviour exits with an error and instructs the user to set `SAFEHOUSE_PROJECT_PATH`. No interactive stdin prompt. May be intentional (non-interactive CLI). |
+| Param naming in load.ts | Low | Functions such as `loadSafehouseConfig(cwd)`, `addPackageToSafehouseManifest(..., cwd)` use `cwd` but expect the **project base** directory. Callers now pass `projectBase` from `findProjectBase`. Consider renaming to `projectBase` for API clarity. |
+| Bundle vs package.tar.gz layout | Info | Feature 3 (step 4) describes unpacking bundle directories from `package.tar.gz` with UNIX conformant / exec-filter handling. The implementation copies from `manifest.assets` (program type) and uses `manifest.bundles` for `{bundle_name}` path mapping. Package layout is assumed correct from catalog add; UNIX conformant handling is in the packager (Feature 2). Install assumes catalog already produced the desired structure. |
+
+---------------------------------------------------------------------------
+
 ## Overview
 
-Following a review of `docs/features/3-package-install-process.md` and the current implementation, all identified gaps have been resolved. The manifest schema is aligned; text patching (`{bundle_name}`) and program asset copying are implemented. Project base discovery (`findProjectBase`) is wired into all relevant commands, allowing them to work correctly from subdirectories and respect `SAFEHOUSE_PROJECT_PATH`.
+Following a review of `docs/features/3-package-install-process.md` and the current implementation, the major gaps from the original todo list have been resolved. The manifest schema is aligned; text patching (`{bundle_name}`) and program asset copying are implemented. Project base discovery (`findProjectBase`) is wired into all relevant commands, allowing them to work correctly from subdirectories and respect `SAFEHOUSE_PROJECT_PATH`.
 
 ## Summary of Todos
 

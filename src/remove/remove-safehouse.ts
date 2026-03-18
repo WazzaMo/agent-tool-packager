@@ -14,13 +14,16 @@ import {
   loadSafehouseList,
   loadSafehouseManifestFromPath,
 } from "../config/load.js";
+
 import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "../install/resolve.js";
+
 import type { PackageAsset } from "../install/types.js";
 
 const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
@@ -89,15 +92,15 @@ function removeUserBinariesIfUnused(pkgName: string, currentCwd: string): void {
 }
 
 function removeAgentCopies(
-  cwd: string,
+  projectBase: string,
   pkgName: string,
   assets: PackageAsset[]
 ): void {
-  const config = loadSafehouseConfig(cwd);
+  const config = loadSafehouseConfig(projectBase);
   const stationConfig = loadStationConfig();
   const agentName = config?.agent ?? "cursor";
   const projectPath = resolveAgentProjectPath(agentName, stationConfig);
-  const agentBase = path.join(cwd, projectPath);
+  const agentBase = path.join(projectBase, projectPath);
 
   for (const asset of assets) {
     if (asset.type === "program") continue;

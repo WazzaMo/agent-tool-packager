@@ -15,15 +15,19 @@ import {
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 
-import {
-  findProjectBase,
-} from "../config/paths.js";
+import { findProjectBase } from "../config/paths.js";
 
 import { reinstallSafehousePackages } from "../install/reinstall.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
+/**
+ * Ensure Safehouse exists. Uses findProjectBase to resolve project from cwd.
+ * Exits with code 1 if no Safehouse found.
+ * @param cwd - Current working directory.
+ * @returns Project base path.
+ */
 function ensureSafehouse(cwd: string): string {
   const projectBase = findProjectBase(cwd);
   if (!projectBase || !safehouseExists(projectBase)) {
@@ -33,6 +37,11 @@ function ensureSafehouse(cwd: string): string {
   return projectBase;
 }
 
+/**
+ * Ensure agent directory exists at projectPath under projectBase.
+ * @param projectPath - Relative path (e.g. .cursor/).
+ * @param projectBase - Project root directory.
+ */
 function ensureAgentDir(projectPath: string, projectBase: string): void {
   const fullPath = path.join(projectBase, projectPath);
   if (!fs.existsSync(fullPath)) {
@@ -41,10 +50,8 @@ function ensureAgentDir(projectPath: string, projectBase: string): void {
 }
 
 /**
- * Registers agent subcommands.
- * 
- * @param program Command object to register.
- * @returns void
+ * Registers agent subcommands: atp agent <name>, atp agent handover to <name>.
+ * @param program - Commander program to register subcommands on.
  */
 export function registerAgentCommands(program: Command): void {
   const agent = program

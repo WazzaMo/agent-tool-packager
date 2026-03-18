@@ -52,6 +52,11 @@ function registerSafehouseInStation(safehousePath: string): void {
   );
 }
 
+/**
+ * Initialize Safehouse in project directory. Creates .atp_safehouse with config and manifest.
+ * Uses findProjectBase; rejects home directory. Registers with Station if present.
+ * Feature 3: atp safehouse init acceptance criteria.
+ */
 export async function safehouseInit(): Promise<void> {
   const cwd = process.cwd();
   const projectBase = findProjectBase(cwd);

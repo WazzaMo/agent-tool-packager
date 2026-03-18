@@ -64,11 +64,15 @@ export function loadStationConfig(): StationConfig | null {
   return yaml.load(content) as StationConfig;
 }
 
-/** Load Safehouse config. Returns null if Safehouse does not exist. */
+/**
+ * Load Safehouse config from .atp_safehouse/atp-config.yaml.
+ * @param projectBase - Project base directory (use findProjectBase when in subdirs). Defaults to process.cwd().
+ * @returns Safehouse config or null if Safehouse does not exist.
+ */
 export function loadSafehouseConfig(
-  cwd: string = process.cwd()
+  projectBase: string = process.cwd()
 ): SafehouseConfig | null {
-  const safehousePath = getSafehousePath(cwd);
+  const safehousePath = getSafehousePath(projectBase);
   const configPath = path.join(safehousePath, SAFEHOUSE_CONFIG_FILE);
 
   if (!pathExists(safehousePath) || !fs.existsSync(configPath)) {
@@ -79,11 +83,15 @@ export function loadSafehouseConfig(
   return yaml.load(content) as SafehouseConfig;
 }
 
-/** Load Safehouse manifest. Returns null if Safehouse does not exist. */
+/**
+ * Load Safehouse manifest (manifest.yaml) with Safehouse-Manifest wrapper.
+ * @param projectBase - Project base directory. Defaults to process.cwd().
+ * @returns Safehouse manifest or null if Safehouse does not exist.
+ */
 export function loadSafehouseManifest(
-  cwd: string = process.cwd()
+  projectBase: string = process.cwd()
 ): SafehouseManifest | null {
-  const safehousePath = getSafehousePath(cwd);
+  const safehousePath = getSafehousePath(projectBase);
   const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
 
   if (!pathExists(safehousePath) || !fs.existsSync(manifestPath)) {
@@ -95,22 +103,30 @@ export function loadSafehouseManifest(
   return parseManifest(raw);
 }
 
-/** Check if Station is initialized */
+/** Check if Station is initialized. */
 export function stationExists(): boolean {
   return pathExists(getStationPath());
 }
 
-/** Check if Safehouse exists in cwd */
-export function safehouseExists(cwd: string = process.cwd()): boolean {
-  return pathExists(getSafehousePath(cwd));
+/**
+ * Check if Safehouse exists in project directory.
+ * @param projectBase - Project base directory. Defaults to process.cwd().
+ * @returns True if .atp_safehouse exists.
+ */
+export function safehouseExists(projectBase: string = process.cwd()): boolean {
+  return pathExists(getSafehousePath(projectBase));
 }
 
-/** Write Safehouse config. Safehouse must exist. */
+/**
+ * Write Safehouse config. Safehouse must exist.
+ * @param config - Safehouse config to write.
+ * @param projectBase - Project base directory. Defaults to process.cwd().
+ */
 export function writeSafehouseConfig(
   config: SafehouseConfig,
-  cwd: string = process.cwd()
+  projectBase: string = process.cwd()
 ): void {
-  const safehousePath = getSafehousePath(cwd);
+  const safehousePath = getSafehousePath(projectBase);
   const configPath = path.join(safehousePath, SAFEHOUSE_CONFIG_FILE);
   fs.writeFileSync(
     configPath,
@@ -119,18 +135,25 @@ export function writeSafehouseConfig(
   );
 }
 
-/** Add or update package in Safehouse manifest. Safehouse must exist. */
+/**
+ * Add or update package in Safehouse manifest. Safehouse must exist.
+ * @param name - Package name.
+ * @param version - Package version.
+ * @param binaryScope - user-bin or project-bin.
+ * @param source - station or local.
+ * @param projectBase - Project base directory. Defaults to process.cwd().
+ */
 export function addPackageToSafehouseManifest(
   name: string,
   version: string | undefined,
   binaryScope: BinaryScope = "user-bin",
   source: PackageSource = "station",
-  cwd: string = process.cwd()
+  projectBase: string = process.cwd()
 ): void {
-  const safehousePath = getSafehousePath(cwd);
+  const safehousePath = getSafehousePath(projectBase);
   const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
 
-  const existing = loadSafehouseManifest(cwd);
+  const existing = loadSafehouseManifest(projectBase);
   const packages = existing?.packages ?? [];
   const stationPath = existing?.station_path ?? null;
 
@@ -151,7 +174,11 @@ export function addPackageToSafehouseManifest(
 
 const STATION_MANIFEST_DIR = "manifest";
 
-/** Write Station package manifest. Station manifest dir must exist. */
+/** Write Station package manifest. Station manifest directory must exist.
+ * @param name Package name
+ * @param manifest - manifest object
+ * @return void
+ */
 export function writeStationPackageManifest(
   name: string,
   manifest: { name: string; version?: string; scope?: string; source?: string }
@@ -171,7 +198,10 @@ export function writeStationPackageManifest(
 
 const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
 
-/** Load Safehouse list from Station. Returns expanded absolute paths to .atp_safehouse dirs. */
+/**
+ * Load Safehouse list from Station. Returns expanded absolute paths to .atp_safehouse directories.
+ * @returns Array<string>
+ */
 export function loadSafehouseList(): string[] {
   const stationPath = getStationPath();
   const listPath = path.join(stationPath, SAFEHOUSE_LIST_FILE);
@@ -184,7 +214,11 @@ export function loadSafehouseList(): string[] {
   return raw.map((p) => path.resolve(expandHome(p)));
 }
 
-/** Remove package from Safehouse manifest. Safehouse must exist. */
+/**
+ * Remove package from Safehouse manifest. Safehouse must exist.
+ * @param name - Package name to remove.
+ * @param cwd - Project base directory. Defaults to process.cwd().
+ */
 export function removePackageFromSafehouseManifest(
   name: string,
   cwd: string = process.cwd()
@@ -204,7 +238,12 @@ export function removePackageFromSafehouseManifest(
   );
 }
 
-/** Update a package entry in Safehouse manifest (e.g. set source: "local"). */
+/**
+ * Update a package entry in Safehouse manifest (e.g. set source: "local").
+ * @param name - Package name to update.
+ * @param updates - Fields to update.
+ * @param cwd - Project base directory. Defaults to process.cwd().
+ */
 export function updateSafehousePackageInManifest(
   name: string,
   updates: { source?: PackageSource },
@@ -227,7 +266,11 @@ export function updateSafehousePackageInManifest(
   );
 }
 
-/** Load Safehouse manifest from a Safehouse path (e.g. /path/to/proj/.atp_safehouse). */
+/**
+ * Load Safehouse manifest from a Safehouse path (e.g. /path/to/proj/.atp_safehouse).
+ * @param safehousePath path to project Safehouse
+ * @returns SafehouseManifest object.
+ */
 export function loadSafehouseManifestFromPath(
   safehousePath: string
 ): SafehouseManifest | null {
@@ -238,14 +281,20 @@ export function loadSafehouseManifestFromPath(
   return parseManifest(raw);
 }
 
-/** Check if Station has a package manifest for the given name. */
+/**
+ * Check if Station has a package manifest for the given name.
+ * @param name - package file name
+ * @returns boolean true if file exists, false otherwise
+ */
 export function stationHasPackage(name: string): boolean {
   const stationPath = getStationPath();
   const manifestPath = path.join(stationPath, STATION_MANIFEST_DIR, `${name}.yaml`);
   return fs.existsSync(manifestPath);
 }
 
-/** Delete Station package manifest. */
+/** Delete Station package manifest.
+ *  @param name - YAML filename
+ */
 export function deleteStationPackageManifest(name: string): void {
   const stationPath = getStationPath();
   const manifestPath = path.join(stationPath, STATION_MANIFEST_DIR, `${name}.yaml`);
