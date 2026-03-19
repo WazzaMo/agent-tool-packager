@@ -94,6 +94,23 @@ Development (no build step):
 npm run dev -- station init
 ```
 
+Development Install
+
+To install a development version in your home directory for package build
+and package install testing, there is a new NPM script to install ATP
+
+1. create ~/.atp_dev
+2. install distributable JS file
+3. install Node wrapper
+4. Sets up `~/.local/bin/atp` link to point to wrapper so atp will run
+
+NPM command
+
+`npm run install-home`
+
+After this, you can run `atp station init` to setup your station.
+
+
 Override Station location:
 ```bash
 STATION_PATH="/path/to/station" npx atp station init
