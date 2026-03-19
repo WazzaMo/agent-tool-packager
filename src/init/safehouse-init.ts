@@ -23,7 +23,7 @@ import type { SafehouseListConfig } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";
 const MANIFEST_FILE = "manifest.yaml";
-const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
+const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 
 function toTildePath(p: string): string {
   const home = os.homedir();

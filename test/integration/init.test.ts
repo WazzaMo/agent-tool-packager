@@ -27,7 +27,7 @@ describe("Integration: station init", () => {
     runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
     expect(fs.existsSync(path.join(stationDir, "atp-config.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "atp-catalog.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(stationDir, "safehouse_list.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "atp-safehouse-list.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(stationDir, "manifest"))).toBe(true);
   });
 
@@ -49,7 +49,7 @@ describe("Integration: safehouse init", () => {
     fs.mkdirSync(projectDir, { recursive: true });
     // Create minimal station first
     fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
@@ -125,7 +125,7 @@ describe("Integration: agent nomination", () => {
       project_path: .claude/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     // Add project marker so safehouse init succeeds in other tests

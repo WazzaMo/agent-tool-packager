@@ -22,7 +22,7 @@ describe("Integration: remove", () => {
       project_path: .cursor/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
     const catalogContent = `packages:
   - name: test-package
     version: 1.0.0
@@ -99,7 +99,7 @@ describe("Integration: remove with binary scope", () => {
       project_path: .cursor/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
     const catalogContent = `packages:
   - name: test-package
     version: 1.0.0

@@ -65,7 +65,7 @@ describe("Integration: Feature 3 - Package Install Process", () => {
       );
     }
     fs.writeFileSync(
-      path.join(stationDir, "safehouse_list.yaml"),
+      path.join(stationDir, "atp-safehouse-list.yaml"),
       "safehouse_paths: []\n"
     );
   });

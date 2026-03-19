@@ -52,7 +52,7 @@ Updated 2026-03-16, 2026-03-17, 2026-03-18.
 - **Item 4 (Text patching placeholder syntax):** Resolved. Feature 3 (lines 243-249) defines `{bundle_name}` as the placeholder syntax. Implementation in `src/install/copy-assets.ts` replaces placeholders with bundle install path when copying skills/rules. Install flow builds `bundlePathMap` from manifest bundles and binary scope.
 
 - **Item 5 (Safehouse registration):** Resolved. The Station's safehouse list lives in
-  `${STATION_PATH}/safehouse_list.yaml`. Safehouse registration occurs during `atp safehouse init`:
+  `${STATION_PATH}/atp-safehouse-list.yaml`. Safehouse registration occurs during `atp safehouse init`:
   `src/init/safehouse-init.ts` calls `registerSafehouseInStation()` when the Station
   and list file exist.
 

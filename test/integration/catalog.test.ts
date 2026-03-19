@@ -14,7 +14,7 @@ describe("Integration: catalog list", () => {
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
     const catalogContent = `packages:
   - name: test-package
     version: 1.0.0
