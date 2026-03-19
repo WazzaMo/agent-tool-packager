@@ -2,6 +2,8 @@
 
 A utility for CLI agentic software development workflows.
 
+Current Version: 0.1.1
+
 Cursor summarised this project as:
 
 > **Agent Tools is an early-stage project to standardize how
