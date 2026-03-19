@@ -12,6 +12,7 @@
     "build": "node scripts/sync-version.js && vite build",
     "sync-version": "node scripts/sync-version.js",
     "install-home": "node scripts/install-to-home.js",
+    "uninstall-home": "node scripts/uninstall-from-home.js",
     "dev": "tsx src/atp.ts",
     "start": "node dist/atp.js",
     "test": "vitest",

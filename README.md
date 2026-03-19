@@ -67,12 +67,18 @@ to install that version if your system doesn't have it. Say "yes"
 and you're good to go.
 
 
-Node.js 20+
+Node.js 24+
 
 ```bash
 npm install
 npm run build
 ```
+
+Test the build works
+
+`npm run test:run`
+
+### Development workflow
 
 Run the CLI:
 ```bash
@@ -94,7 +100,7 @@ Development (no build step):
 npm run dev -- station init
 ```
 
-Development Install
+### Development Install
 
 To install a development version in your home directory for package build
 and package install testing, there is a new NPM script to install ATP
@@ -107,8 +113,14 @@ and package install testing, there is a new NPM script to install ATP
 NPM command
 
 `npm run install-home`
-
 After this, you can run `atp station init` to setup your station.
+
+### Development uninstall
+
+After testing is completed, this development installation can be removed.
+
+`npm run uninstall-home`
+
 
 
 Override Station location:
