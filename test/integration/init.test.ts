@@ -36,6 +36,27 @@ describe("Integration: station init", () => {
     const out = runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
     expect(out).toContain("Station already exists");
   });
+
+  it("finishes initialization if station directory exists but is empty", () => {
+    fs.mkdirSync(stationDir, { recursive: true });
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    expect(fs.existsSync(path.join(stationDir, "atp-config.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "atp-catalog.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "atp-safehouse-list.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "manifest"))).toBe(true);
+  });
+
+  it("finishes initialization if some files are missing", () => {
+    fs.mkdirSync(stationDir, { recursive: true });
+    // Only create config
+    fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "{}");
+    
+    runAtp(["station", "init"], { env: { STATION_PATH: stationDir } });
+    
+    expect(fs.existsSync(path.join(stationDir, "atp-catalog.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "atp-safehouse-list.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(stationDir, "manifest"))).toBe(true);
+  });
 });
 
 describe("Integration: safehouse init", () => {
