@@ -1,6 +1,6 @@
 {
   "name": "@agent-tools/packager",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for agentic software development workflows",
   "type": "module",
   "main": "dist/atp.js",
@@ -9,7 +9,8 @@
   },
   "homepage": "https://github.com/WazzaMo/agent-tool-packager",
   "scripts": {
-    "build": "vite build",
+    "build": "node scripts/sync-version.js && vite build",
+    "sync-version": "node scripts/sync-version.js",
     "dev": "tsx src/atp.ts",
     "start": "node dist/atp.js",
     "test": "vitest",
