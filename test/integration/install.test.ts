@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, runAtpExpectExit, FIXTURE_PKG } from "./test-helpers.js";
+import yaml from "js-yaml";
+import { runAtp, runAtpExpectExit, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: install and list", () => {
   let stationDir: string;
@@ -23,11 +24,13 @@ describe("Integration: install and list", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     // Add project marker so safehouse init succeeds
@@ -115,16 +118,20 @@ assets:
     );
     fs.writeFileSync(path.join(depPkgDir, "skills", "skill.md"), "# Skill\n");
     const catalogPath = path.join(stationDir, "atp-catalog.yaml");
-    const catalog = fs.readFileSync(catalogPath, "utf8");
-    fs.writeFileSync(
-      catalogPath,
-      catalog +
-        `
-  - name: pkg-with-deps
-    version: 1.0.0
-    location: file://${depPkgDir.replace(/\\/g, "/")}
-`
-    );
+    const doc = yaml.load(fs.readFileSync(catalogPath, "utf8")) as Record<string, unknown>;
+    const inner = (doc.catalog ?? doc) as Record<string, unknown>;
+    const pkgField = inner.packages as Record<string, unknown>;
+    const user = [...(Array.isArray(pkgField.user) ? pkgField.user : [])];
+    user.push({
+      name: "pkg-with-deps",
+      version: "1.0.0",
+      location: `file://${depPkgDir.replace(/\\/g, "/")}`,
+    });
+    inner.packages = {
+      standard: Array.isArray(pkgField.standard) ? pkgField.standard : [],
+      user,
+    };
+    fs.writeFileSync(catalogPath, yaml.dump(doc, { lineWidth: 120 }));
     try {
       const result = runAtpExpectExit(["install", "pkg-with-deps"], 1, {
         cwd: projectDir,

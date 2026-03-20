@@ -6,34 +6,26 @@
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
-import {
-  loadGlobalCatalog,
-  loadProjectCatalog,
-  loadUserCatalog,
-} from "../catalog/load.js";
+import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
 
-import { mergeCatalogs } from "../catalog/merge.js";
 import type { CatalogPackage } from "../catalog/types.js";
 import type { PackageManifest } from "./types.js";
 
 const MANIFEST_NAMES = ["atp-package.yaml", "package.yaml"];
 
 /**
- * Resolve package by name from merged catalog.
+ * Resolve package by name from the Station catalog.
  * @param name - Package name.
- * @param cwd - Project base directory. Defaults to process.cwd().
+ * @param _cwd - Reserved for callers; catalog is Station-only.
  * @returns Catalog package or null if not found.
  */
 export function resolvePackage(
   name: string,
-  cwd: string = process.cwd()
+  _cwd: string = process.cwd()
 ): CatalogPackage | null {
-  const global = loadGlobalCatalog();
-  const user = loadUserCatalog();
-  const project = loadProjectCatalog(cwd);
-  const merged = mergeCatalogs(global, user, project);
-
-  const pkg = merged.find((p) => p.name === name);
+  const station = loadStationCatalog();
+  const packages = effectiveStationCatalogPackages(station);
+  const pkg = packages.find((p) => p.name === name);
   return pkg ?? null;
 }
 

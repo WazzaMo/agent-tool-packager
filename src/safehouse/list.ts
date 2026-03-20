@@ -3,7 +3,7 @@
  * Reads .atp_safehouse/manifest.yaml packages array.
  */
 
-import { loadSafehouseManifest } from "../config/load.js";
+import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 import { getSafehousePath, pathExists } from "../config/paths.js";
 
 function pad(str: string, width: number): string {

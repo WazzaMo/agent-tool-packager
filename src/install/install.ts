@@ -7,9 +7,11 @@ import {
   loadSafehouseConfig,
   loadStationConfig,
   safehouseExists,
-  addPackageToSafehouseManifest,
-  writeStationPackageManifest,
 } from "../config/load.js";
+
+import { addPackageToSafehouseManifest } from "../config/safehouse-manifest.js";
+
+import { writeStationPackageManifest } from "../config/station-package-manifest.js";
 
 import { expandHome, findProjectBase } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";

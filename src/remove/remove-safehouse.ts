@@ -7,13 +7,16 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   safehouseExists,
-  loadSafehouseManifest,
   loadSafehouseConfig,
   loadStationConfig,
-  removePackageFromSafehouseManifest,
   loadSafehouseList,
-  loadSafehouseManifestFromPath,
 } from "../config/load.js";
+
+import {
+  loadSafehouseManifest,
+  removePackageFromSafehouseManifest,
+  loadSafehouseManifestFromPath,
+} from "../config/safehouse-manifest.js";
 
 import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";

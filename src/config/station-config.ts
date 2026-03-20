@@ -3,6 +3,8 @@
  * See docs/configuration.md for schema.
  */
 
+import type { CatalogRoot } from "../catalog/types.js";
+
 import type { AgentPaths } from "./types.js";
 
 export interface StandardCatalogConfig {
@@ -57,7 +59,7 @@ export const DEFAULT_SAFEHOUSE_LIST: SafehouseListConfig = {
   safehouse_paths: [],
 };
 
-export const DEFAULT_CATALOG = {
+export const DEFAULT_CATALOG: CatalogRoot = {
   catalog: {
     "standard_packages-path": "./standard_packages/",
     "user_packages-path": "./user_packages/",

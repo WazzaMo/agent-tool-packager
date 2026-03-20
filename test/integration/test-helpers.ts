@@ -6,11 +6,49 @@ import { expect } from "vitest";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import yaml from "js-yaml";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.resolve(__dirname, "../..");
 export const CLI_PATH = path.join(PROJECT_ROOT, "dist", "atp.js");
 export const FIXTURE_PKG = path.resolve(__dirname, "../fixtures/test-package");
+
+/** Station atp-catalog.yaml body: nested standard + user object lists (see docs/configuration.md). */
+export function makeStationCatalogYaml(
+  userPackages: Array<{
+    name: string;
+    version: string;
+    description?: string;
+    location: string;
+  }>,
+  standardPackages: Array<{
+    name: string;
+    version: string;
+    description?: string;
+    location: string;
+  }> = []
+): string {
+  const row = (e: (typeof userPackages)[0]) => {
+    const o: Record<string, string> = {
+      name: e.name,
+      version: e.version,
+      location: e.location,
+    };
+    if (e.description != null) {
+      o.description = e.description;
+    }
+    return o;
+  };
+  return yaml.dump(
+    {
+      packages: {
+        standard: standardPackages.map(row),
+        user: userPackages.map(row),
+      },
+    },
+    { lineWidth: 120 }
+  );
+}
 
 /** Quote arg for shell if it contains space. */
 function shellArgs(args: string[]): string {

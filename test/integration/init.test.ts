@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, runAtpExpectExit } from "./test-helpers.js";
+import { runAtp, runAtpExpectExit, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: station init", () => {
   let stationDir: string;
@@ -71,7 +71,10 @@ describe("Integration: safehouse init", () => {
     // Create minimal station first
     fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
     fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(
+      path.join(stationDir, "atp-catalog.yaml"),
+      makeStationCatalogYaml([])
+    );
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
 
@@ -147,7 +150,10 @@ describe("Integration: agent nomination", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
-    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), "packages: []\n");
+    fs.writeFileSync(
+      path.join(stationDir, "atp-catalog.yaml"),
+      makeStationCatalogYaml([])
+    );
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     // Add project marker so safehouse init succeeds in other tests
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });

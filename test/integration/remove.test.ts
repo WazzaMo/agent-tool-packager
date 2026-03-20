@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG } from "./test-helpers.js";
+import { runAtp, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: remove", () => {
   let stationDir: string;
@@ -23,11 +23,13 @@ describe("Integration: remove", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
     // Add project marker so safehouse init succeeds
@@ -100,11 +102,13 @@ describe("Integration: remove with binary scope", () => {
 `
     );
     fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
 

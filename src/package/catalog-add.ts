@@ -9,6 +9,9 @@ import { execSync } from "node:child_process";
 import zlib from "node:zlib";
 import yaml from "js-yaml";
 import { getStationPath } from "../config/paths.js";
+import { DEFAULT_CATALOG } from "../config/station-config.js";
+import { parseCatalogPackagesField } from "../catalog/load.js";
+import type { CatalogPackage } from "../catalog/types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { validatePackage } from "./validate.js";
 import type { DevPackageManifest } from "./types.js";
@@ -136,28 +139,65 @@ function enrichManifestWithAssets(
   fs.writeFileSync(manifestDest, yaml.dump(outManifest, { lineWidth: 120 }), "utf8");
 }
 
-/** Add or update package entry in atp-catalog.yaml. */
-function addToCatalog(name: string, version: string, pkgDir: string): void {
+/** Add or update package entry in atp-catalog.yaml under packages.user. */
+function addToCatalog(
+  name: string,
+  version: string,
+  pkgDir: string,
+  manifest: DevPackageManifest
+): void {
   const stationPath = getStationPath();
   const catalogPath = path.join(stationPath, CATALOG_FILE);
-  let catalog: { packages?: unknown[] } = { packages: [] };
+
+  let root: Record<string, unknown>;
   if (fs.existsSync(catalogPath)) {
-    const content = fs.readFileSync(catalogPath, "utf8");
-    const data = yaml.load(content) as { packages?: unknown[] } | null;
-    if (data && Array.isArray(data.packages)) {
-      catalog = data;
-    }
+    const parsed = yaml.load(fs.readFileSync(catalogPath, "utf8"));
+    root =
+      parsed && typeof parsed === "object"
+        ? { ...(parsed as Record<string, unknown>) }
+        : structuredClone(DEFAULT_CATALOG) as unknown as Record<string, unknown>;
+  } else {
+    root = structuredClone(DEFAULT_CATALOG) as unknown as Record<string, unknown>;
   }
 
+  const wrapped =
+    "catalog" in root && root.catalog !== null && typeof root.catalog === "object";
+  const catLevel = (wrapped ? root.catalog : root) as Record<string, unknown>;
+
+  const packages = parseCatalogPackagesField(catLevel.packages);
+
+  const description =
+    manifest.usage?.length > 0 ? manifest.usage.join(" ") : undefined;
   const location = `file://${pkgDir}`;
-  const existing = catalog.packages?.find(
-    (p: unknown) => (p as { name?: string }).name === name
-  );
-  if (!existing) {
-    catalog.packages = catalog.packages ?? [];
-    catalog.packages.push({ name, version, location });
+  const entry: CatalogPackage = {
+    name,
+    version,
+    description,
+    location,
+  };
+
+  const uIdx = packages.user.findIndex((p) => p.name === name);
+  if (uIdx >= 0) {
+    packages.user[uIdx] = { ...packages.user[uIdx], ...entry };
+  } else {
+    packages.user.push(entry);
   }
-  fs.writeFileSync(catalogPath, yaml.dump(catalog, { lineWidth: 120 }), "utf8");
+
+  catLevel.packages = packages;
+
+  const defaults = DEFAULT_CATALOG.catalog as Record<string, unknown>;
+  if (catLevel["standard_packages-path"] == null) {
+    catLevel["standard_packages-path"] = defaults["standard_packages-path"];
+  }
+  if (catLevel["user_packages-path"] == null) {
+    catLevel["user_packages-path"] = defaults["user_packages-path"];
+  }
+
+  if (wrapped) {
+    root.catalog = catLevel;
+  }
+
+  fs.writeFileSync(catalogPath, yaml.dump(root, { lineWidth: 120 }), "utf8");
 }
 
 /** Remove stage.tar from cwd (cleanup per Feature 2). */
@@ -191,7 +231,7 @@ export function catalogAddPackage(cwd: string): void {
   const manifestDest = path.join(pkgDir, PACKAGE_FILE);
 
   enrichManifestWithAssets(pkgDir, manifestDest, manifest);
-  addToCatalog(name, manifest.version ?? "0.0.0", pkgDir);
+  addToCatalog(name, manifest.version ?? "0.0.0", pkgDir, manifest);
   removeStageTar(stagePath);
 
   console.log(`Package ${name} added to user package catalog.`);

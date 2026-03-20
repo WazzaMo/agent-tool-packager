@@ -4,11 +4,9 @@
  */
 
 import path from "node:path";
-import {
-  loadSafehouseManifest,
-  loadStationConfig,
-  loadSafehouseConfig,
-} from "../config/load.js";
+import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
+
+import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 
 import { expandHome } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
@@ -18,6 +16,7 @@ import {
   resolvePackagePath,
   loadPackageManifest,
 } from "./resolve.js";
+
 import { copyPackageAssets } from "./copy-assets.js";
 import type { PackageManifest } from "./types.js";
 

@@ -2,7 +2,7 @@
 
 A utility for CLI agentic software development workflows.
 
-Current Version: 0.1.1
+Current Version: 0.2.1
 
 Cursor summarised this project as:
 
@@ -130,9 +130,31 @@ STATION_PATH="/path/to/station" npx atp station init
 
 ## Configuration
 
-- **Station:** `~/.atp_station` (or `STATION_PATH`) — config, catalog, manifests
-- **Safehouse:** `./.atp_safehouse` — per-project installs
-- **Catalog:** global (bundled) + user (`~/.atp_station/atp-catalog.yaml`) + project (`./.atp-local/catalog.yaml`). Precedence: project > user > global
+### Station
+
+Default location: `~/.atp_station` or overidden by environment variable `STATION_PATH`.
+Holds:
+ — config, catalog, manifests
+
+
+### Safehouse
+
+Default location: `./.atp_safehouse`
+
+For per-project installs
+
+### Catalog
+
+One index at the Station: `atp-catalog.yaml` under `STATION_PATH` (default `~/.atp_station`).
+
+Entries under `packages.user` override the same package name under `packages.standard`.
+Installs use this catalog only; files go to the agent’s home-level config or the current
+project’s agent config (`atp install --project` / `--station`, etc.).
+
+Meaning that packages can be installed for the agent for all user work with that agent, held
+at the user's home directory config for the agent.
+
+Conversely, the user can install a package into one project, say to test that package.
 
 See [docs/configuration.md](docs/configuration.md) for full configuration.
 

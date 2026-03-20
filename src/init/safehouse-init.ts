@@ -14,11 +14,13 @@ import {
   findProjectBase,
   isHomeDirectory,
 } from "../config/paths.js";
+
 import {
   DEFAULT_SAFEHOUSE_CONFIG,
   DEFAULT_SAFEHOUSE_MANIFEST,
 } from "../config/safehouse-config.js";
-import { writeManifestContent } from "../config/load.js";
+
+import { writeManifestContent } from "../config/safehouse-manifest.js";
 import type { SafehouseListConfig } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";

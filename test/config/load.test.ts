@@ -2,24 +2,31 @@
  * Unit tests for config/load module.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import yaml from "js-yaml";
+
 import {
   loadStationConfig,
-  loadSafehouseManifest,
   stationExists,
   safehouseExists,
+  loadSafehouseList,
+} from "../../src/config/load.js";
+
+import {
+  loadSafehouseManifest,
   addPackageToSafehouseManifest,
   removePackageFromSafehouseManifest,
-  loadSafehouseList,
   loadSafehouseManifestFromPath,
+} from "../../src/config/safehouse-manifest.js";
+
+import {
   stationHasPackage,
   deleteStationPackageManifest,
   writeStationPackageManifest,
-} from "../../src/config/load.js";
+} from "../../src/config/station-package-manifest.js";
 
 function createTempDir(): string {
   const dir = path.join(os.tmpdir(), `atp-config-load-${Date.now()}`);
