@@ -103,15 +103,24 @@ configuration:
 
 #### Station Catalog `atp-catalog.yaml`
 
+`packages` must be a mapping with **both** `standard` and `user` keys, each a **YAML list** (use `[]` when empty). Each list item must be a **mapping** (object), not a bare package name string: at minimum `name`, plus optional `version`, `description`, and `location` (e.g. a `file://` path). `location` may be omitted when not applicable. The same name in `user` overrides `standard` for installs and for `atp catalog list`. A flat `packages: [ ... ]` list or string entries are invalid and are treated as no packages.
+
+There is only this Station catalog (no separate global or per-project catalog file). The file may omit the outer `catalog:` key and list `packages` at the top level.
+
 ```yaml
 catalog:
   standard_packages-path: ./standard_packages/
   user_packages-path: ./user_packages/
   packages:
     standard:
-      - vecfs
+      - name: vecfs
+        version: "0.2.0"
+        description: Vector filesystem helpers
+        location: file:///path/to/vecfs-package
     user:
-      - special-prompt-set
+      - name: special-prompt-set
+        version: "1.0.0"
+        description: Personal prompt collection
 ```
 
 #### The Station's Safehouse list
