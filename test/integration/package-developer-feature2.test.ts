@@ -88,6 +88,21 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     expect(manifest).toMatch(/coding-standard\.md/);
   });
 
+  it("package usage sets a usage list entry in atp-package.yaml", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package", "skeleton"], o);
+    runAtp(
+      ["package", "usage", "When working on TypeScript code the coding rule should apply"],
+      o
+    );
+
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(
+      /usage:\s*\n\s*-\s*When working on TypeScript code the coding rule should apply/
+    );
+  });
+
   it("package appears in atp-catalog.yaml with name, version, location after catalog add", () => {
     fs.writeFileSync(path.join(pkgDir, "x.md"), "# X\n");
     initPackage(pkgDir, stationDir, {

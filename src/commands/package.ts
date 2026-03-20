@@ -66,13 +66,17 @@ export function registerPackageCommands(program: Command): void {
   pkg
     .command("usage <usage...>")
     .description("Set package usage (help text)")
-    .action((...args: string[]) => {
+    .action((...args: unknown[]) => {
       const m = loadDevManifest(process.cwd());
       if (!m) {
         console.error("No atp-package.yaml. Run `atp create package skeleton` first.");
         process.exit(1);
       }
-      const text = args.join(" ").slice(0, 80);
+      const raw = Array.isArray(args[0]) ? (args[0] as unknown[]) : args;
+      const text = raw
+        .filter((a): a is string => typeof a === "string")
+        .join(" ")
+        .slice(0, 80);
       m.usage = [text];
       saveDevManifest(process.cwd(), m);
     });
