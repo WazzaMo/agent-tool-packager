@@ -48,7 +48,7 @@ Reuse or slightly extend the existing anti-pattern copy so users who hit “mark
 | Area                          | Change condition -> treatment                                         |
 |-------------------------------|--------------------------------                                       |
 | `src/init/safehouse-init.ts`  | After resolving `projectBase`, if `isHomeDirectory(projectBase)` -> 1 |
-| `src/config/paths.ts`         | Optional: add a thin helper, say `isForbiddenSafehouseUserDir` ->2    |
+| `src/config/paths.ts`         | Optional: add a thin helper, say `isForbiddenSafehouseDir` ->2        |
 | `src/commands/safehouse.ts`   | Update description/help for clarity -> 3                              |
 
 Handling or treatment types (from above)
@@ -63,34 +63,39 @@ No change required to `getSafehousePath`; enforcement stays at init time.
 
 ## Benefits of the above changes
 
-Adding the logic to check for the first area in `isForbiddenSafehouseUserDir` as per the second
-area of change results in clear, self-documenting code so this has benefits.
+Adding the logic to check for the first area in `isForbiddenSafehouseDir` as per the second
+area of change results in clear, self-documenting code so this has benefits. This becomes
+the definition of what is a forbidden directory for the safehouse. The escape hatch is on test
+could be done here, too, and it could generate the warning when the escape hatch is set on,
+keeping all definition logic for "bad" and overrides in one place.
+
+The "escape hatch" is only considered "on" when the env var `ATP_ALLOW_HOME_SAFEHOUSE` = 1
+and any other value is not "on".
 
 The third area of change listed above, is about communication.
 
 Given these are all beneficial, integration tests should be added to confirm all three work as intended.
 These tests should cover situations where the condition was and was not met.
 
-# Edge cases
 
-# Symlinks
-
-`findProjectBase` uses `path.resolve`; `isHomeDirectory` compares to `os.homedir()`. If realpath mismatches appear on specific platforms, consider normalizing with `fs.realpathSync` only if tests or reports justify it.
-
-# Windows
-
-`isHomeDirectory` uses parent name `Users` for heuristics; confirm behavior matches `os.homedir()` on typical
-Windows layouts.
-
-## Testing
+# Testing
 
 Unit and integration tests should cover these cases for both sides of the condition checks.
 
-# Heuristics
+## Heuristics
 
 The strict case `resolved === os.homedir()` is the main trigger; secondary heuristics (e.g. `.ssh`, `.bashrc`) apply to paths under `home` / `Users` parents.
 
-# Testing
+## Edge cases
+
+### Symlinks
+
+`findProjectBase` uses `path.resolve`; `isHomeDirectory` compares to `os.homedir()`. If realpath mismatches appear on specific platforms, consider normalizing with `fs.realpathSync` only if tests or reports justify it.
+
+### Windows
+
+`isHomeDirectory` uses parent name `Users` for heuristics; confirm behavior matches `os.homedir()` on typical
+Windows layouts.
 
 ## Integration
 
