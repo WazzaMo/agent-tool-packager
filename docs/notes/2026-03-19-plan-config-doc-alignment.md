@@ -15,7 +15,7 @@ The `StationConfig` interface and `DEFAULT_STATION_CONFIG` in `src/config/statio
 
 # Catalog Schema Divergence
 
-The documentation describes a nested catalog structure in `atp-catalog.yaml` with categories for `standard` and `user` packages, as well as explicit package paths. The implementation in `src/catalog/types.ts` and `src/catalog/load.ts` currently expects a flat array of packages.
+The documentation and implementation both require `packages.standard` and `packages.user` as arrays of objects (`name` required; optional `version`, `description`, `location`). Flat `packages:` lists and string-only entries are rejected (empty packages result).
 
 # Naming Convention Violations
 
@@ -34,8 +34,7 @@ Update `DEFAULT_AGENT_PATHS` to include the missing Gemini agent paths.
 
 # 2. Reconcile Catalog Structure
 
-Update `src/catalog/types.ts` to support the nested `standard` and `user` package categorization.
-Update the catalog loader in `src/catalog/load.ts` to handle the new schema while maintaining backward compatibility for flat lists if necessary.
+Done: `src/catalog/types.ts` and `src/catalog/load.ts` use nested `standard` / `user` object lists only; `parseCatalogPackagesField` rejects non-object `packages` or invalid list items. Only the Station catalog file is loaded (no global or project catalog merge).
 
 # 3. Standardize File Naming
 
