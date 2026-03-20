@@ -26,9 +26,6 @@ Thumbs.db
 *.swo
 *~
 
-# Project-local atp state (installed record; optional catalog)
-.atp-local/
-
 # Test / coverage
 *.log
 coverage.out
