@@ -141,7 +141,9 @@ Holds:
 
 Default location: `./.atp_safehouse`
 
-For per-project installs
+For per-project installs. `atp safehouse init` refuses to create a Safehouse under your
+home directory when the resolved project root is `$HOME` (for example if `~/.vscode` exists).
+To override, set `ATP_ALLOW_HOME_SAFEHOUSE=1` (not recommended).
 
 ### Catalog
 
