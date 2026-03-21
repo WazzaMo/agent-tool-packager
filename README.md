@@ -2,7 +2,7 @@
 
 A utility for CLI agentic software development workflows.
 
-Current Version: 0.2.1
+Current Version: 0.2.2
 
 Cursor summarised this project as:
 
