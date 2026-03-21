@@ -31,6 +31,31 @@ Welcome to "Q Branch" !!
 We're going to build the next generation of agent tools together!
 
 
+## Installation
+
+```bash
+npm install -g @wazzamo-agent-tools/packager
+```
+
+Once installed, you can use the `atp` command line (short for Agent Tools Packager).
+
+```bash
+atp --version
+atp station init
+atp safehouse init
+atp agent cursor
+atp catalog list
+atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
+atp station list
+atp safehouse list
+atp remove station <pkg> [--exfiltrate]
+atp remove safehouse <pkg>
+```
+
+## Project
+
+GitHub: [https://github.com/WazzaMo/agent-tool-packager](https://github.com/WazzaMo/agent-tool-packager)
+
 ## Banner!
 
 ```
