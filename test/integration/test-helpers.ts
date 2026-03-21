@@ -3,7 +3,7 @@
  */
 
 import { expect } from "vitest";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
@@ -64,6 +64,26 @@ export function runAtp(args: string[], opts?: { cwd?: string; env?: NodeJS.Proce
     cwd: opts?.cwd ?? PROJECT_ROOT,
     env,
   });
+}
+
+/**
+ * Run ATP via spawn so stdout and stderr are captured separately (e.g. console.warn on stderr).
+ */
+export function runAtpSpawn(
+  args: string[],
+  opts?: { cwd?: string; env?: NodeJS.ProcessEnv }
+): { stdout: string; stderr: string; status: number | null } {
+  const env = { ...process.env, ...opts?.env };
+  const r = spawnSync(process.execPath, [CLI_PATH, ...args], {
+    cwd: opts?.cwd ?? PROJECT_ROOT,
+    env,
+    encoding: "utf8",
+  });
+  return {
+    stdout: r.stdout ?? "",
+    stderr: r.stderr ?? "",
+    status: r.status,
+  };
 }
 
 export function runAtpExpectExit(

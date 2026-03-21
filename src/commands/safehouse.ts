@@ -15,7 +15,9 @@ export function registerSafehouseCommands(program: Command): void {
 
   safehouse
     .command("init")
-    .description("Create .atp_safehouse in the current directory")
+    .description(
+      "Create .atp_safehouse for the resolved project (not under $HOME unless ATP_ALLOW_HOME_SAFEHOUSE=1)"
+    )
     .action(async () => {
       await safehouseInit();
     });

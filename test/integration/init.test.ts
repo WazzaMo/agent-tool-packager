@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, runAtpExpectExit, makeStationCatalogYaml } from "./test-helpers.js";
+import {
+  runAtp,
+  runAtpExpectExit,
+  runAtpSpawn,
+  makeStationCatalogYaml,
+} from "./test-helpers.js";
 
 describe("Integration: station init", () => {
   let stationDir: string;
@@ -122,10 +127,91 @@ describe("Integration: safehouse init", () => {
     expect(fs.existsSync(safehousePath)).toBe(true);
   });
 
-  it("fails when in home directory (anti-pattern)", () => {
-    // We can't easily mock homedir without affecting the whole process,
-    // but we can test the isHomeDirectory logic in unit tests.
-    // Here we just ensure it respects markers if they are present even if it's not home.
+});
+
+describe("Integration: safehouse init home-directory hardening", () => {
+  let stationDir: string;
+  let fakeHome: string;
+
+  beforeEach(() => {
+    stationDir = path.join(os.tmpdir(), `atp-station-h-${Date.now()}`);
+    fakeHome = path.join(os.tmpdir(), `atp-fake-home-${Date.now()}`);
+    fs.mkdirSync(stationDir, { recursive: true });
+    fs.mkdirSync(fakeHome, { recursive: true });
+    fs.mkdirSync(path.join(fakeHome, ".vscode"), { recursive: true });
+    fs.writeFileSync(
+      path.join(stationDir, "atp-config.yaml"),
+      "configuration:\n  version: 0.1.0\n  agent-paths: {}\n"
+    );
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    fs.writeFileSync(
+      path.join(stationDir, "atp-catalog.yaml"),
+      makeStationCatalogYaml([])
+    );
+    fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+  });
+
+  afterEach(() => {
+    try {
+      fs.rmSync(stationDir, { recursive: true });
+      fs.rmSync(fakeHome, { recursive: true });
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it("refuses init when resolved project root is HOME (e.g. ~/.vscode)", () => {
+    const { stderr } = runAtpExpectExit(["safehouse", "init"], 1, {
+      cwd: fakeHome,
+      env: {
+        STATION_PATH: stationDir,
+        HOME: fakeHome,
+        ATP_ALLOW_HOME_SAFEHOUSE: "",
+      },
+    });
+    expect(stderr).toMatch(/Refusing to create a Safehouse|home directory/i);
+    expect(stderr).toContain("ATP_ALLOW_HOME_SAFEHOUSE=1");
+    expect(fs.existsSync(path.join(fakeHome, ".atp_safehouse"))).toBe(false);
+  });
+
+  it("refuses init when SAFEHOUSE_PROJECT_PATH is HOME without hatch", () => {
+    const { stderr } = runAtpExpectExit(["safehouse", "init"], 1, {
+      cwd: os.tmpdir(),
+      env: {
+        STATION_PATH: stationDir,
+        HOME: fakeHome,
+        SAFEHOUSE_PROJECT_PATH: fakeHome,
+        ATP_ALLOW_HOME_SAFEHOUSE: "",
+      },
+    });
+    expect(stderr).toMatch(/Refusing to create a Safehouse|home directory/i);
+    expect(fs.existsSync(path.join(fakeHome, ".atp_safehouse"))).toBe(false);
+  });
+
+  it("does not treat ATP_ALLOW_HOME_SAFEHOUSE=true as enabled", () => {
+    const { stderr } = runAtpExpectExit(["safehouse", "init"], 1, {
+      cwd: fakeHome,
+      env: {
+        STATION_PATH: stationDir,
+        HOME: fakeHome,
+        ATP_ALLOW_HOME_SAFEHOUSE: "true",
+      },
+    });
+    expect(stderr).toMatch(/Refusing to create a Safehouse|home directory/i);
+  });
+
+  it("allows init under HOME when ATP_ALLOW_HOME_SAFEHOUSE=1 and warns on stderr", () => {
+    const r = runAtpSpawn(["safehouse", "init"], {
+      cwd: fakeHome,
+      env: {
+        STATION_PATH: stationDir,
+        HOME: fakeHome,
+        ATP_ALLOW_HOME_SAFEHOUSE: "1",
+      },
+    });
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain("ATP_ALLOW_HOME_SAFEHOUSE=1");
+    expect(fs.existsSync(path.join(fakeHome, ".atp_safehouse"))).toBe(true);
   });
 });
 

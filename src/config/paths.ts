@@ -116,3 +116,19 @@ export function isHomeDirectory(dir: string): boolean {
   }
   return false;
 }
+
+/**
+ * Escape hatch for `atp safehouse init` in a home directory. Only the literal value `"1"` enables it.
+ * @returns True when ATP_ALLOW_HOME_SAFEHOUSE is exactly "1".
+ */
+export function isHomeSafehouseEscapeHatchActive(): boolean {
+  return process.env.ATP_ALLOW_HOME_SAFEHOUSE === "1";
+}
+
+/**
+ * Whether safehouse init must refuse this directory (user home, and escape hatch not set).
+ * @param dir - Resolved project root from findProjectBase.
+ */
+export function isForbiddenSafehouseDir(dir: string): boolean {
+  return isHomeDirectory(dir) && !isHomeSafehouseEscapeHatchActive();
+}

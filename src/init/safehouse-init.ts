@@ -12,7 +12,9 @@ import {
   getStationPath,
   pathExists,
   findProjectBase,
+  isForbiddenSafehouseDir,
   isHomeDirectory,
+  isHomeSafehouseEscapeHatchActive,
 } from "../config/paths.js";
 
 import {
@@ -78,6 +80,24 @@ export async function safehouseInit(): Promise<void> {
       "To force initialization, set the SAFEHOUSE_PROJECT_PATH environment variable."
     );
     process.exit(1);
+  }
+
+  if (isForbiddenSafehouseDir(projectBase)) {
+    console.error(
+      "Error: Refusing to create a Safehouse in your home directory (detected as project root)."
+    );
+    console.error("Initializing a Safehouse here is an anti-pattern.");
+    console.error(
+      "Run from a real project directory, adjust .git/.vscode markers, or set SAFEHOUSE_PROJECT_PATH to a non-home path."
+    );
+    console.error("To override (not recommended), set ATP_ALLOW_HOME_SAFEHOUSE=1.");
+    process.exit(1);
+  }
+
+  if (isHomeDirectory(projectBase) && isHomeSafehouseEscapeHatchActive()) {
+    console.warn(
+      "Warning: ATP_ALLOW_HOME_SAFEHOUSE=1 is set; creating a Safehouse under the home directory."
+    );
   }
 
   const safehousePath = getSafehousePath(projectBase);
