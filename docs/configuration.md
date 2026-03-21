@@ -158,6 +158,11 @@ The safehouse holds a manifest of installed agent packages, called `manifest.yam
 and it will identify the packages that are in-use in that project and the `STATION_PATH`
 from which they were installed.
 
+`atp safehouse init` will not create `.atp_safehouse` under the user’s home directory when
+the resolved project root is `$HOME` (for example when `~/.git` or `~/.vscode` is found there,
+or when `SAFEHOUSE_PROJECT_PATH` points at `$HOME`). To force that layout anyway, set
+`ATP_ALLOW_HOME_SAFEHOUSE` to exactly `1`; any other value leaves the restriction in place.
+
 # Standard and Custom Packages
 
 Standard packages were source from the global home office.
