@@ -1,5 +1,5 @@
 {
-  "name": "@agent-tools/packager",
+  "name": "@wazzamo-agent-tools/packager",
   "version": "0.2.2",
   "description": "CLI for agentic software development workflows",
   "type": "module",
