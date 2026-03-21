@@ -1,15 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { builtinModules } from 'module';
+import fs from 'node:fs';
+
+const version = fs.readFileSync('project-version', 'utf8').trim();
 
 export default defineConfig({
+  define: {
+    'process.env.ATP_VERSION': JSON.stringify(version),
+  },
   build: {
     target: 'node24',
     ssr: true, // We are building for Node
     lib: {
-      entry: resolve(__dirname, 'src/cli.ts'),
+      entry: resolve(__dirname, 'src/atp.ts'),
       formats: ['es'],
-      fileName: 'cli',
+      fileName: 'atp',
     },
     rollupOptions: {
       external: [

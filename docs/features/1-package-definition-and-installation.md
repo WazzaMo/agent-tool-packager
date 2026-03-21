@@ -66,7 +66,7 @@ be installed at the user level or at the project level.
 ### Terminology (aligned with package-metadata)
 
 - **Rules**: Product type for prompt markdown files. In
-  [package-metadata](../notes/2026-02-25-package-metadata-and-catalog.md) and
+  [package-metadata](../notes/2026-02-25-plan-package-metadata-and-catalog.md) and
   code, these are "assets" or "prompts."
 
 - **Station**: Main config area at `~/.atp_station` (or `STATION_PATH`); see
@@ -274,10 +274,10 @@ Example:
 
 ```yaml
 SafehouseConfig:
- - AtpVersion: 0.1.0
- - StationPath: ~/.atp_station
- - PathToAgentFiles: ../.cursor
- - Agent: cursor
+  AtpVersion: 0.1.0
+  StationPath: ~/.atp_station
+  PathToAgentFiles: ../.cursor
+  Agent: cursor
 ```
 
 
@@ -387,16 +387,18 @@ To list packages in the catalog that can be installed.
 ## Agent nomination
 
 ATP needs to know which agent requires the weapons (the package) 
-because every agent is different. It is to be assumed that there
-will be no safehouse path in the project file until one is created.
+because every agent is different. The Safehouse must be initialised
+before nominating an agent, and without it, the `atp agent {name}`
+command will fail.
 
-The `atp agent` command creates the safehouse path in the project.
+The `atp agent` command assigns the agent to the project's Safehouse.
 When the agent name is given, it configures the safehouse
 for that agent so that weapons can be installed into the proper place
 for that agent.
 
 ```bash
 cd test_project
+atp safehouse init
 atp agent cursor
 ```
 
@@ -416,7 +418,8 @@ unnecessary, "Q Branch already knows cursor was assigned to this project"
 ## Agent handover
 
 When a project is under one particular agent and swaps it for a new
-agent, this is a handover.
+agent, this is a handover. The Safehouse already exists in this scenario,
+of course.
 
 Where a package is installed in a project's Safehouse, a handover
 can be affected like this:
@@ -438,6 +441,7 @@ must install into the project area, assumed to be the current directory.
 
 ```bash
 cd test_project
+atp safehouse init
 atp agent cursor
 atp install vecfs-ts --{scope}
 ```

@@ -35,7 +35,7 @@ const program = new Command();
 program
   .name("atp")
   .description(greetingMessage)
-  .version("0.1.0");
+  .version(process.env.ATP_VERSION || "0.0.0-dev");
 
 registerStationCommands(program);
 registerSafehouseCommands(program);

@@ -11,16 +11,23 @@ import {
   getSafehousePath,
   getStationPath,
   pathExists,
+  findProjectBase,
+  isForbiddenSafehouseDir,
+  isHomeDirectory,
+  isHomeSafehouseEscapeHatchActive,
 } from "../config/paths.js";
+
 import {
   DEFAULT_SAFEHOUSE_CONFIG,
   DEFAULT_SAFEHOUSE_MANIFEST,
 } from "../config/safehouse-config.js";
+
+import { writeManifestContent } from "../config/safehouse-manifest.js";
 import type { SafehouseListConfig } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";
 const MANIFEST_FILE = "manifest.yaml";
-const SAFEHOUSE_LIST_FILE = "safehouse_list.yaml";
+const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 
 function toTildePath(p: string): string {
   const home = os.homedir();
@@ -49,9 +56,51 @@ function registerSafehouseInStation(safehousePath: string): void {
   );
 }
 
+/**
+ * Initialize Safehouse in project directory. Creates .atp_safehouse with config and manifest.
+ * Uses findProjectBase; rejects home directory. Registers with Station if present.
+ * Feature 3: atp safehouse init acceptance criteria.
+ */
 export async function safehouseInit(): Promise<void> {
   const cwd = process.cwd();
-  const safehousePath = getSafehousePath(cwd);
+  const projectBase = findProjectBase(cwd);
+
+  if (!projectBase) {
+    if (isHomeDirectory(cwd)) {
+      console.error("Error: It looks like you are in your home directory.");
+      console.error("Initializing a Safehouse here is an anti-pattern.");
+      console.error("Please run this from a project directory, or set SAFEHOUSE_PROJECT_PATH.");
+      process.exit(1);
+    }
+
+    console.error(
+      "Error: Could not confirm this is a project directory (no .git or .vscode markers found)."
+    );
+    console.error(
+      "To force initialization, set the SAFEHOUSE_PROJECT_PATH environment variable."
+    );
+    process.exit(1);
+  }
+
+  if (isForbiddenSafehouseDir(projectBase)) {
+    console.error(
+      "Error: Refusing to create a Safehouse in your home directory (detected as project root)."
+    );
+    console.error("Initializing a Safehouse here is an anti-pattern.");
+    console.error(
+      "Run from a real project directory, adjust .git/.vscode markers, or set SAFEHOUSE_PROJECT_PATH to a non-home path."
+    );
+    console.error("To override (not recommended), set ATP_ALLOW_HOME_SAFEHOUSE=1.");
+    process.exit(1);
+  }
+
+  if (isHomeDirectory(projectBase) && isHomeSafehouseEscapeHatchActive()) {
+    console.warn(
+      "Warning: ATP_ALLOW_HOME_SAFEHOUSE=1 is set; creating a Safehouse under the home directory."
+    );
+  }
+
+  const safehousePath = getSafehousePath(projectBase);
 
   if (fs.existsSync(safehousePath)) {
     console.log(`Safehouse already exists at ${safehousePath}`);
@@ -71,10 +120,10 @@ export async function safehouseInit(): Promise<void> {
   );
   fs.writeFileSync(
     manifestPath,
-    yaml.dump(
-      { ...DEFAULT_SAFEHOUSE_MANIFEST, station_path: stationPath },
-      { lineWidth: 80 }
-    ),
+    writeManifestContent({
+      ...DEFAULT_SAFEHOUSE_MANIFEST,
+      station_path: stationPath,
+    }),
     "utf8"
   );
 

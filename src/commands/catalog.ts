@@ -3,12 +3,8 @@
  */
 
 import type { Command } from "commander";
-import { mergeCatalogs } from "../catalog/merge.js";
-import {
-  loadGlobalCatalog,
-  loadProjectCatalog,
-  loadUserCatalog,
-} from "../catalog/load.js";
+import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
+
 import type { CatalogPackage } from "../catalog/types.js";
 import { catalogAddPackage } from "../package/catalog-add.js";
 
@@ -22,31 +18,13 @@ function formatPackage(pkg: CatalogPackage): string {
 export function registerCatalogCommands(program: Command): void {
   const catalog = program
     .command("catalog")
-    .description("Manage and list packages in the catalog");
+    .description("Manage and list packages in the Station catalog");
 
   catalog
     .command("list")
-    .description("List packages in the catalog that can be installed")
-    .option("--global-only", "Show only global (bundled) catalog")
-    .option("--project-only", "Show only project catalog")
-    .option("--user-only", "Show only user (Station) catalog")
-    .action((opts: { globalOnly?: boolean; projectOnly?: boolean; userOnly?: boolean }) => {
-      const cwd = process.cwd();
-      const global = loadGlobalCatalog();
-      const user = loadUserCatalog();
-      const project = loadProjectCatalog(cwd);
-
-      let packages: CatalogPackage[];
-
-      if (opts.globalOnly) {
-        packages = global.packages;
-      } else if (opts.projectOnly) {
-        packages = project.packages;
-      } else if (opts.userOnly) {
-        packages = user.packages;
-      } else {
-        packages = mergeCatalogs(global, user, project);
-      }
+    .description("List packages in the Station catalog (atp-catalog.yaml)")
+    .action(() => {
+      const packages = effectiveStationCatalogPackages(loadStationCatalog());
 
       if (packages.length === 0) {
         console.log("(no packages)");
@@ -62,7 +40,7 @@ export function registerCatalogCommands(program: Command): void {
 
   catalog
     .command("add package")
-    .description("Add current package to Station user catalog (run from package directory)")
+    .description("Add current package to Station catalog (run from package directory)")
     .action(() => {
       catalogAddPackage(process.cwd());
     });

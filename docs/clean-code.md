@@ -47,6 +47,31 @@ for creating objects with the same protocol.
 Polymorphism as a last resort and only when it really
 adds readibility and keeps things simple.
 
+## Readability
+
+TypeScript imports can get noisy when multi-line imports
+are one after the other without some break inbetween.
+
+### Single line example
+
+```TypeScript
+// a stream of single-line imports reads well..
+import A from B;
+import D from E;
+```
+
+### Multi-line example
+
+```TypeScript
+// Multi line imports need space afterwards, to break them up
+import {
+    FooClass,
+    BarClass
+} from 'land/of/foo';
+
+import A from B;
+```
+
 # Self-documenting code
 
 ## Code Composition for self-documenting code
@@ -75,6 +100,17 @@ as simple and as dedicated as possible.
 In TypeScript the /** ... */ document comment is very useful.
 You can add meaning parameters, return types and other annotations
 on each class, interface and function.
+
+```typescript
+/**
+ * Example function declaration with JSDoc
+ * @param message - message to return.
+ * @returns the message given.
+ */
+function exampleFuncDec(message: string) : string {
+    return message;
+}
+```
 
 # Clean Tests
 

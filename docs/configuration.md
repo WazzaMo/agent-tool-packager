@@ -63,39 +63,64 @@ The station directory found either at:
 
 Will hold information about the Agent Tool Packager (ATP) Station.
 
-It will contain at minimum:
+The Station configuration will contain at minimum:
 
 ```yaml
+# ATP Station Configuration
+# Version: 0.1.0
+
 configuration:
-    - version: 0.1.0
-    - agent-paths:
-        - cursor:
-            - home_path: ~/.cursor/
-            - project_path: .cursor/
-            - rule: rules/
-            - commands: commands/
-            - skills: skills/
-        - codex:
-            - home_path: ~/.codex
-        - claude:
-            - home_path: ~/.claude
-        - gemini:
-            - home_path: ~/.gemini
-    - standard-catalog:
-        url: https://agent-tool-packager.example.com/packages/0.1.0/
+  # The version of the configuration schema
+  version: "0.1.0"
+
+  # Path configurations for different AI agents supported by ATP.
+  # These define where the agents expect their rules, commands, and skills.
+  agent-paths:
+    cursor:
+      home_path: "~/.cursor/"
+      project_path: ".cursor/"
+      rule: "rules/"
+      commands: "commands/"
+      skills: "skills/"
+    
+    codex:
+      home_path: "~/.codex"
+      
+    claude:
+      home_path: "~/.claude"
+      
+    gemini:
+      home_path: "~/.gemini"
+      project_path: ".gemini/"
+      rule: "rules/"
+      skills: "skills/"
+
+  # The standard catalog URL provides the default source for package updates.
+  standard-catalog:
+    url: "https://agent-tool-packager.example.com/packages/0.1.0/"
 ```
+
 
 #### Station Catalog `atp-catalog.yaml`
 
+`packages` must be a mapping with **both** `standard` and `user` keys, each a **YAML list** (use `[]` when empty). Each list item must be a **mapping** (object), not a bare package name string: at minimum `name`, plus optional `version`, `description`, and `location` (e.g. a `file://` path). `location` may be omitted when not applicable. The same name in `user` overrides `standard` for installs and for `atp catalog list`. A flat `packages: [ ... ]` list or string entries are invalid and are treated as no packages.
+
+There is only this Station catalog (no separate global or per-project catalog file). The file may omit the outer `catalog:` key and list `packages` at the top level.
+
 ```yaml
 catalog:
-    - standard_packages-path: ./standard_packages/
-    - user_packages-path: ./user_packages/
-    - packages:
-        - standard:
-            - vecfs
-        - user:
-            - special-prompt-set
+  standard_packages-path: ./standard_packages/
+  user_packages-path: ./user_packages/
+  packages:
+    standard:
+      - name: vecfs
+        version: "0.2.0"
+        description: Vector filesystem helpers
+        location: file:///path/to/vecfs-package
+    user:
+      - name: special-prompt-set
+        version: "1.0.0"
+        description: Personal prompt collection
 ```
 
 #### The Station's Safehouse list
@@ -132,6 +157,11 @@ The hierarchy would be like this:
 The safehouse holds a manifest of installed agent packages, called `manifest.yaml`
 and it will identify the packages that are in-use in that project and the `STATION_PATH`
 from which they were installed.
+
+`atp safehouse init` will not create `.atp_safehouse` under the user’s home directory when
+the resolved project root is `$HOME` (for example when `~/.git` or `~/.vscode` is found there,
+or when `SAFEHOUSE_PROJECT_PATH` points at `$HOME`). To force that layout anyway, set
+`ATP_ALLOW_HOME_SAFEHOUSE` to exactly `1`; any other value leaves the restriction in place.
 
 # Standard and Custom Packages
 

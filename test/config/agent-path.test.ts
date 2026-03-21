@@ -4,8 +4,49 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { resolveAgentProjectPath } from "../../src/config/agent-path.js";
+import {
+  isAgentInStationConfig,
+  resolveAgentProjectPath,
+} from "../../src/config/agent-path.js";
 import type { StationConfig } from "../../src/config/station-config.js";
+
+describe("isAgentInStationConfig", () => {
+  it("returns true when agent has entry in agent-paths", () => {
+    const config: StationConfig = {
+      configuration: {
+        version: "0.1.0",
+        "agent-paths": {
+          cursor: { project_path: ".cursor/" },
+        },
+      },
+    };
+    expect(isAgentInStationConfig("cursor", config)).toBe(true);
+  });
+
+  it("returns false when agent not in agent-paths", () => {
+    const config: StationConfig = {
+      configuration: {
+        version: "0.1.0",
+        "agent-paths": { cursor: { project_path: ".cursor/" } },
+      },
+    };
+    expect(isAgentInStationConfig("unknown-agent", config)).toBe(false);
+  });
+
+  it("returns false when agent-paths is empty", () => {
+    const config: StationConfig = {
+      configuration: {
+        version: "0.1.0",
+        "agent-paths": {},
+      },
+    };
+    expect(isAgentInStationConfig("cursor", config)).toBe(false);
+  });
+
+  it("returns false when station config is null", () => {
+    expect(isAgentInStationConfig("cursor", null)).toBe(false);
+  });
+});
 
 describe("resolveAgentProjectPath", () => {
   it("returns project_path when configured", () => {

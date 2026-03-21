@@ -12,13 +12,13 @@ export interface BundleDefinition {
 }
 
 export interface DevPackageManifest {
-  name?: string;
-  type?: string;
+  name: string;
+  type: string;
+  version: string;
+  usage: string[];
+  components: string[];
   developer?: string;
   license?: string;
-  version?: string;
   copyright?: string[];
-  usage?: string[];
-  components?: string[];
   bundles?: (string | BundleDefinition)[];
 }

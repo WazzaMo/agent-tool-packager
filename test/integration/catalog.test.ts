@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG } from "./test-helpers.js";
+import { runAtp, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: catalog list", () => {
   let stationDir: string;
@@ -14,15 +14,22 @@ describe("Integration: catalog list", () => {
     fs.mkdirSync(stationDir, { recursive: true });
     fs.mkdirSync(projectDir, { recursive: true });
     fs.writeFileSync(path.join(stationDir, "atp-config.yaml"), "configuration:\n  version: 0.1.0\n  agent-paths: {}\n");
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-  - name: doc-guide
-    version: 1.0.0
-    location: file:///nonexistent
-`;
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    const catalogContent = makeStationCatalogYaml(
+      [
+        {
+          name: "test-package",
+          version: "1.0.0",
+          location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+        },
+        {
+          name: "doc-guide",
+          version: "1.0.0",
+          location: "file:///nonexistent",
+        },
+      ],
+      []
+    );
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
   });
@@ -36,20 +43,12 @@ describe("Integration: catalog list", () => {
     }
   });
 
-  it("atp catalog list shows known packages from catalog", () => {
+  it("atp catalog list shows known packages from Station catalog", () => {
     const out = runAtp(["catalog", "list"], {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
     expect(out).toContain("test-package");
     expect(out).toContain("doc-guide");
-  });
-
-  it("atp catalog list --user-only shows only user catalog", () => {
-    const out = runAtp(["catalog", "list", "--user-only"], {
-      cwd: projectDir,
-      env: { STATION_PATH: stationDir },
-    });
-    expect(out).toContain("test-package");
   });
 });

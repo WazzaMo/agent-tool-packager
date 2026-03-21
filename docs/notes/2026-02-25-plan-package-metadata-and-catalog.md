@@ -77,19 +77,21 @@ does not need to hold the full asset content.
 
 ### What the catalog file might look like
 
-A minimal catalog could be a YAML or JSON array of entries, e.g.:
+A minimal catalog uses nested `packages.standard` and `packages.user` arrays (each may be `[]`). Every list element must be an object with at least `name`; optional `version`, `description`, and `location` (`location` may be empty or omitted). Bare strings in lists are not allowed.
 
 ```yaml
-# catalog.yaml or similar
+# Station atp-catalog.yaml
 packages:
-  - name: doc-guide
-    version: 1.0.0
-    description: Markdown documentation style guide for ATP.
-    location: file:///path/to/prompt-assets/docs
-  - name: clean-code
-    version: 1.0.0
-    description: Coding conventions for Agent Tool Packager.
-    location: https://example.com/atp-packages/clean-code
+  standard:
+    - name: doc-guide
+      version: 1.0.0
+      description: Markdown documentation style guide for ATP.
+      location: file:///path/to/prompt-assets/docs
+  user:
+    - name: clean-code
+      version: 1.0.0
+      description: Coding conventions for Agent Tool Packager.
+      location: https://example.com/atp-packages/clean-code
 ```
 
 Or the catalog could reference each package’s manifest URL so that the
@@ -99,18 +101,7 @@ for display or resolution.
 
 ### Where the catalog lives
 
-- **User home**: e.g. `~/.atp_station/catalog.yaml` for packages the user has added
-  or subscribed to.
-
-- **Project**: e.g. `./.atp-local/catalog.yaml` for packages scoped to that
-  project.
-
-- **Bundled or remote**: ATP could ship or point at a default catalog (e.g.
-  GitHub repo or static JSON) so users see a default set of packages without
-  configuring anything.
-
-Combining these (e.g. merge project catalog with user catalog, with
-project overriding) gives flexibility for teams and individuals.
+- **Station only**: `${STATION_PATH}/atp-catalog.yaml` (default `~/.atp_station/atp-catalog.yaml`). There is no separate global, bundled, or per-project catalog file; installs resolve package names from this index only (agent files still install to home-level or project-level agent dirs per `atp install` options).
 
 ## Summary
 
@@ -119,7 +110,7 @@ project overriding) gives flexibility for teams and individuals.
 | Package        | One or more assets (e.g. markdown) plus a manifest with name, version, list. |
 | Manifest       | File in package root (e.g. atp-package.yaml) describing the package.        |
 | Versioning     | Semver or similar; bump when assets or manifest change.                     |
-| Catalog        | Index of packages: name, version, location; user/project/remote sources.   |
+| Catalog        | Station index of packages: name, version, location; `packages.user` overrides `packages.standard` by name. |
 
 Package authors: add a manifest next to your assets and (optionally) register
 the package in a catalog so others can discover and install it by name and

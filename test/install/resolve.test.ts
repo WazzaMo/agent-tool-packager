@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import yaml from "js-yaml";
 import {
   resolvePackage,
   loadPackageManifest,
@@ -25,11 +26,21 @@ describe("resolvePackage", () => {
     fs.mkdirSync(tmpStation, { recursive: true });
     fs.writeFileSync(
       path.join(tmpStation, "atp-catalog.yaml"),
-      `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`
+      yaml.dump(
+        {
+          packages: {
+            standard: [],
+            user: [
+              {
+                name: "test-package",
+                version: "1.0.0",
+                location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+              },
+            ],
+          },
+        },
+        { lineWidth: 120 }
+      )
     );
     process.env.STATION_PATH = tmpStation;
   });

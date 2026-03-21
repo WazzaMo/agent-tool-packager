@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+import "../dist/atp.js";
+
+// (c) Copyright 2026 Warwick Molloy.
+// Contribution to this project is supported and contributors will be recognised.
+//-----
+// License: Apache 2.0

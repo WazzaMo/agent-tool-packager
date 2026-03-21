@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG } from "./test-helpers.js";
+import { runAtp, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: remove", () => {
   let stationDir: string;
@@ -22,14 +22,18 @@ describe("Integration: remove", () => {
       project_path: .cursor/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+    // Add project marker so safehouse init succeeds
+    fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
     runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
@@ -97,14 +101,20 @@ describe("Integration: remove with binary scope", () => {
       project_path: .cursor/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+
+    // Add project markers
+    fs.mkdirSync(path.join(projectDir1, ".git"), { recursive: true });
+    fs.mkdirSync(path.join(projectDir2, ".git"), { recursive: true });
 
     // Init safehouses
     runAtp(["safehouse", "init"], { cwd: projectDir1, env: { STATION_PATH: stationDir, HOME: fakeHome } });

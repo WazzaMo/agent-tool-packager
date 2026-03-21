@@ -2,25 +2,31 @@
  * Unit tests for config/load module.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import yaml from "js-yaml";
+
 import {
   loadStationConfig,
-  loadSafehouseConfig,
-  loadSafehouseManifest,
   stationExists,
   safehouseExists,
+  loadSafehouseList,
+} from "../../src/config/load.js";
+
+import {
+  loadSafehouseManifest,
   addPackageToSafehouseManifest,
   removePackageFromSafehouseManifest,
-  loadSafehouseList,
   loadSafehouseManifestFromPath,
+} from "../../src/config/safehouse-manifest.js";
+
+import {
   stationHasPackage,
   deleteStationPackageManifest,
   writeStationPackageManifest,
-} from "../../src/config/load.js";
+} from "../../src/config/station-package-manifest.js";
 
 function createTempDir(): string {
   const dir = path.join(os.tmpdir(), `atp-config-load-${Date.now()}`);
@@ -87,10 +93,18 @@ describe("config/load", () => {
         "agent: cursor\nstation_path: null"
       );
 
-      addPackageToSafehouseManifest("pkg-a", "1.0", "user-bin", path.dirname(safehouse));
+      addPackageToSafehouseManifest(
+        "pkg-a",
+        "1.0",
+        "user-bin",
+        "station",
+        path.dirname(safehouse)
+      );
       let manifest = loadSafehouseManifest(path.dirname(safehouse));
       expect(manifest?.packages).toHaveLength(1);
       expect(manifest?.packages[0].name).toBe("pkg-a");
+      expect(manifest?.packages[0].source).toBe("station");
+      expect(manifest?.packages[0].binary_scope).toBe("user-bin");
 
       removePackageFromSafehouseManifest("pkg-a", path.dirname(safehouse));
       manifest = loadSafehouseManifest(path.dirname(safehouse));
@@ -122,17 +136,17 @@ describe("config/load", () => {
   });
 
   describe("loadSafehouseList", () => {
-    it("returns empty when no safehouse_list.yaml", () => {
+    it("returns empty when no atp-safehouse-list.yaml", () => {
       const tmp = createTempDir();
       process.env.STATION_PATH = tmp;
       expect(loadSafehouseList()).toEqual([]);
       fs.rmSync(tmp, { recursive: true });
     });
 
-    it("returns expanded paths from safehouse_list.yaml", () => {
+    it("returns expanded paths from atp-safehouse-list.yaml", () => {
       const tmp = createTempDir();
       fs.writeFileSync(
-        path.join(tmp, "safehouse_list.yaml"),
+        path.join(tmp, "atp-safehouse-list.yaml"),
         "safehouse_paths:\n  - /abs/path/to/safe"
       );
       process.env.STATION_PATH = tmp;
@@ -152,11 +166,37 @@ describe("config/load", () => {
       const sh = createTempDir();
       fs.writeFileSync(
         path.join(sh, "manifest.yaml"),
-        yaml.dump({ packages: [{ name: "x", version: "1" }], station_path: null })
+        yaml.dump({
+          "Safehouse-Manifest": {
+            packages: [
+              {
+                name: "x",
+                version: "1",
+                source: "local",
+                binary_scope: "project-bin",
+              },
+            ],
+            station_path: null,
+          },
+        })
       );
       const m = loadSafehouseManifestFromPath(sh);
       expect(m?.packages).toHaveLength(1);
       expect(m?.packages[0].name).toBe("x");
+      expect(m?.packages[0].source).toBe("local");
+      expect(m?.packages[0].binary_scope).toBe("project-bin");
+      fs.rmSync(sh, { recursive: true });
+    });
+
+    it("loads legacy flat manifest (backward compat)", () => {
+      const sh = createTempDir();
+      fs.writeFileSync(
+        path.join(sh, "manifest.yaml"),
+        yaml.dump({ packages: [{ name: "legacy", version: "1" }], station_path: null })
+      );
+      const m = loadSafehouseManifestFromPath(sh);
+      expect(m?.packages).toHaveLength(1);
+      expect(m?.packages[0].name).toBe("legacy");
       fs.rmSync(sh, { recursive: true });
     });
   });

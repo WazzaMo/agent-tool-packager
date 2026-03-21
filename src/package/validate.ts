@@ -67,8 +67,15 @@ export function validatePackage(cwd: string): ValidateResult {
     };
   }
 
-  const hasCritical = missing.some((m) => m.includes("atp-package") || m.includes("stage"));
-  const exitCode: 1 | 2 = hasCritical ? 2 : 1;
+  const hasMandatoryMissing = missing.some(
+    (m) =>
+      m === "name" ||
+      m === "type" ||
+      m === "version" ||
+      m === "usage" ||
+      m.includes("atp-package")
+  );
+  const exitCode: 1 | 2 = hasMandatoryMissing ? 2 : 1;
 
   let message = "Only package type is set and many properties remain to make the package viable to install, such as:";
   if (missing.includes("name")) message += "\n- name";

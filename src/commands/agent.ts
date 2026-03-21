@@ -5,31 +5,61 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Command } from "commander";
+
 import {
   loadSafehouseConfig,
   loadStationConfig,
   safehouseExists,
   writeSafehouseConfig,
 } from "../config/load.js";
-import { resolveAgentProjectPath } from "../config/agent-path.js";
+
+import {
+  isAgentInStationConfig,
+  resolveAgentProjectPath,
+} from "../config/agent-path.js";
+
+import { findProjectBase } from "../config/paths.js";
+
+import { reinstallSafehousePackages } from "../install/reinstall.js";
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
-function ensureSafehouse(cwd: string): void {
-  if (!safehouseExists(cwd)) {
+const AGENT_NOT_CONFIGURED_MSG =
+  (name: string) =>
+  `Agent '${name}' is not configured in the Station. Add it to agent-paths in atp-config.yaml.`;
+
+/**
+ * Ensure Safehouse exists. Uses findProjectBase to resolve project from cwd.
+ * Exits with code 1 if no Safehouse found.
+ * @param cwd - Current working directory.
+ * @returns Project base path.
+ */
+function ensureSafehouse(cwd: string): string {
+  const projectBase = findProjectBase(cwd);
+  if (!projectBase || !safehouseExists(projectBase)) {
     console.error(SAFEHOUSE_REQUIRED_MSG);
     process.exit(1);
   }
+  return projectBase;
 }
 
-function ensureAgentDir(projectPath: string, cwd: string): void {
-  const fullPath = path.join(cwd, projectPath);
+/**
+ * Ensure agent directory exists at projectPath under projectBase.
+ * @param projectPath - Relative path (e.g. .cursor/).
+ * @param projectBase - Project root directory.
+ */
+function ensureAgentDir(projectPath: string, projectBase: string): void {
+  const fullPath = path.join(projectBase, projectPath);
   if (!fs.existsSync(fullPath)) {
     fs.mkdirSync(fullPath, { recursive: true });
   }
 }
 
+/**
+ * Registers agent subcommands: atp agent <name>, atp agent handover to <name>.
+ * @param program - Commander program to register subcommands on.
+ */
 export function registerAgentCommands(program: Command): void {
   const agent = program
     .command("agent")
@@ -41,29 +71,34 @@ export function registerAgentCommands(program: Command): void {
     .argument("to", "'to' (literal)")
     .argument("<name>", "Agent to hand over to")
     .description("Hand over from current agent to a new agent")
-    .action((_to: string, name: string) => {
+    .action(async (_to: string, name: string) => {
       const cwd = process.cwd();
-      ensureSafehouse(cwd);
+      const projectBase = ensureSafehouse(cwd);
 
-      const config = loadSafehouseConfig(cwd);
+      const config = loadSafehouseConfig(projectBase);
       if (!config) {
         console.error(SAFEHOUSE_REQUIRED_MSG);
         process.exit(1);
       }
 
       const stationConfig = loadStationConfig();
+      if (!isAgentInStationConfig(name, stationConfig)) {
+        console.error(AGENT_NOT_CONFIGURED_MSG(name));
+        process.exit(1);
+      }
       const agentPath = resolveAgentProjectPath(name, stationConfig);
 
-      ensureAgentDir(agentPath, cwd);
+      ensureAgentDir(agentPath, projectBase);
 
       const updated: typeof config = {
         ...config,
         agent: name,
         agent_path: agentPath,
       };
-      writeSafehouseConfig(updated, cwd);
+      writeSafehouseConfig(updated, projectBase);
 
-      // TODO Phase 5: skill re-install/patching when switching agents
+      await reinstallSafehousePackages(projectBase);
+
       console.log(`Handed over to ${name} (${agentPath})`);
     });
 
@@ -73,9 +108,9 @@ export function registerAgentCommands(program: Command): void {
     .description("Assign agent to this project (run from project with .atp_safehouse)")
     .action((name: string) => {
       const cwd = process.cwd();
-      ensureSafehouse(cwd);
+      const projectBase = ensureSafehouse(cwd);
 
-      const config = loadSafehouseConfig(cwd);
+      const config = loadSafehouseConfig(projectBase);
       if (!config) {
         console.error(SAFEHOUSE_REQUIRED_MSG);
         process.exit(1);
@@ -87,16 +122,20 @@ export function registerAgentCommands(program: Command): void {
       }
 
       const stationConfig = loadStationConfig();
+      if (!isAgentInStationConfig(name, stationConfig)) {
+        console.error(AGENT_NOT_CONFIGURED_MSG(name));
+        process.exit(1);
+      }
       const agentPath = resolveAgentProjectPath(name, stationConfig);
 
-      ensureAgentDir(agentPath, cwd);
+      ensureAgentDir(agentPath, projectBase);
 
       const updated: typeof config = {
         ...config,
         agent: name,
         agent_path: agentPath,
       };
-      writeSafehouseConfig(updated, cwd);
+      writeSafehouseConfig(updated, projectBase);
 
       console.log(`Assigned ${name} to this project (${agentPath})`);
     });

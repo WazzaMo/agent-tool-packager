@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG } from "./test-helpers.js";
+import yaml from "js-yaml";
+import { runAtp, runAtpExpectExit, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: install and list", () => {
   let stationDir: string;
@@ -22,14 +23,18 @@ describe("Integration: install and list", () => {
       project_path: .cursor/
 `
     );
-    fs.writeFileSync(path.join(stationDir, "safehouse_list.yaml"), "safehouse_paths: []\n");
-    const catalogContent = `packages:
-  - name: test-package
-    version: 1.0.0
-    location: file://${FIXTURE_PKG.replace(/\\/g, "/")}
-`;
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    const catalogContent = makeStationCatalogYaml([
+      {
+        name: "test-package",
+        version: "1.0.0",
+        location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+      },
+    ]);
     fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
     fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+    // Add project marker so safehouse init succeeds
+    fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
     runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
   });
@@ -41,6 +46,17 @@ describe("Integration: install and list", () => {
     } catch {
       /* ignore */
     }
+  });
+
+  it("atp install test-package defaults to project scope (Feature 1)", () => {
+    const out = runAtp(["install", "test-package"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(out).toContain("Installed test-package");
+    expect(out).toContain("(prompts:project");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    expect(fs.existsSync(skillPath)).toBe(true);
   });
 
   it("atp install test-package --project installs to safehouse", () => {
@@ -82,5 +98,53 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project, bin:project-bin)");
+  });
+
+  it("atp install fails with meaningful error when dependency missing (Feature 1)", () => {
+    const depPkgDir = path.join(os.tmpdir(), `atp-dep-pkg-${Date.now()}`);
+    fs.mkdirSync(depPkgDir, { recursive: true });
+    fs.mkdirSync(path.join(depPkgDir, "skills"), { recursive: true });
+    fs.writeFileSync(
+      path.join(depPkgDir, "atp-package.yaml"),
+      `name: pkg-with-deps
+version: 1.0.0
+program_dependencies:
+  - nonexistent-dep
+assets:
+  - path: skills/skill.md
+    type: skill
+    name: skill
+`
+    );
+    fs.writeFileSync(path.join(depPkgDir, "skills", "skill.md"), "# Skill\n");
+    const catalogPath = path.join(stationDir, "atp-catalog.yaml");
+    const doc = yaml.load(fs.readFileSync(catalogPath, "utf8")) as Record<string, unknown>;
+    const inner = (doc.catalog ?? doc) as Record<string, unknown>;
+    const pkgField = inner.packages as Record<string, unknown>;
+    const user = [...(Array.isArray(pkgField.user) ? pkgField.user : [])];
+    user.push({
+      name: "pkg-with-deps",
+      version: "1.0.0",
+      location: `file://${depPkgDir.replace(/\\/g, "/")}`,
+    });
+    inner.packages = {
+      standard: Array.isArray(pkgField.standard) ? pkgField.standard : [],
+      user,
+    };
+    fs.writeFileSync(catalogPath, yaml.dump(doc, { lineWidth: 120 }));
+    try {
+      const result = runAtpExpectExit(["install", "pkg-with-deps"], 1, {
+        cwd: projectDir,
+        env: { STATION_PATH: stationDir },
+      });
+      expect(result.stderr + result.stdout).toMatch(/unmet dependencies|nonexistent-dep/);
+      expect(result.stderr + result.stdout).toMatch(/--dependencies/);
+    } finally {
+      try {
+        fs.rmSync(depPkgDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
   });
 });

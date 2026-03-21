@@ -6,12 +6,16 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 import {
   expandHome,
   getStationPath,
   getSafehousePath,
   pathExists,
+  findProjectBase,
   DEFAULT_STATION_PATH,
+  isHomeSafehouseEscapeHatchActive,
+  isForbiddenSafehouseDir,
 } from "../../src/config/paths.js";
 
 describe("expandHome", () => {
@@ -90,5 +94,57 @@ describe("pathExists", () => {
     } finally {
       fs.unlinkSync(tmpFile);
     }
+  });
+});
+
+describe("isHomeSafehouseEscapeHatchActive", () => {
+  const original = process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+
+  afterEach(() => {
+    if (original !== undefined) {
+      process.env.ATP_ALLOW_HOME_SAFEHOUSE = original;
+    } else {
+      delete process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+    }
+  });
+
+  it("is true only when ATP_ALLOW_HOME_SAFEHOUSE is exactly 1", () => {
+    delete process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+    expect(isHomeSafehouseEscapeHatchActive()).toBe(false);
+    process.env.ATP_ALLOW_HOME_SAFEHOUSE = "";
+    expect(isHomeSafehouseEscapeHatchActive()).toBe(false);
+    process.env.ATP_ALLOW_HOME_SAFEHOUSE = "0";
+    expect(isHomeSafehouseEscapeHatchActive()).toBe(false);
+    process.env.ATP_ALLOW_HOME_SAFEHOUSE = "true";
+    expect(isHomeSafehouseEscapeHatchActive()).toBe(false);
+    process.env.ATP_ALLOW_HOME_SAFEHOUSE = "1";
+    expect(isHomeSafehouseEscapeHatchActive()).toBe(true);
+  });
+});
+
+describe("isForbiddenSafehouseDir", () => {
+  const original = process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+
+  afterEach(() => {
+    if (original !== undefined) {
+      process.env.ATP_ALLOW_HOME_SAFEHOUSE = original;
+    } else {
+      delete process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+    }
+  });
+
+  it("is false for a non-home path", () => {
+    delete process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+    expect(isForbiddenSafehouseDir(path.join(os.tmpdir(), "some-project"))).toBe(false);
+  });
+
+  it("is true for homedir when hatch is off", () => {
+    delete process.env.ATP_ALLOW_HOME_SAFEHOUSE;
+    expect(isForbiddenSafehouseDir(os.homedir())).toBe(true);
+  });
+
+  it("is false for homedir when hatch is on", () => {
+    process.env.ATP_ALLOW_HOME_SAFEHOUSE = "1";
+    expect(isForbiddenSafehouseDir(os.homedir())).toBe(false);
   });
 });
