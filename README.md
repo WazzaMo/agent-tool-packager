@@ -1,4 +1,4 @@
-# Agent Tool Packager (ATP)
+# WazzaMo Agent Tool Packager (ATP)
 
 A utility for CLI agentic software development workflows.
 
