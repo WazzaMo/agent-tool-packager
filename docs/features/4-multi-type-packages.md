@@ -38,7 +38,7 @@ as should always be allowed, but will create multi-type packages by default.
 # Extending atp-package.yaml ...
 
 Some fields remain singular, because they describe the package, like the name,
-versionn, developer, copyright and the things associated with the type, like
+version, developer, copyright and the things associated with the type, like
 the components and bundles must be part of another object, within a list
 of such objects.
 
