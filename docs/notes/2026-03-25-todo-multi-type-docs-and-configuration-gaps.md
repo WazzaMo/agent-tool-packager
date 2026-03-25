@@ -1,45 +1,106 @@
 # Multi-type packages: doc and configuration gaps
 
-2026-03-25 · kind: todo
+## Copyright
 
-Deferred questions and follow-ups after reading [doc-guide.md](../doc-guide.md), [configuration.md](../configuration.md), and [features/4-multi-type-packages.md](../features/4-multi-type-packages.md).
+(c) Copyright 2026 Warwick Molloy.
+Contribution to this project is supported and contributors will be recognised.
 
-# Cross-document gaps
+# Summary
 
-| Topic | Note |
-|-------|------|
-| configuration.md | Describes only the pre–multi-type `atp-package.yaml` layout. No mention of `type: multi`, `parts`, or how station/install behaviour differs. Readers using configuration.md alone will not see the 0.2.3+ model. |
-| Single source of truth | Feature 4 duplicates the legacy field table and example from configuration.md. Risk of drift if one file updates without the other. |
-| Link from feature doc | The link `[configuration.md](docs/configuration.md)` is relative to `docs/features/`; it likely resolves to `docs/features/docs/configuration.md` (broken). Prefer `../configuration.md` or a root-absolute path consistent with other docs. |
+Kind: todo · date: 2026-03-25
 
-# Feature 4 content issues (fix or track)
+Review of [configuration.md](../configuration.md), [features/4-multi-type-packages.md](../features/4-multi-type-packages.md), and [doc-guide.md](../doc-guide.md). configuration.md now spells out **Type = `Multi`** versus **Type != `Multi`** behaviour, validation severity, and how legacy single-type rules apply.
 
-| Item | Detail |
-|------|--------|
-| Typo | Line 41: "versionn" → "version". |
-| Example YAML | Under `parts`, `components` / `bundles` list indentation looks wrong (`- SKILL.md` and the `bundles` entry should nest under the mapping). Confirm valid YAML and match intended schema. |
-| Heading depth | Doc mixes `##` and `#` after the title; doc-guide prefers consistent spacing and heading use—minor cleanup if aligning all feature docs. |
+# Newly documented in configuration.md
 
-# Schema and behaviour questions
+| Topic                         | Detail         |
+|-------------------------------|----------------|
+| Multi vs legacy in one file | See (1) below  |
+| `parts` when Type is Multi    | See (2) below  |
+| Root fields by mode         | See (3) below  |
+| Validation and exit codes   | See (4) below  |
 
-| Question | Why it matters |
-|----------|----------------|
-| Root `components` / `bundles` when `type: multi` | Table marks them optional at root while `parts` is mandatory. Can a multi package use only root-level components/bundles, only `parts`, or both? Rules for merge vs reject should be explicit for implementers and validators. |
-| Allowed `part.type` values | Same vocabulary as legacy root `Type` (Rule, Skill, Mcp, Command, Experimental)? Any restriction on duplicate types across parts? |
-| Root `usage` optional | Legacy layout required root `usage`; multi layout makes root `usage` optional. Document migration: is old root usage split across parts or dropped? |
-| ATP vs package version | Feature speaks of "Version 0.2.3" / "0.3.0" for ATP and migration; configuration shows `configuration.version` in `atp-config.yaml`. Clarify relationship between ATP release, config schema version, and `atp-package.yaml` format—avoid readers conflating them. |
-| 0.3.0 "by default" | "Create multi-type packages by default" reads like CLI/template default; spell out what artefacts (e.g. `atp init`, samples) change vs runtime still accepting legacy manifests. |
+(1) **Type = `Multi`:** root-level Type defaults to `Multi` (multi-type file); it may be set to `Rule` in a legacy package (sentence as written—confirm intent with implementation). **Type != `Multi`:** when Type is a valid value from Feature 2, the effective rules match the **legacy** package layout.
+
+(2) For Type = `Multi`, `parts` is **required in practice**: missing `parts` must produce an error message, **fatal**, non-zero exit. The field table still lists `parts` as **optional**; that is a **doc inconsistency** until the table reflects conditional rules (optional in YAML vs required when Type is Multi).
+
+(3) For Type = `Multi`, root `components`, `bundles`, and `Usage` **do not need** to be present (values live under parts). For Type != `Multi`, root `components`, `bundles`, and `Usage` are **expected**; an incomplete single-type manifest must fail validation with non-zero exit.
+
+(4) Missing required `parts` (Multi) and invalid/incomplete legacy layout (non-Multi) are both specified as errors with non-zero exit. Duplicate `Part.type` values remain a **warning** only (unchanged from prior review).
+
+# Resolved or superseded (no longer tracked here)
+
+| Topic                        | Detail                                                      |
+|------------------------------|-------------------------------------------------------------|
+| Stale configuration pointer  | Feature 4 names **Extended atp-package.yaml layout (version 0.2.3+)**. |
+| Duplicate 0.2.3+ spec       | Feature 4 defers the modern layout to configuration.md.    |
+| Multi-type example YAML     | Example in configuration.md is readable.                        |
+| `part.type` vocabulary      | Feature 2 **Package Types** remains the source list.          |
+| Duplicate types across parts | Warning, not fatal.                                           |
+
+# Minor polish (optional)
+
+| Item            | Detail         |
+|-----------------|----------------|
+| Plain link      | See (5) below  |
+| Heading style   | See (6) below  |
+| Version wording | See (7) below  |
+
+(5) Feature 4 still ends with plain “refer to configuration.md”; a markdown link would match the rest of the doc.
+
+(6) Feature 4 mixes `#` and `##` after the title. Optional cleanup per doc-guide.
+
+(7) The heading `version => 0.2.3` could use a consistent comparator style (for example **≥ 0.2.3**).
+
+# Remaining gaps and consistency checks
+
+| Topic              | Detail         |
+|--------------------|----------------|
+| Table vs prose     | See (8) below  |
+| `Multi` casing     | See (9) below  |
+| Multi + root fields | See (10) below |
+| Default / legacy   | See (11) below |
+
+(8) Root field table lists `parts` as **optional** while the **Type = `Multi`** subsection requires `parts` with fatal error if missing. Update the table or add a footnote that **mandatory/optional depends on `Type`**.
+
+(9) Prose uses **`Multi`**; the YAML example uses `type: multi`. Align documentation and schema (case sensitivity) with the parser.
+
+(10) If **Type = `Multi`** and root-level `components`, `bundles`, or `Usage` are **also** present, behaviour is not stated (ignore, merge, or reject). Worth one sentence for implementers.
+
+(11) The line about defaulting to `Multi` while allowing `Rule` for a legacy package is easy to misread. A short clarifying example (two valid shapes) would reduce support questions.
+
+# Narrower open items
+
+### Migration narrative
+
+Authors moving from mandatory root `usage` (0.2.2) to per-part `usage` under Type = `Multi` may still benefit from a short mapping in feature 4 or Feature 2.
+
+### ATP semver vs package manifest vs `atp-config` schema
+
+Feature 4 describes ATP 0.2.3 / 0.3.0; configuration.md shows `configuration.version` under `atp-config.yaml`. A one-line reminder that these version streams differ can still help.
+
+### 0.3.0 "by default"
+
+Which commands or templates emit Type = `Multi` manifests by default remains to be named when that release is fixed.
 
 # Smaller consistency notes
 
-| Note | Detail |
-|------|--------|
-| Type spelling | Examples use `Mcp` and `Skill`; ensure CONTRIBUTING/schema and code use one canonical casing. |
-| `version => 0.2.3` | Prefer consistent comparator wording (e.g. "≥ 0.2.3") for readability in rendered docs. |
+| Note          | Detail         |
+|---------------|----------------|
+| Type spelling | See (12) below |
 
-# Suggested follow-ups (not done in this note)
+(12) Examples use `Mcp` and `Skill`. Keep CONTRIBUTING, schema, and code aligned with canonical casing.
 
-1. Fix relative link and YAML example in feature 4; fix typo.
-2. Extend configuration.md with a short subsection pointing at feature 4 and summarising multi-type, or fold the authoritative table into one place with the other doc linking to it.
-3. Add a short "migration" subsection: single file from 0.2.2 → 0.2.3 layout (field mapping).
-4. Resolve open schema questions in a plan or concern note before locking implementation.
+# Suggested follow-ups
+
+1. Reconcile the root field table (`parts` optional vs required when Type is `Multi`) with the **Type = `Multi`** / **Type != `Multi`** subsections.
+
+2. Document `multi` vs `Multi` and any default when `type` is omitted.
+
+3. Add one sentence on Multi manifests that also set root `components` / `bundles` / `Usage`.
+
+4. Clarify “default to `Multi`” and “set to `Rule` in a legacy package” with a minimal example.
+
+5. Optional: markdown link at the end of feature 4; migration bullets; ATP vs config vs manifest one-liner; 0.3.0 defaults when scoped.
+
+6. Close or archive this todo when the above are implemented or moved to a plan note.

@@ -44,10 +44,13 @@ of such objects.
 
 ## version <= 0.2.2 atp-package.yaml layout
 
-See [configuration.md](docs/configuration.md) section **atp-package.yaml layout** for
-the existing layout, which is below.
+See [configuration.md](../configuration.md) section 
+**Extended atp-package.yaml layout (version 0.2.3+)** for the new layout.
 
-The `atp-package.yaml` has mandatory and optional fields
+The old layout for 0.2.2 and before is now only found below.
+
+The `atp-package.yaml` has mandatory and optional fields as below and this now
+documents the old layout where a single type was accidentally enforced.
 
 `Package` is the root structure.
 
@@ -89,64 +92,6 @@ bundles:
 
 ## version => 0.2.3 atp-package.yaml layout
 
-THE NEW LAYOUT allows for multiple parts, each with their type.
+For the new layout, refer to configuration.md. That is the authoritative
+guide for modern package layout.
 
-The `atp-package.yaml` has mandatory and optional fields
-
-`Package` is the root structure.
-
-`Part` will be the new type, usage, component and bundle structure that supports
-multi-type packages.
-
-| Field Name | Opt or Mand  | Type        | max len |
-|------------|--------------|-------------|---------|
-| Name       | mandatory    | string      |     80  |
-| Type       | mandatory    | str 'multi' |     20  |
-| Developer  | optional     | string      |     80  |
-| License    | optional     | string      |     80  |
-| Version    | mandatory    | string      |     80  |
-| Copyright  | optional     | string list |     80  |
-| Usage      | optional     | string list |     80  |
-| components | optional     | string list |    256  |
-| bundles    | optional     | bundle list |    256  |
-| parts      | mandatory    | part list   |    256  |
-
-
-The Part layout:
-
-| Field Name | Opt or Mand  | Type        | max len |
-|------------|--------------|-------------|---------|
-| type       | mandatory    | string      |     20  |
-| Usage      | mandatory    | string list |     80  |
-| components | optional     | string list |    256  |
-| bundles    | optional     | bundle list |    256  |
-
-
-A **bundle list** is a list of objects, where each object contains:
-- `path`: The relative path to the bundle directory.
-- `exec-filter`: A glob pattern (relative to the package root) identifying executable files.
-
-An example for layout for versions 0.2.3 and beyond.
-
-```yaml
-name: clean-docs-and-code
-type: multi
-developer: Warwick Molloy
-license: Apache License 2.0
-version: 0.1.0
-copyright:
-    - Warwick Molloy 2026
-    - All rights reserved.
-parts:
-    - type: Skill
-      usage:
-        - Use this for cleaning docs.
-      components:
-      - SKILL.md
-    - type: Mcp
-      usage:
-        - Identifies the docs to clean.
-      bundles:
-      - path: mcp-exec
-          exec-filter: mcp-exec/bin/*
-```
