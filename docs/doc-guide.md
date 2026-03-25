@@ -40,7 +40,17 @@ and only made "nicer" to read when rendered as HTML or other manner.
 |----------|----------------------|
 | Note 1   | make it easy to read |
 
-... and...
+When it comes to markdown tables, align the vertical bars and set the table
+width to be consistent for each row. When a cell is too long, find a way
+to continue that long-form text outside the table, afterwards.
+
+| Category   | Description                                  |
+|------------|--------------------------------------------- |
+| Long Note  | ~ 10 char on why and then refer to (1) below |
+| Short Note | make it easy to read                         |
+
+(1) Long note discussion continues. Now the table is easy to read even
+just in the text file, without needing to render it. It's beautiful!
 
 # Long Form text
 
