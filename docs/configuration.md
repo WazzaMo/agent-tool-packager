@@ -170,11 +170,23 @@ Standard packages were source from the global home office.
 Custom packages are configured into the catalog as personal favourites
 that the user wishes ATP to manage installation.
 
-## atp-package.yaml layout
+## Extended atp-package.yaml layout (version 0.2.3+)
+
+THE NEW LAYOUT allows for multiple parts, each with their type.
+The parts entry is mandatory because there should be at least one part
+to package and install. It is compatible with the old layout but some
+root-level fields are now optional, as responsibilities changed.
+
+The old usage, components and bundles fields, at the root level, are now
+optional because we want to move those values to parts, but having the fields
+remain defined and optional, allows old packages to still work.
 
 The `atp-package.yaml` has mandatory and optional fields
 
 `Package` is the root structure.
+
+`Part` will be the new type, usage, component and bundle structure that supports
+multi-type packages.
 
 | Field Name | Opt or Mand  | Type        | max len |
 |------------|--------------|-------------|---------|
@@ -184,30 +196,74 @@ The `atp-package.yaml` has mandatory and optional fields
 | License    | optional     | string      |     80  |
 | Version    | mandatory    | string      |     80  |
 | Copyright  | optional     | string list |     80  |
-| Usage      | mandatory    | string list |     80  |
-| components | mandatory    | string list |    256  |
+| Usage      | optional     | string list |     80  |
+| components | optional     | string list |    256  |
 | bundles    | optional     | bundle list |    256  |
+| parts      | optional     | part list   |    256  |
+
+Root-level Type will default to `Multi` meaning the file supports multiple
+types but could be set to `Rule` in a legacy package.
+
+Type = `Multi`
+
+`parts` is actually required and an error message should be issued to the user
+and this is a fatal error with a non-zero exit code.
+
+Root-level `components`, `bundles` and `Usage` do not need to be present because
+they will appear in the one-or-more part(s).
+
+Type != `Multi`
+
+When Type is one of the valid type values in 
+[Feature 2](./features/2-package-developer-support.md) then the effective
+rules become the legacy package layout.
+
+The root-level `components`, `bundles` and `Usage` fields are expected
+and an error message must be issued because the single-type format is incomplete
+and invalid. Validation should fail and the exit code should be non-zero.
+
+The Part layout:
+
+| Field Name | Opt or Mand  | Type        | max len |
+|------------|--------------|-------------|---------|
+| type       | mandatory    | string      |     20  |
+| Usage      | mandatory    | string list |     80  |
+| components | optional     | string list |    256  |
+| bundles    | optional     | bundle list |    256  |
+
+Types are defined in the section **Package Types** from 
+[Feature 2](./features/2-package-developer-support.md) and the text type names
+are all valid values for `type` in the Part object. Different parts should normally
+have different types because a rule can have many markdown components, so all those
+files can be packaged in a single part. If types are repeated, a warning should be
+printed for the user to see but it is not a fatal error.
 
 A **bundle list** is a list of objects, where each object contains:
 - `path`: The relative path to the bundle directory.
 - `exec-filter`: A glob pattern (relative to the package root) identifying executable files.
 
-An example:
+An example for layout for versions 0.2.3 and beyond.
 
 ```yaml
 name: clean-docs-and-code
-type: Mcp 
+type: multi
 developer: Warwick Molloy
 license: Apache License 2.0
 version: 0.1.0
 copyright:
-    - Warwick Molloy 2026
-    - All rights reserved.
-usage:
-    - Use this for cleaning docs.
-components:
-   - SKILL.md
-bundles:
-   - path: mcp-exec
-     exec-filter: mcp-exec/bin/*
+ - Warwick Molloy 2026
+ - All rights reserved.
+parts:
+- type: Skill
+  usage:
+  - Use this for cleaning docs.
+  components:
+  - SKILL.md
+- type: Mcp
+  usage:
+  - Identifies the docs to clean.
+  bundles:
+  - path: mcp-exec
+    exec-filter: mcp-exec/bin/*
 ```
+
