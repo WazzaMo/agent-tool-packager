@@ -52,7 +52,7 @@ Root-level metadata commands behave like Feature 2: successful writes exit **0**
 Parts are the unit of type, usage, components, and bundles for Multi manifests.
 
 | Step            | Proposed command                                |
-|-----------------|-----------------------------------------------  |
+|-----------------|-------------------------------------------------|
 | Skill part      | `atp package newpart skill` (1) below           |
 | Usage, part 1   | `atp package part 1 usage "<text>"` -> (2)      |
 | Stage Skill     | `atp package part 1 component SKILL.md` -> (3)  |
@@ -66,7 +66,7 @@ The word `newpart` also flags to the user that a new part definition has begun s
 is written into a shell script, that will be easy to read.
 
 The `newpart` subcommand can trigger a validation process to check that previous parts are not
-missing information befor proceeding with a new part.
+missing information before proceeding with a new part.
 
 (1) CLI keywords map to Rule, Skill, Mcp, … per Feature 2. CLI prints part number "Part 1 added to package"
 
@@ -118,7 +118,7 @@ Root `usage`, `components`, and optional `bundles` are **required** at the root;
 | Part missing usage        | List index and field    | 1–2 (1) |
 | Legacy type + parts       | Reject mix              | 1       |
 | Duplicate part types      | Warn stderr             | 0       |
-| No `--part` on add        | Error: set `--part n`   | 1       |
+| Ambiguous part target     | Error: index or `--part`| 1       |
 | Invalid part index        | Part not found          | 1       |
 | Bad or empty `stage.tar`  | Like Feature 2 validate | 1–2 (2) |
 
@@ -149,9 +149,9 @@ Align global exit semantics with [2026-03-25-plan-atp-cli-multi-type-package-lay
 
 (1) Example: refuse overwrite without a confirm flag, if that policy exists.
 
-## `atp package part add <type-keyword>`
+## `atp package newpart <type-keyword>`
 
-Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., per Feature 2).
+Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., per Feature 2). Matches the workflow table above. An alias such as `atp package part add <type-keyword>` is optional if you want symmetry with `part remove`.
 
 ### Acceptance criteria
 
@@ -199,25 +199,25 @@ Sets or appends **usage** lines for part `n` (mirror `atp package usage` / `add 
 | 0    | Updated                        |
 | 1    | Invalid index or manifest error |
 
-## `atp package component add … --part <n>`
+## `atp package part <n> component <path>` (and/or `component add --part <n>`)
 
-Same rules as Feature 2 `atp package component add`, scoped to part `n` for Multi manifests.
+Same rules as Feature 2 `atp package component add`, scoped to part `n` for Multi manifests. The workflow table uses **`part <n> component <path>`** so the part index stays explicit without a flag. A **`--part <n>`** form on the existing `component add` command is an alternative; pick one primary spelling in implementation to avoid two ways to do the same thing.
 
 ### Acceptance criteria
 
 1. Paths under package root; file must exist; same error strings as Feature 2 for bad paths.
-2. For Multi with multiple parts, **`--part` is required**; otherwise error.
+2. For Multi with multiple parts, the target part must be unambiguous; otherwise error.
 
 ### Exit codes
 
 | Code | Meaning                          |
 |------|----------------------------------|
 | 0    | Staged on correct part           |
-| 1    | Path, `--part`, or staging error |
+| 1    | Path, part target, or staging error |
 
-## `atp package bundle add … --part <n>`
+## `atp package part <n> bundle add …` (and/or `bundle add --part <n>`)
 
-Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n`.
+Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n`. Align with the same part-target pattern as component add.
 
 ### Acceptance criteria
 
@@ -273,7 +273,7 @@ Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n
 
 # Migration note (author)
 
-Moving from a **legacy** single-type file to **Multi** is a separate story: either a documented manual edit of `atp-package.yaml` or a future `atp package migrate` command. Until then, authors may create a new Multi skeleton and re-add components/bundles with `--part` flags.
+Moving from a **legacy** single-type file to **Multi** is a separate story: either a documented manual edit of `atp-package.yaml` or a future `atp package migrate` command. Until then, authors may create a new Multi skeleton and re-add components/bundles using the part-scoped CLI chosen for implementation (`part <n> …` and/or `--part <n>`).
 
 # Test approach (high level)
 
