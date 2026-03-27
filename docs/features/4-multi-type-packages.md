@@ -253,25 +253,105 @@ Exit code **0** when mandatory fields, **non-empty** `stage.tar`, and part const
 
 Exit code **0** on success; gzip of `stage.tar` to `package.tar.gz` and copy under `user_packages/<name>/` per Feature 2.
 
+-------------------------------------------------------------------------------
+
+# Example workflow one part, one type in the new format
+
+The new format supports multiple parts and types but that doesn't require any more than
+one part. In the new format and commands, an author would need to add one part, at least,
+and can then validate the package.
+
+```bash
+atp create package skeleton
+
+atp package name clean-docs-and-code
+atp package copyright "Warwick Molloy 2026" "All rights reserved"
+atp package license "Apache License 2.0"
+atp package version 0.1.0
+atp package newpart rule
+atp package part 1 usage "Tell the agent to read the documents and summarise into AGENTS.md"
+atp package part 1 component add docs/doc-guide.md docs/coding-standard.md
+```
+
+At this point, the package is complete with one part because it is a rule and the markdown
+components were given.
+
+`atp validate package`
+
+This succeeds and gives an exit code 0.
+
+`atp catalog add package`
+
+This also succeeds, adding the package to the station's catalog, returning exit code 0.
 
 -------------------------------------------------------------------------------
 
 # Example workflow (legacy single-type, for comparison)
 
-Authors who need the pre–0.2.3 shape use a **legacy** create option `atp create package skeleton --legacy` this will assume
-the type to be blank (NULL) until the user issues a `atp package type {kind}` command.
+Authors who need the single type package format, pre–0.2.3 shape, use a **legacy** create option 
+`atp create package skeleton --legacy` this will assume the type to be blank (NULL) until the user
+issues a `atp package type {kind}` command.
+
+Type being unset  (blank) which is NULL in YAML, means that "Multi" was not set and the
+package configuration is a single type because it is not a Multi type. Validation will
+expect the details to be filled in according to single-type packaging.
+
+This means that version 0.2.3 must have two forms of package validation logic:
+1. for single-type packages (legacy)
+2. for multi-type packages.
 
 The single type is confirmed also by performing a package type command.
 
-`atp package type mcp`
+```bash
+atp create package skeleton --legacy
+atp package type rule
 
-Root `usage`, `components`, and optional `bundles` are **required** at the root; **`parts` must not** be populated. Validation errors and exit codes align with [configuration.md](../configuration.md): incomplete legacy layout → **non-zero** exit.
+atp package name clean-docs-and-code
+atp package copyright "Warwick Molloy 2026" "All rights reserved"
+atp package license "Apache License 2.0"
+atp package version 0.1.0
+atp package usage "Tell the agent to read the documents and summarise into AGENTS.md"
+atp package component add docs/doc-guide.md docs/coding-standard.md
+```
 
-The stage.tar format will be as in versions 0.2.2 and prior, which is defined in 
-[2-package-developer-support](./2-package-developer-support.md) at "Staging executables."
+Layout of `stage.tar` will remain simple, following what was defined in feature 2.
 
-When the root Type field does not equal "Multi", then the `atp package newpart xxx` and `atp package part N xxx` commands should
-fail with error messages, as unsupported when the top-level package type has a specific, singular type. They must return exit code 1.
+`tar -tf stage.tar` will output:
+> doc-guide.md
+> coding-standard.md
+
+Validating the package now should confirm that it is complete.
+
+`atp validate package`
+
+> Package appears complete. Mandatory minimal values are set.
+> Some optional values are also set.
+> This package can be added to the catalog.
+
+We should get encourage from the package summary as well.
+
+`atp package summary`
+
+> Package summary:
+> name: clean-docs-and-code
+> components:
+>   - doc-guide.md
+>   - coding-standard.md
+> license (opt) : Apache License 2.0
+> Version: 0.1.0
+> copyright (opt): Warwick Molloy 2026, All rights reserved
+> This package can be added to the catalog.
+
+Adding the package to the user package catalog should succeed.
+
+`atp catalog add package`
+
+When using legacy, single type packaging, the top-level `usage`, `components`, and optional `bundles` are **required** at the root; **`parts` must not** be populated. Validation errors and exit codes align with [configuration.md](../configuration.md): incomplete legacy layout result in a **non-zero** exit code.
+
+
+When the root Type field does not equal "Multi", then the `atp package newpart xxx` and `atp package part N xxx`
+commands should fail with error messages, as unsupported when the top-level package type has a specific, 
+singular type. They must return exit code 1.
 
 --------------------------------------------------------------------------------
 
@@ -302,7 +382,7 @@ fail with error messages, as unsupported when the top-level package type has a s
 
 1. Creates or overwrites `atp-package.yaml` in CWD; resets `stage.tar` per existing skeleton rules.
 2. Default mode produces a **Multi-capable** manifest (`type: multi`, `parts` empty or documented stub).
-3. Optional **legacy** flag produces single-type root fields only (no `parts`).
+3. Optional **legacy** flag produces single-type root fields only (no `parts`) with empty type field.
 4. User-supplied strings are sanitised for YAML (Feature 2).
 
 ### Exit codes
@@ -317,6 +397,8 @@ fail with error messages, as unsupported when the top-level package type has a s
 
 ## `atp package newpart <type-keyword>`
 
+Only works when type is "Multi" and not in legacy skeleton packages.
+
 Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., per Feature 2). Matches the workflow table above. An alias such as `atp package part add <type-keyword>` is optional if you want symmetry with `part remove`.
 
 ### Acceptance criteria
@@ -330,12 +412,18 @@ Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., p
 | Code | Meaning                        |
 |------|--------------------------------|
 | 0    | Part added; YAML saved         |
-| 1    | Layout, keyword, or write fail |
+| 1    | Not a 'Multi' type package.    |
 | 2    | Manifest missing or unparsable |
+
 
 ## `atp package part <n> remove`
 
+Only works when type is "Multi" and not in legacy skeleton packages.
+
 Removes part `n` (1-based index per 2026-03-25 plan) and **removes** staged files that belong only to that part, or refuses with instructions if shared staging cannot be split (implementation detail: prefer **clear part-scoped paths** in `stage.tar`).
+
+Forces a re-indexing of the parts and the `stage.tar` layout requires update, so the paths match the
+new part index layout.
 
 ### Acceptance criteria
 
