@@ -11,46 +11,6 @@ Kind: todo · date: 2026-03-25
 
 Review of [configuration.md](../configuration.md), [features/4-multi-type-packages.md](../features/4-multi-type-packages.md), and [doc-guide.md](../doc-guide.md). configuration.md now spells out **Type = `Multi`** versus **Type != `Multi`** behaviour, validation severity, and how legacy single-type rules apply.
 
-# Newly documented in configuration.md
-
-| Topic                         | Detail         |
-|-------------------------------|----------------|
-| Multi vs legacy in one file | See (1) below  |
-| `parts` when Type is Multi    | See (2) below  |
-| Root fields by mode         | See (3) below  |
-| Validation and exit codes   | See (4) below  |
-
-(1) **Type = `Multi`:** root-level Type defaults to `Multi` (multi-type file); it may be set to `Rule` in a legacy package (sentence as written—confirm intent with implementation). **Type != `Multi`:** when Type is a valid value from Feature 2, the effective rules match the **legacy** package layout.
-
-(2) For Type = `Multi`, `parts` is **required in practice**: missing `parts` must produce an error message, **fatal**, non-zero exit. The field table still lists `parts` as **optional**; that is a **doc inconsistency** until the table reflects conditional rules (optional in YAML vs required when Type is Multi).
-
-(3) For Type = `Multi`, root `components`, `bundles`, and `Usage` **do not need** to be present (values live under parts). For Type != `Multi`, root `components`, `bundles`, and `Usage` are **expected**; an incomplete single-type manifest must fail validation with non-zero exit.
-
-(4) Missing required `parts` (Multi) and invalid/incomplete legacy layout (non-Multi) are both specified as errors with non-zero exit. Duplicate `Part.type` values remain a **warning** only (unchanged from prior review).
-
-# Resolved or superseded (no longer tracked here)
-
-| Topic                        | Detail                                                      |
-|------------------------------|-------------------------------------------------------------|
-| Stale configuration pointer  | Feature 4 names **Extended atp-package.yaml layout (version 0.2.3+)**. |
-| Duplicate 0.2.3+ spec       | Feature 4 defers the modern layout to configuration.md.    |
-| Multi-type example YAML     | Example in configuration.md is readable.                        |
-| `part.type` vocabulary      | Feature 2 **Package Types** remains the source list.          |
-| Duplicate types across parts | Warning, not fatal.                                           |
-
-# Minor polish (optional)
-
-| Item            | Detail         |
-|-----------------|----------------|
-| Plain link      | See (5) below  |
-| Heading style   | See (6) below  |
-| Version wording | See (7) below  |
-
-(5) Feature 4 still ends with plain “refer to configuration.md”; a markdown link would match the rest of the doc.
-
-(6) Feature 4 mixes `#` and `##` after the title. Optional cleanup per doc-guide.
-
-(7) The heading `version => 0.2.3` could use a consistent comparator style (for example **≥ 0.2.3**).
 
 # Remaining gaps and consistency checks
 
