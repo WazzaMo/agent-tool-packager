@@ -423,7 +423,8 @@ Only works when type is "Multi" and not in legacy skeleton packages.
 Removes part `n` (1-based index per 2026-03-25 plan) and **removes** staged files that belong only to that part, or refuses with instructions if shared staging cannot be split (implementation detail: prefer **clear part-scoped paths** in `stage.tar`).
 
 Forces a re-indexing of the parts and the `stage.tar` layout requires update, so the paths match the
-new part index layout.
+new part index layout. The user needs to know the new part indices and so the CLI dump the parts that remain
+as a package summary.
 
 ### Acceptance criteria
 
