@@ -357,27 +357,71 @@ singular type. They must return exit code 1.
 
 # Considerations TODO
 
-- **Question:** How should the CLI handle the potential disruption to user scripts that rely on specific indices?
+## How should the CLI handle the potential disruption to user scripts that rely on specific indices?
 
-Is this real?
-
-- **Gap:** There is no explicit command defined for removing a *single* component or bundle from a specific part without removing the entire part. Should it be `atp package part <n> component remove <path>`?
-
-
-- **Question:** In a multi-type package, are bundle names required to be globally unique across all parts to avoid substitution collisions? 
-- **Gap:** If bundle names are not unique, we need a namespacing convention for substitutions (e.g., `{part1.patch_tool}`).
-
-- **Question:** Does `atp install` always install ALL parts of a multi-type package, or can a user select specific types (e.g., "just the MCP part")? 
-- **Gap:** The installation logic in Feature 3 needs to be explicitly updated for the `parts` list structure, defining how each part's `type` determines its destination path.
-
-Feature 4 introduces a new `part_{index}_{type}/` prefix in `stage.tar`.
-- **Gap:** We need a clear plan for how `atp validate package` and `atp catalog add` handle a package that was started in "legacy" mode but then switched to "multi" mode (or vice versa), especially regarding the `stage.tar` content.
+The CLI should not handle this disruption. User-written scripts for package authoring will not accidentally
+add parts and then remove them. Scripts should be written and tested for correctness when automating
+package authoring and, if this is done correctly, they should not need to remove parts and re-indexing
+is not a problem they need to solve.
 
 
-### 6. Unique Bundle Names in Staging
-Feature 4 mentions "Bundle uniqueness by name within the part (and globally if implementation requires...)".
-- **Question:** If the staging area uses `part_{index}_{type}/` as a prefix, do we still need global uniqueness for bundle directory names? 
-- **Recommendation:** Enforce global bundle name uniqueness within a package to simplify variable substitution and installation.
+## In a multi-type package, are bundle names required to be unique across all parts in the package to avoid substitution collisions?
+
+Yes bundle names must be unique across the entire package. This is stated in the section later in this
+file called, "ATP command specifics (multi-type authoring)."
+
+This is why bundle names must be unique:
+- avoids problems when installing the bundle from the tar file into the target location
+- avoids problems with knowing which bundle is being referenced when substituting names in skills
+  as part of the installation.
+
+## Does `atp install` always install ALL parts of a multi-type package?
+
+Yes. There is no such thing as partially installing a package. The multi-type package is intended
+to eliminate the need for splitting types up across packages with dependencies. A multi-type package
+has parts that ARE INTENDED TO WORK TOGETHER.
+
+## Can package authoring switch from single-type to multi-type?
+
+No. Conversion is not needed and not supported. The packaging commands and logic need
+to be as simple as possible.
+
+The intention of this feature is to extend the package format to support multiple types while giving
+the developer control over how many types are actually packaged.
+
+## How should a package developer switch from single-type (legacy) to multi-type packaging?
+
+Restart the package authoring process. Create a new package skeleton and populate it using the tools.
+This will result in a package in the new format. It is the simplest way to do this.
+
+## Validation of staged packages
+
+Multi-type packages introduces a new `part_{index}_{type}/` prefix in `stage.tar` for each part.
+This makes it more reliable to associate the `stage.tar` directories with the right part in the
+package description file `atp-package.yaml`.
+
+Package validation needs two algorithms:
+
+  1.  The existing validation algorithm for single-type packages covering the atp-package.yaml
+      and stage.tar files.
+  
+  2.  The new multi-type format covering the atp-package.yaml and the stage.tar file.
+
+The choice of which algorithm to use will be made on the top-level type field value, whether
+it is "Multi" or one of the valid type values, that make it singularly typed.
+
+This validation method should be used wherever validation is required:
+
+  1.  `atp validate`
+
+  2.  `atp summary`
+
+  3.  `atp package newpart <type>` where the package should be validated prior to adding a new part.
+
+  4.  `atp catalog add` as a pre-condition to performing the add.
+
+If the integrity of the package files are maintained, then package installation and uninstallation
+should work as planned.
 
 
 --------------------------------------------------------------------------------
@@ -534,8 +578,7 @@ at install time.
 
 ### Acceptance criteria
 
-1. Bundle uniqueness by name within the **part** and package-globally if implementation
-    requires unique bundle directory names in `stage.tar`.
+1. Bundle uniqueness by name within the **part** and package-globally.
 2. Same stderr messages for non-UNIX bundles without filter as Feature 2.
 
 ### Exit codes
