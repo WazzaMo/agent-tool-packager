@@ -38,6 +38,26 @@ This will support any existing, single-type packages with installation and remov
 as should always be allowed, but will only support creating multi-type packages.
 Version 0.3.0 is a future version.
 
+# Migration note (author)
+
+As migratory steps go, this step is about introducing a new standard, the multi-type package,
+and extending the commands of the CLI to handle it, while retaining the old meaning.
+It's a migration of capability, not of existing packages. It is assumed there are not
+enough packages in existence to warrant a single-to-multi conversion automation function.
+
+It would be possible for someone to create a single-to-multi repackaging script that:
+- creates a safehouse
+- installs the single-type package
+- creates a new package skeleton
+- increments the version number in the new package
+- adds the component or bundle to the one part in the new package
+- adds the new package to the Station as a new version.
+
+If package authors script the package authoring process, then using the new version of `atp` will
+solve this problem automatically by updating their authoring script to use the new sub-commands.
+
+Package migration is not a big enough problem to warrant automation.
+
 # Extending atp-package.yaml ...
 
 Some fields remain singular, because they describe the package, like the name,
@@ -442,8 +462,7 @@ should work as planned.
 
 (2) Match Feature 2 validate tiers for staging versus mandatory fields.
 
-
-----------------------------
+--------------------------------------------------------------------------------
 
 # ATP command specifics (multi-type authoring)
 
@@ -465,6 +484,8 @@ should work as planned.
 | 2    | Cannot write files or dir      |
 
 (1) Example: refuse overwrite without a confirm flag, if that policy exists.
+
+--------------------------------------------------------------------------------
 
 ## `atp package newpart <type-keyword>`
 
@@ -488,6 +509,7 @@ Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., p
 | 1    | Not a 'Multi' type package.    |
 | 2    | Manifest missing or unparsable |
 
+--------------------------------------------------------------------------------
 
 ## `atp package part <n> remove`
 
@@ -535,7 +557,7 @@ appear in a script.
 | 0    | Part removed; staging adjusted |
 | 1    | Not found or unsafe removal    |
 
-----------------------------------------------
+--------------------------------------------------------------------------------
 
 ## `atp package part <n> usage …` / `atp package part <n> add usage …`
 
@@ -553,6 +575,8 @@ Sets or appends **usage** lines for part `n` (mirror `atp package usage` / `add 
 | 0    | Updated                        |
 | 1    | Invalid index or manifest error |
 
+--------------------------------------------------------------------------------
+
 ## `atp package part <n> component <path>`
 
 Same rules as Feature 2 `atp package component add`, scoped to part `n` for Multi manifests. The workflow table uses **`part <n> component <path>`** so the part index stays explicit without a flag.
@@ -568,6 +592,8 @@ Same rules as Feature 2 `atp package component add`, scoped to part `n` for Mult
 |------|----------------------------------|
 | 0    | Staged on correct part           |
 | 1    | Path, part target, or staging error |
+
+--------------------------------------------------------------------------------
 
 ## `atp package part <n> bundle …` and `atp package part <n> bundle add …`
 
@@ -589,7 +615,7 @@ at install time.
 | 1    | Bundle, filter, or part scope  |
 | 2    | Bundle name not unique         |
 
-----------------------------------------------------
+--------------------------------------------------------------------------------
 
 ## `atp package part <n> component remove <path>`
 
@@ -607,7 +633,7 @@ if not an error message must be shown.
 0 = removal successful
 1 = invalid index or no component found at that part.
 
-----------------------------------------------------
+--------------------------------------------------------------------------------
 
 ## `atp package part <n> bundle remove <path>`
 
@@ -626,7 +652,7 @@ if not an error message must be shown.
 0 = removal successful
 1 = invalid index or no bundle found at that part.
 
-----------------------------------------------------
+--------------------------------------------------------------------------------
 
 ## `atp validate package`
 
@@ -647,7 +673,12 @@ if not an error message must be shown.
 
 (1) Exact split follows implementation (Feature 2 baseline).
 
+--------------------------------------------------------------------------------
+
 ## `atp package summary`
+
+Validates the package using the validation method, which has two algorithms - one for single-type
+and one for multi-type packages.
 
 ### Acceptance criteria
 
@@ -655,6 +686,14 @@ if not an error message must be shown.
 2. Exit code **matches** `atp validate package` (Feature 2).
 
 ## `atp catalog add package`
+
+This should add the contents of `atp-package.yaml` to the Station catalog in the appropriate
+directory structure, as described in the [configuration](../configuration.md) spec.
+
+This process should create a `package.tar.gz` file that contains the parts with the part
+directory name convention used in `stage.tar` to keep the same reconciling logic for looking up
+each part mentioned in the catalog in the `package.tar.gz` which follows the same directory structure
+from the configuration spec.
 
 ### Acceptance criteria
 
@@ -668,26 +707,105 @@ if not an error message must be shown.
 | 0    | Catalog and copy succeeded |
 | 1    | Validate or publish failed |
 
-# Migration note (author)
+--------------------------------------------------------------------------------
 
-As migratory steps go, this step is about introducing a new standard, the multi-type package,
-and extending the commands of the CLI to handle it, while retaining the old meaning.
-It's a migration of capability, not of existing packages. It is assumed there are not
-enough packages in existence to warrant a single-to-multi conversion automation function.
+## `atp install`
 
-It would be possible for someone to create a single-to-multi repackaging script that:
-- creates a safehouse
-- installs the single-type package
-- creates a new package skeleton
-- increments the version number in the new package
-- adds the component or bundle to the one part in the new package
-- adds the new package to the Station as a new version.
+For multi-part package installs, the base bundle directories will be a child of the part directory.
+The algorithm for installation needs to navigate the part directory in the `package.tar.gz` file
+in the final package, to find and resolve the bundle directory. Once the bundle directory
+has been found, it can be installed with the existing logic.
 
-If package authors script the package authoring process, then using the new version of `atp` will
-solve this problem automatically by updating their authoring script to use the new sub-commands.
+The existing logic should have two top-level functions:
 
-Package migration is not a big enough problem to warrant automation.
+  1.  Install single-type package (legacy logic)
 
+  2.  Install multi-type package
+
+The multi-type package installer can use some functions from the legacy logic. The common functions
+should be moved into a library that can be used by either installation logic. The reason is that
+eventually the single-type installer may be deprecated, so these common dependencies need to be
+in an independent source directory, so they will be retained.
+
+
+| Aspect          | Intention                                                                   |
+|-----------------|-----------------------------------------------------------------------------|
+| Unit of install | Still **one catalog package** (one package descriptor - atp-package.yaml).  |
+| Expansion       | For each **part**, install **that part’s** components/bundles - see (1)     |
+| Ordering        | Deterministic order: **as in `parts[]`** matching the part index.           |
+| Dependencies    | Unchanged: if package lists dependencies, see (2).                          |
+
+(1) part files are installed into agent-relevant paths according to **part `type`**, meaning
+Rule → rules dir, Skill → skills, Mcp → MCP config, etc.
+
+(2) Unchanged: if package lists dependencies, resolve before or with `--dependencies`.
+
+### Acceptance criteria
+
+| # | Criterion                                                                       | Exit    |
+|---|---------------------------------------------------------------------------------|---------|
+| 1 | One part fails (missing binary); Exit is per current install policy             | 1 or 2  |
+| 2 | Whole package removed on partial failure to make install atomic, see (1) below  | 1       |
+
+(1) Whole package removed on partial failure | Define: **best-effort** rollback or **leave** partial; document.
+
+--------------------------------------------------------------------------------
+
+## `atp remove safehouse <pkg>` / `atp remove station <pkg>`
+
+| Aspect            | Proposal                                                                |
+|-------------------|-------------------------------------------------------------------------|
+| Scope             | Remove **all** artefacts installed from that manifest (all parts).      |
+| Manifest tracking | Safehouse manifest records enough to uninstall by package name, see (1) |
+
+(1) Safehouse manifest records enough to uninstall by package name (today’s model), extended if per-part install
+    paths need teardown.
+
+
+### Acceptance criteria
+
+| # | Criterion             | Exit  |
+|---|-----------------------|-------|
+| 1 | Package not installed | 1     |
+| 2 | Success               | 0     |
+
+--------------------------------------------------------------------------------
+
+## `atp station list` / `atp safehouse list` / `atp catalog list`
+
+| Command           | Proposal                                                      |
+|-------------------|---------------------------------------------------------------|
+| `catalog list`    | Unchanged list of names/versions; see (1)                     |
+| `station list`    | List of package names installed at the station, see (2).      |
+| `safehouse list`  | List of package names installed at the safehouse, see (2).    |
+
+(1) Unchanged list of names/versions; New option **`--verbose`** shows either singular type or each part types,
+    depending on the top-level type field.
+
+(2) Extended list summary with types in brackets using --extended option, **`pkgname (Skill, Mcp)`** when
+    manifest is Multi and a single type in brackets when singular.
+
+### Acceptance criteria
+
+| # | Criterion | Exit |
+|---|-----------|------|
+| 1 | Empty list | 0 |
+| 2 | Parse error in manifest | 2 |
+
+--------------------------------------------------------------------------------
+
+## `atp agent`, `atp safehouse init`, `atp station init`
+
+| Command               | Multi impact                                |
+|-----------------------|---------------------------------------------|
+| `agent` / `handover`  | **None** on manifest format; see (1) below  |
+| `safehouse init`      | **None**.                                   |
+| `station init`        | **None**.                                   |
+
+(1) **None** on manifest format; reinstall still reapplies all installed packages (each may be Multi internally).
+
+
+--------------------------------------------------------------------------------
 
 # Test approach (high level)
 
@@ -697,3 +815,12 @@ Package migration is not a big enough problem to warrant automation.
 4. Empty `parts` with `type: multi` → validate **non-zero**.
 5. Legacy manifest with `parts` present → command or validate **non-zero** per policy.
 6. `atp catalog add package` → user catalog lists package; `package.tar.gz` present.
+
+# Suggested implementation order
+
+1. Manifest model + loader + **validate** (Multi vs legacy).  
+2. **`atp create package`** default Multi + **`part add` / `part list` / `part remove`**.  
+3. **Scoped** `component` / `bundle` add/remove + staging metadata.  
+4. **Install** expansion per part.  
+5. **List/summary** enhancements.  
+6. **Legacy** flags and migration helpers if needed.
