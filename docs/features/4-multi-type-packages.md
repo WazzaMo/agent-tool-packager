@@ -355,6 +355,33 @@ singular type. They must return exit code 1.
 
 --------------------------------------------------------------------------------
 
+# Considerations TODO
+
+- **Question:** How should the CLI handle the potential disruption to user scripts that rely on specific indices?
+
+Is this real?
+
+- **Gap:** There is no explicit command defined for removing a *single* component or bundle from a specific part without removing the entire part. Should it be `atp package part <n> component remove <path>`?
+
+
+- **Question:** In a multi-type package, are bundle names required to be globally unique across all parts to avoid substitution collisions? 
+- **Gap:** If bundle names are not unique, we need a namespacing convention for substitutions (e.g., `{part1.patch_tool}`).
+
+- **Question:** Does `atp install` always install ALL parts of a multi-type package, or can a user select specific types (e.g., "just the MCP part")? 
+- **Gap:** The installation logic in Feature 3 needs to be explicitly updated for the `parts` list structure, defining how each part's `type` determines its destination path.
+
+Feature 4 introduces a new `part_{index}_{type}/` prefix in `stage.tar`.
+- **Gap:** We need a clear plan for how `atp validate package` and `atp catalog add` handle a package that was started in "legacy" mode but then switched to "multi" mode (or vice versa), especially regarding the `stage.tar` content.
+
+
+### 6. Unique Bundle Names in Staging
+Feature 4 mentions "Bundle uniqueness by name within the part (and globally if implementation requires...)".
+- **Question:** If the staging area uses `part_{index}_{type}/` as a prefix, do we still need global uniqueness for bundle directory names? 
+- **Recommendation:** Enforce global bundle name uniqueness within a package to simplify variable substitution and installation.
+
+
+--------------------------------------------------------------------------------
+
 # Error scenarios (authoring)
 
 | Situation                 | Behaviour (short)       | Exit    |
