@@ -397,7 +397,9 @@ singular type. They must return exit code 1.
 
 ## `atp package newpart <type-keyword>`
 
-Only works when type is "Multi" and not in legacy skeleton packages.
+Only works when the top-levl Type field is "Multi" and not in legacy skeleton packages.
+The `atp package newpart` cannot accept "multi" as a valid part type because it is a reserved
+flag value to be used for the entire package, at the root or top-level ONLY.
 
 Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., per Feature 2). Matches the workflow table above. An alias such as `atp package part add <type-keyword>` is optional if you want symmetry with `part remove`.
 
@@ -426,6 +428,30 @@ Forces a re-indexing of the parts and the `stage.tar` layout requires update, so
 new part index layout. The user needs to know the new part indices and so the CLI dump the parts that remain
 as a package summary.
 
+Let's say, for instance, that there were three parts in a package:
+
+| part index    | type      | usage             |
+|---------------|-----------|-------------------|
+|   1           | rule      | Prompt to read    |
+|   2           | skill     | Info how to use   |
+|   3           | command   | Exec to act       |
+
+Removing any part immediately impacts two things:
+1.  `atp-package.yaml` part list
+2.  stage.tar layout
+
+Removing part 2 should result in:
+- removing the second part object in the part list of `atp-package.yaml`
+- in stage.tar, removing part_2_Skill directory and renaming part_3_Command to part_2_Command
+
+To avoid losing information:
+1.  the 2nd object in the part list of `atp-package.yaml`
+2.  remove the part_2_* directory in stage.tar
+3.  rename / reflow the directory names in stage.tar according to the object list in `atp-package.yaml`
+
+Removing a part is what a human or agent might do as an interactive user, not something that should
+appear in a script.
+
 ### Acceptance criteria
 
 1. Part index in range; otherwise error.
@@ -437,6 +463,8 @@ as a package summary.
 |------|--------------------------------|
 | 0    | Part removed; staging adjusted |
 | 1    | Not found or unsafe removal    |
+
+----------------------------------------------
 
 ## `atp package part <n> usage …` / `atp package part <n> add usage …`
 
@@ -470,13 +498,17 @@ Same rules as Feature 2 `atp package component add`, scoped to part `n` for Mult
 | 0    | Staged on correct part           |
 | 1    | Path, part target, or staging error |
 
-## `atp package part <n> bundle add …`
+## `atp package part <n> bundle …` and `atp package part <n> bundle add …`
 
 Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n`. Align with the same part-target pattern as component add.
 
+Bundle directory names need to be unique across all parts in the package to avoid collision
+at install time.
+
 ### Acceptance criteria
 
-1. Bundle uniqueness by name within the **part** (and globally if implementation requires unique bundle directory names in `stage.tar`).
+1. Bundle uniqueness by name within the **part** and package-globally if implementation
+    requires unique bundle directory names in `stage.tar`.
 2. Same stderr messages for non-UNIX bundles without filter as Feature 2.
 
 ### Exit codes
@@ -485,6 +517,46 @@ Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n
 |------|--------------------------------|
 | 0    | Success                        |
 | 1    | Bundle, filter, or part scope  |
+| 2    | Bundle name not unique         |
+
+----------------------------------------------------
+
+## `atp package part <n> component remove <path>`
+
+When a component is added accidentally, and needs to be removed, this
+command can remove a component by matching the filename from the path
+and keep the part. The part will need at least one component or bundle
+to be defined correctly.
+
+### Acceptance criteria
+
+The part index must exist and it must have a component matching the given filename from the path,
+if not an error message must be shown.
+
+### Exit codes
+0 = removal successful
+1 = invalid index or no component found at that part.
+
+----------------------------------------------------
+
+## `atp package part <n> bundle remove <path>`
+
+Like the similar command : `atp package part <n> component remove <path>`
+
+When a bundle is added accidentally, and needs to be removed, this
+command can remove a bundle and keep the part. The part will need
+at least one component or bundle to be defined correctly.
+
+### Acceptance criteria
+
+The part index must exist and it must have a bundle matching the given directoy name from the path,
+if not an error message must be shown.
+
+### Exit codes
+0 = removal successful
+1 = invalid index or no bundle found at that part.
+
+----------------------------------------------------
 
 ## `atp validate package`
 
@@ -528,7 +600,24 @@ Same as Feature 2 bundle add (UNIX `bin/` or `--exec-filter`), scoped to part `n
 
 # Migration note (author)
 
-Moving from a **legacy** single-type file to **Multi** is a separate story: either a documented manual edit of `atp-package.yaml` or a future `atp package migrate` command. Until then, authors may create a new Multi skeleton and re-add components/bundles using the part-scoped CLI chosen for implementation.
+As migratory steps go, this step is about introducing a new standard, the multi-type package,
+and extending the commands of the CLI to handle it, while retaining the old meaning.
+It's a migration of capability, not of existing packages. It is assumed there are not
+enough packages in existence to warrant a single-to-multi conversion automation function.
+
+It would be possible for someone to create a single-to-multi repackaging script that:
+- creates a safehouse
+- installs the single-type package
+- creates a new package skeleton
+- increments the version number in the new package
+- adds the component or bundle to the one part in the new package
+- adds the new package to the Station as a new version.
+
+If package authors script the package authoring process, then using the new version of `atp` will
+solve this problem automatically by updating their authoring script to use the new sub-commands.
+
+Package migration is not a big enough problem to warrant automation.
+
 
 # Test approach (high level)
 
