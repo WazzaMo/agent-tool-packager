@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
+import { runAtp, runAtpSpawn, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
 
 describe("Integration: catalog list", () => {
   let stationDir: string;
@@ -50,5 +50,35 @@ describe("Integration: catalog list", () => {
     });
     expect(out).toContain("test-package");
     expect(out).toContain("doc-guide");
+  });
+
+  it("atp catalog list --verbose appends type from atp-package.yaml", () => {
+    const out = runAtp(["catalog", "list", "--verbose"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(out).toMatch(/test-package[\s\S]*\(/);
+  });
+
+  it("atp catalog list --verbose exits 2 on invalid package yaml", () => {
+    const badDir = path.join(stationDir, "user_packages", "badpkg");
+    fs.mkdirSync(badDir, { recursive: true });
+    fs.writeFileSync(path.join(badDir, "atp-package.yaml"), "type: [\n", "utf8");
+    const catalogContent = makeStationCatalogYaml(
+      [
+        {
+          name: "badpkg",
+          version: "1.0.0",
+          location: `file://${badDir.replace(/\\/g, "/")}`,
+        },
+      ],
+      []
+    );
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
+    const r = runAtpSpawn(["catalog", "list", "--verbose"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(r.status).toBe(2);
   });
 });

@@ -10,6 +10,7 @@ import { getSafehousePath, pathExists } from "./paths.js";
 
 import type {
   SafehouseManifest,
+  SafehouseManifestPackage,
   PackageSource,
   BinaryScope,
 } from "./types.js";
@@ -105,25 +106,31 @@ export function loadSafehouseManifest(
  * @param binaryScope - user-bin or project-bin.
  * @param source - station or local.
  * @param projectBase - Project base directory. Defaults to process.cwd().
+ * @param installLayout - Optional `multi` vs `legacy` hint for Feature 4 manifests.
  */
 export function addPackageToSafehouseManifest(
   name: string,
   version: string | undefined,
   binaryScope: BinaryScope = "user-bin",
   source: PackageSource = "station",
-  projectBase: string = process.cwd()
+  projectBase: string = process.cwd(),
+  installLayout?: "multi" | "legacy"
 ): void {
   const existing = loadSafehouseManifest(projectBase);
   const packages = existing?.packages ?? [];
   const stationPath = existing?.station_path ?? null;
 
   const filtered = packages.filter((p) => p.name !== name);
-  filtered.push({
+  const row: SafehouseManifestPackage = {
     name,
     version,
     source,
     binary_scope: binaryScope,
-  });
+  };
+  if (installLayout) {
+    row.install_layout = installLayout;
+  }
+  filtered.push(row);
 
   writeSafehouseManifestToProject(projectBase, {
     packages: filtered,

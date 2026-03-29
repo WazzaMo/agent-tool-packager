@@ -38,4 +38,6 @@ export interface PackageManifest {
   bundles?: Array<string | { path: string; "exec-filter"?: string }>;
   program_dependencies?: string[];
   program_definitions?: ProgramDefinition[];
+  /** Feature 4: when present in catalog `atp-package.yaml`, install treats layout as multi-part. */
+  parts?: Array<Record<string, unknown>>;
 }

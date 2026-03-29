@@ -57,7 +57,8 @@ function copyAsset(
   agentBase: string,
   asset: PackageAsset,
   bundlePathMap?: Record<string, string>,
-  installBinDir?: string
+  installBinDir?: string,
+  onFileCopied?: (destAbsolute: string) => void
 ): void {
   if (asset.type === "program") {
     if (!installBinDir) return;
@@ -67,6 +68,7 @@ function copyAsset(
     const baseName = path.basename(asset.path);
     const destPath = path.join(installBinDir, baseName);
     fs.copyFileSync(srcPath, destPath);
+    onFileCopied?.(destPath);
     return;
   }
 
@@ -85,8 +87,10 @@ function copyAsset(
     const content = fs.readFileSync(srcPath, "utf8");
     const patched = patchPlaceholders(content, bundlePathMap);
     fs.writeFileSync(destPath, patched, "utf8");
+    onFileCopied?.(destPath);
   } else {
     fs.copyFileSync(srcPath, destPath);
+    onFileCopied?.(destPath);
   }
 }
 
@@ -98,16 +102,18 @@ function copyAsset(
  * @param agentBase - Agent base path.
  * @param bundlePathMap - Optional map for `{bundle_name}` placeholder patching.
  * @param installBinDir - Optional bin directory for program assets.
+ * @param onFileCopied - Optional hook for each file written (used for install rollback).
  */
 export function copyPackageAssets(
   pkgDir: string,
   manifest: PackageManifest,
   agentBase: string,
   bundlePathMap?: Record<string, string>,
-  installBinDir?: string
+  installBinDir?: string,
+  onFileCopied?: (destAbsolute: string) => void
 ): void {
   const assets = manifest.assets ?? [];
   for (const asset of assets) {
-    copyAsset(pkgDir, agentBase, asset, bundlePathMap, installBinDir);
+    copyAsset(pkgDir, agentBase, asset, bundlePathMap, installBinDir, onFileCopied);
   }
 }

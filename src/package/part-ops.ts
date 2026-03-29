@@ -14,6 +14,12 @@ import {
   partStagePrefix,
 } from "./manifest-layout.js";
 import { validatePackage } from "./validate.js";
+import { wouldBundleBasenameCollideForPartAdd } from "./part-bundle-uniqueness.js";
+import {
+  mutateStageTarContents,
+  removePathUnderExtractRoot,
+  renameDirectoryUnderExtractRoot,
+} from "./stage-tar-mutate.js";
 import { stageMultiBundleTree, stageMultiComponentFile } from "./stage-multi.js";
 
 /**
@@ -181,6 +187,28 @@ export function packagePartUsage(cwd: string, indexStr: string, textParts: strin
 }
 
 /**
+ * `atp package part <n> add usage <text...>` — append one usage line (max 80 chars) for a part.
+ *
+ * @param cwd - Package root directory.
+ * @param indexStr - 1-based part index.
+ * @param textParts - Words joined into a single new usage line.
+ */
+export function packagePartAddUsage(cwd: string, indexStr: string, textParts: string[]): void {
+  const index1 = parsePartIndex1OrExit(indexStr);
+  const m = loadDevManifestOrExit(cwd);
+  exitUnlessMultiDevManifest(m);
+  const part = getPartAtIndexOrExit(m, index1);
+  const text = textParts.join(" ").trim().slice(0, 80);
+  if (!text) {
+    console.error("Usage text is required.");
+    process.exit(1);
+  }
+  const existing = part.usage ?? [];
+  part.usage = [...existing, text];
+  saveDevManifest(cwd, m);
+}
+
+/**
  * `atp package part <n> component <path>` — register component and stage under part prefix.
  *
  * @param cwd - Package root directory.
@@ -233,30 +261,6 @@ function assertBundleDirectoryUnderPackageOrExit(execBase: string, pkgRoot: stri
 }
 
 /**
- * @param m - Full manifest (all parts).
- * @param relPath - Bundle path relative to package root.
- * @param excludePartIndex1 - Optional part index to skip (the part being updated).
- * @returns True when another part already uses the same bundle basename.
- */
-function bundleBasenameCollidesAcrossParts(
-  m: DevPackageManifest,
-  relPath: string,
-  excludePartIndex1?: number
-): boolean {
-  const seen = new Set<string>();
-  const parts = m.parts ?? [];
-  for (let i = 0; i < parts.length; i++) {
-    if (excludePartIndex1 != null && i + 1 === excludePartIndex1) continue;
-    for (const b of parts[i].bundles ?? []) {
-      const p = typeof b === "string" ? b : b.path;
-      seen.add(path.basename(p) || p);
-    }
-  }
-  const name = path.basename(relPath) || relPath;
-  return seen.has(name);
-}
-
-/**
  * `atp package part <n> bundle add <execBase> [--exec-filter]` — register bundle and stage tree.
  *
  * @param cwd - Package root directory.
@@ -289,17 +293,19 @@ export function packagePartBundleAdd(
     process.exit(1);
   }
 
-  if (bundleBasenameCollidesAcrossParts(m, relBase)) {
-    console.error("Bundle name must be unique across all parts in the package.");
-    process.exit(2);
-  }
-
   const bundles = part.bundles ?? [];
   const existing = bundles.find((b) => {
     if (typeof b === "string") return b === relBase;
     return b.path === relBase;
   });
-  if (existing) return;
+  if (existing) {
+    return;
+  }
+
+  if (wouldBundleBasenameCollideForPartAdd(m.parts, relBase, index1)) {
+    console.error("Bundle name must be unique across all parts in the package.");
+    process.exit(2);
+  }
 
   const def: BundleDefinition = {
     path: relBase,
@@ -311,4 +317,153 @@ export function packagePartBundleAdd(
 
   const prefix = partStagePrefix(index1, part.type);
   stageMultiBundleTree(pkgRoot, prefix, relBase, bundlePath);
+}
+
+/**
+ * Split a manifest-relative path into segments for the extract root.
+ *
+ * @param rel - Path using `/` or platform separators.
+ */
+function archivePathSegments(rel: string): string[] {
+  return rel.split(/[/\\]/).filter(Boolean);
+}
+
+/**
+ * `atp package part <n> component remove <path>` — drop component from manifest and `stage.tar`.
+ *
+ * @param cwd - Package root directory.
+ * @param indexStr - 1-based part index.
+ * @param filePath - Component path (basename matched against manifest list).
+ */
+export function packagePartComponentRemove(
+  cwd: string,
+  indexStr: string,
+  filePath: string
+): void {
+  const index1 = parsePartIndex1OrExit(indexStr);
+  const pkgRoot = path.resolve(cwd);
+  const resolved = path.resolve(pkgRoot, filePath);
+  const rel = path.relative(pkgRoot, resolved);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) {
+    console.error(`Invalid path to component given: ${filePath}`);
+    process.exit(1);
+  }
+  const baseName = path.basename(resolved);
+
+  const m = loadDevManifestOrExit(cwd);
+  exitUnlessMultiDevManifest(m);
+  const part = getPartAtIndexOrExit(m, index1);
+  const components = part.components ?? [];
+  if (!components.includes(baseName)) {
+    console.error("Component had not been included in this part.");
+    process.exit(1);
+  }
+
+  const prefix = partStagePrefix(index1, part.type);
+  try {
+    mutateStageTarContents(pkgRoot, (extractRoot) => {
+      removePathUnderExtractRoot(extractRoot, [prefix, baseName]);
+    });
+  } catch (err) {
+    console.error(String(err));
+    process.exit(1);
+  }
+
+  part.components = components.filter((c) => c !== baseName);
+  saveDevManifest(cwd, m);
+}
+
+/**
+ * `atp package part <n> bundle remove <execBase>` — drop bundle from manifest and `stage.tar`.
+ *
+ * @param cwd - Package root directory.
+ * @param indexStr - 1-based part index.
+ * @param execBase - Bundle directory relative to package root.
+ */
+export function packagePartBundleRemove(
+  cwd: string,
+  indexStr: string,
+  execBase: string
+): void {
+  const index1 = parsePartIndex1OrExit(indexStr);
+  const pkgRoot = path.resolve(cwd);
+  const bundlePath = path.resolve(pkgRoot, execBase);
+  const relBase = path.relative(pkgRoot, bundlePath);
+  if (relBase.startsWith("..") || path.isAbsolute(relBase)) {
+    console.error(`Invalid path to bundle given: ${execBase}`);
+    process.exit(1);
+  }
+
+  const m = loadDevManifestOrExit(cwd);
+  exitUnlessMultiDevManifest(m);
+  const part = getPartAtIndexOrExit(m, index1);
+  const bundles = part.bundles ?? [];
+  const found = bundles.find((b) => {
+    if (typeof b === "string") return b === relBase;
+    return b.path === relBase;
+  });
+  if (!found) {
+    console.error("Bundle had not been included in this part.");
+    process.exit(1);
+  }
+
+  const prefix = partStagePrefix(index1, part.type);
+  const bundleSegments = archivePathSegments(relBase);
+
+  try {
+    mutateStageTarContents(pkgRoot, (extractRoot) => {
+      removePathUnderExtractRoot(extractRoot, [prefix, ...bundleSegments]);
+    });
+  } catch (err) {
+    console.error(String(err));
+    process.exit(1);
+  }
+
+  part.bundles = bundles.filter((b) => {
+    if (typeof b === "string") return b !== relBase;
+    return b.path !== relBase;
+  });
+  saveDevManifest(cwd, m);
+}
+
+/**
+ * `atp package part <n> remove` — remove one part, delete its staging prefix, reindex later parts.
+ *
+ * @param cwd - Package root directory.
+ * @param indexStr - 1-based part index to remove.
+ */
+export function packagePartRemove(cwd: string, indexStr: string): void {
+  const r = parsePartIndex1OrExit(indexStr);
+  const m = loadDevManifestOrExit(cwd);
+  exitUnlessMultiDevManifest(m);
+  const oldParts = m.parts ?? [];
+  if (r < 1 || r > oldParts.length) {
+    console.error(`Part ${r} not found.`);
+    process.exit(1);
+  }
+
+  const removed = oldParts[r - 1];
+  const newParts = [...oldParts.slice(0, r - 1), ...oldParts.slice(r)];
+  const pkgRoot = path.resolve(cwd);
+
+  try {
+    mutateStageTarContents(pkgRoot, (extractRoot) => {
+      removePathUnderExtractRoot(extractRoot, [partStagePrefix(r, removed.type)]);
+      for (let i = r + 1; i <= oldParts.length; i++) {
+        const oldPrefix = partStagePrefix(i, oldParts[i - 1].type);
+        const newPrefix = partStagePrefix(i - 1, newParts[i - 2].type);
+        if (oldPrefix === newPrefix) {
+          continue;
+        }
+        renameDirectoryUnderExtractRoot(extractRoot, [oldPrefix], [newPrefix]);
+      }
+    });
+  } catch (err) {
+    console.error(String(err));
+    process.exit(1);
+  }
+
+  m.parts = newParts;
+  saveDevManifest(cwd, m);
+  console.log(`Removed part ${r}. ${newParts.length} part(s) remain.`);
 }

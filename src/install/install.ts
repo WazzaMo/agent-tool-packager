@@ -1,8 +1,11 @@
 /**
  * Main install orchestration: resolve, copy, record.
+ * Splits Feature 4 multi-part vs legacy install entry points; shared copy + best-effort rollback.
  */
 
+import fs from "node:fs";
 import path from "node:path";
+
 import {
   loadSafehouseConfig,
   loadStationConfig,
@@ -15,6 +18,8 @@ import { writeStationPackageManifest } from "../config/station-package-manifest.
 
 import { expandHome, findProjectBase } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+
+import type { CatalogPackage } from "../catalog/types.js";
 
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
 import {
@@ -42,8 +47,52 @@ export interface InstallOptions {
   dependencies: boolean;
 }
 
+/** Arguments shared by {@link installMultiTypeCatalogPackage} and {@link installLegacyCatalogPackage}. */
+export interface CatalogInstallContext {
+  pkgDir: string;
+  manifest: PackageManifest;
+  agentBase: string;
+  bundlePathMap: Record<string, string> | undefined;
+  installBinDir: string | undefined;
+  catalogPkg: CatalogPackage;
+  opts: InstallOptions;
+  projectBase: string;
+}
+
+/**
+ * Classify catalog manifest layout for install routing (Feature 4).
+ *
+ * @param manifest - Loaded `atp-package.yaml`.
+ * @returns `multi` when `parts` is a non-empty array.
+ */
+export function manifestInstallLayout(manifest: PackageManifest): "multi" | "legacy" {
+  const parts = manifest.parts;
+  if (Array.isArray(parts) && parts.length > 0) {
+    return "multi";
+  }
+  return "legacy";
+}
+
+/**
+ * Best-effort undo of file copies when install fails before Safehouse/Station bookkeeping completes.
+ *
+ * @param paths - Destination files written during the attempt (most recent first is ideal).
+ */
+function rollbackCopiedFiles(paths: string[]): void {
+  for (const p of [...paths].reverse()) {
+    try {
+      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+        fs.unlinkSync(p);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /**
  * Check for missing dependencies.
+ *
  * @param manifest - Package manifest with program_dependencies.
  * @param projectBase - Project root directory.
  * @returns List of missing package names.
@@ -65,8 +114,9 @@ function checkDependencies(
 
 /**
  * Resolve agent base path (project agent dir) for skills/rules.
+ *
  * @param projectBase - Project root directory.
- * @returns Absolute path to agent directory (e.g. .cursor/).
+ * @returns Absolute path to agent directory (e.g. `.cursor/`).
  */
 function getAgentBasePath(projectBase: string): string {
   const config = loadSafehouseConfig(projectBase);
@@ -74,6 +124,89 @@ function getAgentBasePath(projectBase: string): string {
   const agentName = config?.agent ?? "cursor";
   const projectPath = resolveAgentProjectPath(agentName, stationConfig);
   return path.join(projectBase, projectPath);
+}
+
+/**
+ * Copy assets and update Station or Safehouse; rollback copied files on failure (project scope).
+ *
+ * @param layout - Recorded on Safehouse manifest when `promptScope` is project.
+ * @param ctx - Resolved paths and manifest.
+ */
+async function executeCatalogInstall(
+  layout: "multi" | "legacy",
+  ctx: CatalogInstallContext
+): Promise<void> {
+  const {
+    pkgDir,
+    manifest,
+    agentBase,
+    bundlePathMap,
+    installBinDir,
+    catalogPkg,
+    opts,
+    projectBase,
+  } = ctx;
+
+  const copied: string[] = [];
+  try {
+    copyPackageAssets(
+      pkgDir,
+      manifest,
+      agentBase,
+      bundlePathMap,
+      installBinDir,
+      (dest) => copied.push(dest)
+    );
+
+    const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
+
+    if (opts.promptScope === "project") {
+      const source = opts.binaryScope === "user-bin" ? "station" : "local";
+      addPackageToSafehouseManifest(
+        manifest.name,
+        version,
+        opts.binaryScope,
+        source,
+        projectBase,
+        layout
+      );
+    } else {
+      writeStationPackageManifest(manifest.name, {
+        name: manifest.name,
+        version,
+        scope: "user",
+        source: catalogPkg.location,
+      });
+    }
+  } catch {
+    rollbackCopiedFiles(copied);
+    throw new Error("Install copy or manifest update failed.");
+  }
+
+  const finalLabel = `prompts:${opts.promptScope}, bin:${opts.binaryScope}`;
+  console.log(`Installed ${manifest.name} ${manifest.version ?? catalogPkg.version ?? "0.0.0"} (${finalLabel})`);
+}
+
+/**
+ * Install a Feature 4 multi-part catalog package (non-empty `parts` in manifest).
+ *
+ * @param ctx - Resolved install context.
+ */
+export async function installMultiTypeCatalogPackage(
+  ctx: CatalogInstallContext
+): Promise<void> {
+  await executeCatalogInstall("multi", ctx);
+}
+
+/**
+ * Install a legacy single-type catalog package (flat root manifest).
+ *
+ * @param ctx - Resolved install context.
+ */
+export async function installLegacyCatalogPackage(
+  ctx: CatalogInstallContext
+): Promise<void> {
+  await executeCatalogInstall("legacy", ctx);
 }
 
 /**
@@ -151,30 +284,26 @@ export async function installPackage(
         : path.join(projectBase, ".atp_safehouse", `${manifest.name}-exec`, "bin")
       : undefined;
 
-  copyPackageAssets(pkgDir, manifest, agentBase, bundlePathMap, installBinDir);
+  const ctx: CatalogInstallContext = {
+    pkgDir,
+    manifest,
+    agentBase,
+    bundlePathMap,
+    installBinDir,
+    catalogPkg,
+    opts,
+    projectBase,
+  };
 
-  const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
-
-  if (opts.promptScope === "project") {
-    const source =
-      opts.binaryScope === "user-bin" ? "station" : "local";
-    addPackageToSafehouseManifest(
-      manifest.name,
-      version,
-      opts.binaryScope,
-      source,
-      projectBase
-    );
-  } else {
-    writeStationPackageManifest(manifest.name, {
-      name: manifest.name,
-      version,
-      scope: "user",
-      source: catalogPkg.location,
-    });
+  const layout = manifestInstallLayout(manifest);
+  try {
+    if (layout === "multi") {
+      await installMultiTypeCatalogPackage(ctx);
+    } else {
+      await installLegacyCatalogPackage(ctx);
+    }
+  } catch (err) {
+    console.error(String(err));
+    process.exit(1);
   }
-
-  const finalLabel = `prompts:${opts.promptScope}, bin:${opts.binaryScope}`;
-
-  console.log(`Installed ${manifest.name} ${version} (${finalLabel})`);
 }

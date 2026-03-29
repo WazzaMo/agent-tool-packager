@@ -16,8 +16,12 @@ import {
 } from "../package/manifest-layout.js";
 import {
   packageNewpart,
+  packagePartAddUsage,
   packagePartBundleAdd,
+  packagePartBundleRemove,
   packagePartComponentAdd,
+  packagePartComponentRemove,
+  packagePartRemove,
   packagePartUsage,
 } from "../package/part-ops.js";
 
@@ -58,12 +62,32 @@ function dispatchPackagePartCommand(
   execFilter: string | undefined
 ): void {
   const sub = subcommand.toLowerCase();
+  const ex = extra ?? [];
+
+  if (sub === "remove" && ex.length === 0) {
+    packagePartRemove(cwd, index);
+    return;
+  }
+
   if (sub === "usage") {
-    packagePartUsage(cwd, index, extra ?? []);
+    packagePartUsage(cwd, index, ex);
+    return;
+  }
+  if (sub === "add" && (ex[0] ?? "").toLowerCase() === "usage") {
+    packagePartAddUsage(cwd, index, ex.slice(1));
     return;
   }
   if (sub === "component") {
-    const p = extra?.[0];
+    if ((ex[0] ?? "").toLowerCase() === "remove") {
+      const p = ex[1];
+      if (!p) {
+        console.error("Missing file path for component remove.");
+        process.exit(1);
+      }
+      packagePartComponentRemove(cwd, index, p);
+      return;
+    }
+    const p = ex[0];
     if (!p) {
       console.error("Missing file path for component.");
       process.exit(1);
@@ -72,11 +96,20 @@ function dispatchPackagePartCommand(
     return;
   }
   if (sub === "bundle") {
-    const a0 = (extra?.[0] ?? "").toLowerCase();
-    const execBase = extra?.[1];
+    const a0 = (ex[0] ?? "").toLowerCase();
+    if (a0 === "remove") {
+      const execBase = ex[1];
+      if (!execBase) {
+        console.error("Expected: atp package part <n> bundle remove <execBase>");
+        process.exit(1);
+      }
+      packagePartBundleRemove(cwd, index, execBase);
+      return;
+    }
+    const execBase = ex[1];
     if (a0 !== "add" || !execBase) {
       console.error(
-        "Expected: atp package part <n> bundle add <execBase> [--exec-filter ...]"
+        "Expected: atp package part <n> bundle add <execBase> | bundle remove <execBase> [--exec-filter ...]"
       );
       process.exit(1);
     }
@@ -86,7 +119,7 @@ function dispatchPackagePartCommand(
     return;
   }
   console.error(
-    `Unknown part subcommand '${subcommand}'. Use usage, component, or bundle.`
+    `Unknown part subcommand '${subcommand}'. Use remove, usage, add usage, component, or bundle.`
   );
   process.exit(1);
 }
@@ -144,26 +177,33 @@ export function registerPackageCommands(program: Command): void {
     });
 
   pkg
-    .command("part <index> <subcommand> [extra...]")
+    .command("part")
     .description(
-      "Multi package: part <n> usage <text...> | part <n> component <path> | part <n> bundle add <dir>"
+      "Multi-type: `part add <type>` (alias newpart), or `part <n> usage|add usage|component|bundle …`"
     )
     .option("--exec-filter <glob>", "With bundle add: executable glob when bundle has no bin/")
-    .action(function (
-      this: Command,
-      index: string,
-      subcommand: string,
-      extra: string[]
-    ) {
+    .argument("<tokens...>", "Tokens after `part`")
+    .action(function (this: Command, tokens: string[]) {
       const cwd = process.cwd();
       const opts = this.opts() as { execFilter?: string };
-      dispatchPackagePartCommand(
-        cwd,
-        index,
-        subcommand,
-        extra ?? [],
-        opts.execFilter
-      );
+      const t = tokens ?? [];
+      if (t.length === 0) {
+        console.error(
+          "Usage: atp package part add <type> | part <n> usage <text…> | part <n> add usage <text…> | …"
+        );
+        process.exit(1);
+      }
+      if (t[0].toLowerCase() === "add" && t[1]) {
+        packageNewpart(cwd, t[1]);
+        return;
+      }
+      const index = t[0];
+      const subcommand = t[1];
+      if (!subcommand) {
+        console.error("Missing subcommand after part index.");
+        process.exit(1);
+      }
+      dispatchPackagePartCommand(cwd, index, subcommand, t.slice(2), opts.execFilter);
     });
 
   pkg

@@ -6,7 +6,12 @@ import type { Command } from "commander";
 import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
 
 import type { CatalogPackage } from "../catalog/types.js";
+import {
+  readTypeSummaryFromPackageDir,
+  AtpPackageYamlParseError,
+} from "../catalog/package-type-summary.js";
 import { catalogAddPackage } from "../package/catalog-add.js";
+import { resolvePackagePath } from "../install/resolve.js";
 
 /**
  * Single-line display for one catalog entry.
@@ -23,9 +28,13 @@ function formatCatalogPackageLine(pkg: CatalogPackage): string {
 
 /**
  * Print effective catalog packages to stdout (or a placeholder when empty).
+ *
+ * @param opts.verbose - Append type summary from each resolvable `file://` package dir.
+ * @param opts.cwd - Used to resolve relative catalog locations.
  */
-function printStationCatalogList(): void {
+function printStationCatalogList(opts?: { verbose?: boolean; cwd?: string }): void {
   const packages = effectiveStationCatalogPackages(loadStationCatalog());
+  const cwd = opts?.cwd ?? process.cwd();
 
   if (packages.length === 0) {
     console.log("(no packages)");
@@ -33,9 +42,25 @@ function printStationCatalogList(): void {
   }
 
   for (const pkg of packages) {
-    if (pkg.name) {
-      console.log(formatCatalogPackageLine(pkg));
+    if (!pkg.name) {
+      continue;
     }
+    let line = formatCatalogPackageLine(pkg);
+    if (opts?.verbose && pkg.location) {
+      const dir = resolvePackagePath(pkg.location, cwd);
+      if (dir) {
+        try {
+          line += readTypeSummaryFromPackageDir(dir);
+        } catch (err) {
+          if (err instanceof AtpPackageYamlParseError) {
+            console.error(err.message);
+            process.exit(2);
+          }
+          throw err;
+        }
+      }
+    }
+    console.log(line);
   }
 }
 
@@ -52,8 +77,10 @@ export function registerCatalogCommands(program: Command): void {
   catalog
     .command("list")
     .description("List packages in the Station catalog (atp-catalog.yaml)")
-    .action(() => {
-      printStationCatalogList();
+    .option("--verbose", "Show package types (from each package atp-package.yaml)")
+    .action(function (this: Command) {
+      const o = this.opts() as { verbose?: boolean };
+      printStationCatalogList({ verbose: o.verbose, cwd: process.cwd() });
     });
 
   catalog

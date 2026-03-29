@@ -123,4 +123,139 @@ describe("Integration: Feature 4 multi-type packages", () => {
     expect(r.status).toBe(0);
     expect(r.stderr.toLowerCase()).toMatch(/duplicate/);
   });
+
+  it("part bundle add same path twice is idempotent (exit 0)", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "idem-bundle"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.mkdirSync(path.join(pkgDir, "b1", "bin"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "b1", "bin", "x"), "#!/bin/sh\n", "utf8");
+    runAtp(["package", "newpart", "mcp"], o);
+    runAtp(["package", "part", "1", "usage", "Mcp usage"], o);
+    runAtp(["package", "part", "1", "bundle", "add", "b1"], o);
+    const r2 = runAtpSpawn(["package", "part", "1", "bundle", "add", "b1"], o);
+    expect(r2.status).toBe(0);
+  });
+
+  it("part bundle add basename collision across parts exits 2", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "collide-bundles"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.mkdirSync(path.join(pkgDir, "p1", "foo", "bin"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "p1", "foo", "bin", "a"), "#!/bin/sh\n", "utf8");
+    fs.mkdirSync(path.join(pkgDir, "p2", "foo", "bin"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "p2", "foo", "bin", "b"), "#!/bin/sh\n", "utf8");
+    runAtp(["package", "newpart", "mcp"], o);
+    runAtp(["package", "part", "1", "usage", "first mcp"], o);
+    runAtp(["package", "part", "1", "bundle", "add", "p1/foo"], o);
+    runAtp(["validate", "package"], o);
+    runAtp(["package", "newpart", "mcp"], o);
+    runAtp(["package", "part", "2", "usage", "second mcp"], o);
+    const r = runAtpSpawn(["package", "part", "2", "bundle", "add", "p2/foo"], o);
+    expect(r.status).toBe(2);
+    expect((r.stdout + r.stderr).toLowerCase()).toMatch(/unique/);
+  });
+
+  it("part add <type> aliases newpart", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "alias-part"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    runAtp(["package", "part", "add", "skill"], o);
+    const yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).toMatch(/type:\s*Skill/i);
+    expect(yaml).toMatch(/parts:/);
+  });
+
+  it("part <n> add usage appends a line; usage replaces", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "usage-lines"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    runAtp(["package", "part", "add", "rule"], o);
+    runAtp(["package", "part", "1", "usage", "first line"], o);
+    runAtp(["package", "part", "1", "add", "usage", "second line"], o);
+    let yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).toMatch(/first line/);
+    expect(yaml).toMatch(/second line/);
+    runAtp(["package", "part", "1", "usage", "replaced only"], o);
+    yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).toMatch(/replaced only/);
+    expect(yaml).not.toMatch(/first line/);
+  });
+
+  it("part <n> component remove updates manifest and stage.tar", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "p-cr"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.writeFileSync(path.join(pkgDir, "z.md"), "# Z\n");
+    runAtp(["package", "part", "add", "rule"], o);
+    runAtp(["package", "part", "1", "usage", "rule usage"], o);
+    runAtp(["package", "part", "1", "component", "z.md"], o);
+    runAtp(["validate", "package"], o);
+    runAtp(["package", "part", "1", "component", "remove", "z.md"], o);
+    const yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).not.toMatch(/\bz\.md\b/);
+    const listing = listStageTar(pkgDir);
+    expect(listing).not.toMatch(/part_1_Rule\/z\.md/);
+  });
+
+  it("part <n> bundle remove drops bundle from tar and manifest", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "p-br"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.mkdirSync(path.join(pkgDir, "bx", "bin"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "bx", "bin", "t"), "#!/bin/sh\n", "utf8");
+    runAtp(["package", "part", "add", "mcp"], o);
+    runAtp(["package", "part", "1", "usage", "mcp"], o);
+    runAtp(["package", "part", "1", "bundle", "add", "bx"], o);
+    runAtp(["validate", "package"], o);
+    runAtp(["package", "part", "1", "bundle", "remove", "bx"], o);
+    const yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).not.toMatch(/\bbx\b/);
+    const listing = listStageTar(pkgDir);
+    expect(listing).not.toMatch(/part_1_Mcp\/bx/);
+  });
+
+  it("part <n> remove reindexes stage.tar prefixes", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "p-prm"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.writeFileSync(path.join(pkgDir, "r1.md"), "# R1\n");
+    fs.writeFileSync(path.join(pkgDir, "r2.md"), "# R2\n");
+    fs.writeFileSync(path.join(pkgDir, "r3.md"), "# R3\n");
+    runAtp(["package", "part", "add", "rule"], o);
+    runAtp(["package", "part", "1", "usage", "p1"], o);
+    runAtp(["package", "part", "1", "component", "r1.md"], o);
+    runAtp(["package", "part", "add", "rule"], o);
+    runAtp(["package", "part", "2", "usage", "p2"], o);
+    runAtp(["package", "part", "2", "component", "r2.md"], o);
+    runAtp(["package", "part", "add", "rule"], o);
+    runAtp(["package", "part", "3", "usage", "p3"], o);
+    runAtp(["package", "part", "3", "component", "r3.md"], o);
+    runAtp(["validate", "package"], o);
+    let listing = listStageTar(pkgDir);
+    expect(listing).toMatch(/part_1_Rule\/r1\.md/);
+    expect(listing).toMatch(/part_2_Rule\/r2\.md/);
+    expect(listing).toMatch(/part_3_Rule\/r3\.md/);
+    runAtp(["package", "part", "2", "remove"], o);
+    listing = listStageTar(pkgDir);
+    expect(listing).toMatch(/part_1_Rule\/r1\.md/);
+    expect(listing).not.toMatch(/part_2_Rule\/r2\.md/);
+    expect(listing).toMatch(/part_2_Rule\/r3\.md/);
+    expect(listing).not.toMatch(/part_3_Rule/);
+    runAtp(["validate", "package"], o);
+  });
 });

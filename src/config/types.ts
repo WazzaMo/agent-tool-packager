@@ -35,6 +35,8 @@ export interface SafehouseManifestPackage {
   source?: PackageSource;
   /** Required when writing. */
   binary_scope?: BinaryScope;
+  /** Hint for uninstall / tooling: `multi` when the catalog package used Feature 4 `parts`. */
+  install_layout?: "multi" | "legacy";
 }
 
 /** Safehouse manifest document: installed packages and originating Station path. */

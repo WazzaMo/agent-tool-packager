@@ -7,6 +7,9 @@ import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
 import { getStationPath, pathExists } from "../config/paths.js";
+import { readTypeSummaryFromPackageDir, AtpPackageYamlParseError } from "../catalog/package-type-summary.js";
+
+import { StationManifestParseError } from "./list-errors.js";
 
 /** Parsed fields from a Station-side package manifest file. */
 interface StationPackageManifest {
@@ -22,6 +25,8 @@ type StationListRow = {
   version: string;
   scope: string;
   source: string;
+  /** From `user_packages/<name>/atp-package.yaml` when `--extended`. */
+  typeSuffix?: string;
 };
 
 /**
@@ -35,14 +40,20 @@ function parseStationManifestContent(
   content: string,
   ext: string
 ): StationPackageManifest | null {
+  let data: unknown;
   try {
     if (ext === ".json") {
-      return JSON.parse(content) as StationPackageManifest;
+      data = JSON.parse(content) as StationPackageManifest;
+    } else {
+      data = yaml.load(content);
     }
-    return yaml.load(content) as StationPackageManifest | null;
   } catch {
+    throw new StationManifestParseError();
+  }
+  if (!data || typeof data !== "object") {
     return null;
   }
+  return data as StationPackageManifest;
 }
 
 /**
@@ -60,9 +71,17 @@ function padCell(str: string, width: number): string {
  * Collect display rows from every manifest file in the Station manifest directory.
  *
  * @param manifestDir - Absolute path to `.../manifest`.
+ * @param stationPath - Station root (for `user_packages/` when `extended`).
+ * @param extended - When true, append type summary from each package’s `atp-package.yaml`.
  * @returns Non-empty rows with string `name`; skips invalid files.
+ * @throws {@link StationManifestParseError} on JSON/YAML syntax errors in `manifest/`.
+ * @throws {@link AtpPackageYamlParseError} when `extended` and a package YAML is invalid.
  */
-function collectStationListRows(manifestDir: string): StationListRow[] {
+function collectStationListRows(
+  manifestDir: string,
+  stationPath: string,
+  extended: boolean
+): StationListRow[] {
   const entries = fs.readdirSync(manifestDir);
   const rows: StationListRow[] = [];
 
@@ -83,12 +102,17 @@ function collectStationListRows(manifestDir: string): StationListRow[] {
       continue;
     }
 
-    rows.push({
+    const row: StationListRow = {
       name: data.name,
       version: data.version ?? "-",
       scope: data.scope ?? "-",
       source: data.source ?? "-",
-    });
+    };
+    if (extended) {
+      const pkgDir = path.join(stationPath, "user_packages", data.name);
+      row.typeSuffix = readTypeSummaryFromPackageDir(pkgDir);
+    }
+    rows.push(row);
   }
 
   return rows;
@@ -100,7 +124,10 @@ function collectStationListRows(manifestDir: string): StationListRow[] {
  * @param rows - Rows from {@link collectStationListRows}.
  */
 function printStationPackageTable(rows: StationListRow[]): void {
-  const nameW = Math.max(4, ...rows.map((m) => m.name.length));
+  const nameW = Math.max(
+    4,
+    ...rows.map((m) => m.name.length + (m.typeSuffix?.length ?? 0))
+  );
   const versionW = Math.max(7, ...rows.map((m) => m.version.length));
   const scopeW = Math.max(5, ...rows.map((m) => m.scope.length));
   const sourceW = Math.max(6, ...rows.map((m) => m.source.length));
@@ -117,7 +144,7 @@ function printStationPackageTable(rows: StationListRow[]): void {
 
   for (const m of rows) {
     console.log(
-      padCell(m.name, nameW) +
+      padCell(displayStationName(m), nameW) +
         "  " +
         padCell(m.version, versionW) +
         "  " +
@@ -128,10 +155,17 @@ function printStationPackageTable(rows: StationListRow[]): void {
   }
 }
 
+function displayStationName(m: StationListRow): string {
+  return m.name + (m.typeSuffix ?? "");
+}
+
 /**
  * List packages registered in the Station `manifest/` directory (stdout table).
+ *
+ * @param opts.extended - Append type summary from each `user_packages/<name>/atp-package.yaml`.
+ * @throws Never; uses `process.exit(2)` on manifest or package YAML parse errors.
  */
-export function stationList(): void {
+export function stationList(opts?: { extended?: boolean }): void {
   const stationPath = getStationPath();
   const manifestDir = path.join(stationPath, "manifest");
 
@@ -140,7 +174,16 @@ export function stationList(): void {
     return;
   }
 
-  const rows = collectStationListRows(manifestDir);
+  let rows: StationListRow[];
+  try {
+    rows = collectStationListRows(manifestDir, stationPath, opts?.extended ?? false);
+  } catch (err) {
+    if (err instanceof StationManifestParseError || err instanceof AtpPackageYamlParseError) {
+      console.error(err.message);
+      process.exit(2);
+    }
+    throw err;
+  }
 
   if (rows.length === 0) {
     console.log("No packages installed in Station");

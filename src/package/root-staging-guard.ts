@@ -27,7 +27,7 @@ export function exitIfMultiUsesRootStaging(manifest: DevPackageManifest, command
 export function exitIfMultiDevManifestForLegacyRemove(manifest: DevPackageManifest): void {
   if (!isMultiDevManifest(manifest)) return;
   console.error(
-    "Multi package: use part-scoped remove when implemented, or edit atp-package.yaml."
+    "Multi package: use `atp package part <n> component remove <path>` or `part <n> bundle remove <dir>`, or edit atp-package.yaml."
   );
   process.exit(1);
 }

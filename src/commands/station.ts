@@ -26,7 +26,12 @@ export function registerStationCommands(program: Command): void {
   station
     .command("list")
     .description("List packages installed in the Station")
-    .action(() => {
-      stationList();
+    .option(
+      "--extended",
+      "Append types from user_packages/<name>/atp-package.yaml (parse errors exit 2)"
+    )
+    .action(function (this: Command) {
+      const o = this.opts() as { extended?: boolean };
+      stationList({ extended: o.extended });
     });
 }

@@ -40,8 +40,13 @@ export function registerSafehouseCommands(program: Command): void {
   safehouse
     .command("list")
     .description("List packages installed in the project Safehouse")
-    .action(() => {
+    .option(
+      "--extended",
+      "Append types from catalog package atp-package.yaml (parse errors exit 2)"
+    )
+    .action(function (this: Command) {
       const cwd = process.cwd();
-      safehouseList(projectBaseForSafehouseList(cwd));
+      const o = this.opts() as { extended?: boolean };
+      safehouseList(projectBaseForSafehouseList(cwd), { extended: o.extended });
     });
 }
