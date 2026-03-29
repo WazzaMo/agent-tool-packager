@@ -36,6 +36,28 @@ We're going to build the next generation of agent tools together!
 I am assuming a UNIX-like (Linux, BSD, MacOS) environment in these examples.
 Will it work in Windows? Maybe... I make no promises about Windows (yet).
 
+## What can ATP do?
+
+Right now ATP is good for AI agent extensions that can be developed and packaged.
+The extensions generally are:
+
+- rule
+- standard prompt material as markdown
+- commands that agents can use as tools
+- skills as defined in the standard originally by Anthropic for SKILL.md
+- MCP servers
+
+The package can be installed at the user level or in a project. Because we are dealing with agents,
+we use words from the world of spies. So the Station is the country headquarters away from HQ and here
+is the user home directory configuration and storage for ATP.
+
+The project is the field of battle (or espionage?) and so the Safehouse is the safe place the agent
+has for storing their tools of the trade.
+
+So ATP, right now, lets you define and stage a package of tools for agentic work,
+add that package to the Station's catalog and then install that package, or other packages you create,
+to any project's Safehouse, or to an agent's user-central installation in the Station.
+
 ## Before you start.
 
 You need a Station for your agents to get their packages.
@@ -47,10 +69,39 @@ That will create the station at ${HOME}/.atp_station
 
 ## Creating your own package
 
+Create a skeleton of a package.
+
+`atp create package skeleton`
+
+Then define its name, copyright, license, version for the package as base metadata.
+
+```bash
+atp package name clean-docs-and-code
+atp package copyright "Warwick Molloy 2026" "All rights reserved"
+atp package license "Apache License 2.0"
+atp package version 0.1.0
+```
+
+Add some file assets with hints on how to use them in one or more parts....
+
+```bash
+atp package newpart rule
+atp package part 1 usage "Tell the agent to read the documents and summarise into AGENTS.md"
+atp package part 1 component add docs/doc-guide.md docs/coding-standard.md
+```
+
+Then check if the package definition is complete enough. An integrity check, basically...
+
+`atp validate package`
+
+Get a summary of the definition and contents...
+
+`atp package summary`
+
 
 -----------------------------------------------------
 
-# Installation
+# How to install ATP on your computer
 
 ```bash
 npm install -g @wazzamo-agent-tools/packager
