@@ -7,7 +7,7 @@ Current Version: 0.2.3
 Cursor summarised this project as:
 
 > **Agent Tools is an early-stage project to standardize how
-  you add prompts, MCP servers, and skills to agentic CLI workflows,
+  you add prompts, hooks, MCP servers, and skills to agentic CLI workflows,
   with documentation and conventions in place**
 
 ## Copyright
@@ -43,6 +43,7 @@ The extensions generally are:
 
 - rule
 - standard prompt material as markdown
+- hooks (agent loop scripts and `hooks.json`; see [Cursor Hooks](https://cursor.com/docs/hooks))
 - commands that agents can use as tools
 - skills as defined in the standard originally by Anthropic for SKILL.md
 - MCP servers
@@ -87,14 +88,17 @@ Add some file assets with hints on how to use them in one or more parts....
 ```bash
 atp package newpart rule
 atp package part 1 usage "Tell the agent to read the documents and summarise into AGENTS.md"
-atp package part 1 component add docs/doc-guide.md docs/coding-standard.md
+atp package part 1 component docs/doc-guide.md
+atp package part 1 component docs/coding-standard.md # -- add another markdown file
 ```
 
 Then check if the package definition is complete enough. An integrity check, basically...
 
 `atp validate package`
 
-Get a summary of the definition and contents...
+
+Get a summary of the definition and contents... and an indication if the package
+is complete enough, by running...
 
 `atp package summary`
 
