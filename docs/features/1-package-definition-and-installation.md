@@ -54,8 +54,10 @@ The product types are:
 
 | Package Type  | Description                               |
 | ------------  | ------------                              |
-| Rule          | Markdown as a prompt file.                |
+| Rule          | Markdown as a prompt file (rules area).   |
+| Prompt        | Markdown or text prompts (prompts area).  |
 | Skill         | SKILL.md file                             |
+| Hook          | hooks.json + hook scripts (agent hooks).   |
 | MCP servers   | in any language, packed as a tar.gz file  |
 | Command       | Shell scripts or programs as support tools |
 | Experimental  | Payloads that are yet to be defined by industry |
@@ -65,9 +67,15 @@ be installed at the user level or at the project level.
 
 ### Terminology (aligned with package-metadata)
 
-- **Rules**: Product type for prompt markdown files. In
+- **Rules**: Product type for prompt markdown files installed as rules. In
   [package-metadata](../notes/2026-02-25-plan-package-metadata-and-catalog.md) and
-  code, these are "assets" or "prompts."
+  code, file components use an install-time kind such as `rule`, `prompt`, `skill`, or `hook`.
+
+- **Prompts**: Product type for reusable prompt templates installed under the agent
+  prompts directory (see Feature 2).
+
+- **Hooks**: Product type for agent hook configuration and scripts (see Feature 2 and
+  [Cursor Hooks](https://cursor.com/docs/hooks) for Cursor’s layout).
 
 - **Station**: Main config area at `~/.atp_station` (or `STATION_PATH`); see
   [configuration](../configuration.md).
@@ -75,7 +83,7 @@ be installed at the user level or at the project level.
 ## 2. Installation
 
 Utility programs (executables) are installed to the user home directory by default to allow reuse across many projects. 
-Prompt materials (skills, rules) are installed based on the selected scope (`--project` or `--station`).
+Prompt materials and hooks (skills, rules, prompts, hook configs) are installed based on the selected scope (`--project` or `--station`).
 The default for a package installation is the project space for skills and user home for programs (`--user-bin`).
 This ensures the agent can use the skills immediately in the project while keeping the system clean.
 

@@ -199,7 +199,7 @@ missing information before proceeding with a new part.
 | Bundle, part 2  | `atp package part 2 bundle add … `      | see (5)   |
 
 
-(1) CLI keywords map to Rule, Skill, Mcp, … per Feature 2. CLI prints part number "Part 1 added to package"
+(1) CLI keywords map to Rule, Prompt, Skill, Hook, Mcp, … per Feature 2. CLI prints part number "Part 1 added to package"
 
 (2) Usage is mandatory on each part in the Part layout.
 
@@ -682,7 +682,7 @@ if not an error message must be shown.
 
 ### Acceptance criteria
 
-1. **Multi:** at least one part; each part has **type**, **usage**, and required **components** / **bundles** per type expectations in Feature 2 (e.g. Skill expects markdown components; Mcp typically expects bundles).
+1. **Multi:** at least one part; each part has **type**, **usage**, and required **components** / **bundles** per type expectations in Feature 2 (e.g. Rule, Prompt, and Skill expect markdown components; Hook expects hook files such as `hooks.json` and scripts; Mcp typically expects bundles).
 2. **Legacy:** root-level mandatory fields and staging as in Feature 2.
 3. Lists missing items by **part index** for Multi.
 4. Emits **warnings** for duplicate part types; does not fail unless strict mode is specified later.
@@ -760,7 +760,7 @@ in an independent source directory, so they will be retained.
 | Dependencies    | Unchanged: if package lists dependencies, see (2).                          |
 
 (1) part files are installed into agent-relevant paths according to **part `type`**, meaning
-Rule → rules dir, Skill → skills, Mcp → MCP config, etc.
+Rule → rules dir, Prompt → prompts dir, Skill → skills, Hook → `hooks.json` at agent root and other files under `hooks/`, Mcp → MCP config, etc.
 
 (2) Unchanged: if package lists dependencies, resolve before or with `--dependencies`.
 

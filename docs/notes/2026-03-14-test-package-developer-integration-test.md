@@ -22,7 +22,7 @@ The Feature 2 Test Approach was implemented as integration tests. The tests init
 
 2. **atp create package skeleton** — Creates empty `atp-package.yaml` (`type: ""` so it parses) and deletes any existing `stage.tar`.
 
-3. **atp package type|name|version|usage** — Property setters that load, update, and save the manifest. Type mapping: `rule→Rule`, `skill→Skill`, `mcp→Mcp`, `shell→Command`, `other→Experimental`.
+3. **atp package type|name|version|usage** — Property setters that load, update, and save the manifest. Type mapping: `rule→Rule`, `prompt→Prompt`, `skill→Skill`, `hook→Hook`, `mcp→Mcp`, `shell→Command`, `other→Experimental`.
 
 4. **atp package component add** — Adds file to `stage.tar` and components list. Uses system `tar` for append/create. Commander passes variadic args as first param (string or array); normalised so component add receives strings.
 

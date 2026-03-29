@@ -5,7 +5,7 @@ Created Mar 29, 2026.
 
 # Summary
 
-This plan outlines the implementation of **Feature 4: Multi-type Packages**. This feature extends the Agent Tool Packager (ATP) to allow a single package to contain multiple types of assets (e.g., a Skill, an MCP, and a Rule) grouped into distinct "parts." This avoids the need for multiple dependent packages for a single logical toolset.
+This plan outlines the implementation of **Feature 4: Multi-type Packages**. This feature extends the Agent Tool Packager (ATP) to allow a single package to contain multiple types of assets (e.g., Rule, Prompt, Skill, Hook, or MCP) grouped into distinct "parts." This avoids the need for multiple dependent packages for a single logical toolset.
 
 # Implementation Strategy
 
@@ -46,7 +46,7 @@ New and updated commands will be implemented to support multi-part authoring:
 
 # Installation and Removal
 
-- **Installation:** `atp install` will iterate through all parts of a multi-type package, installing each into its agent-relevant path (e.g., Rule -> `rules/`, Skill -> `skills/`).
+- **Installation:** `atp install` will iterate through all parts of a multi-type package, installing each into its agent-relevant path (e.g., Rule -> `rules/`, Prompt -> `prompts/`, Skill -> `skills/`, Hook -> `hooks.json` + `hooks/` per Feature 2).
 - **Atomic Install:** Installation should ideally be atomic; if one part fails, the whole package should be rolled back or marked as partially failed with clear instructions.
 - **Removal (installed packages):** `atp remove safehouse` / `atp remove station` remove the **entire** catalog package only. Per-part, per-component, or per-bundle removal exists **only** during package authoring (`atp package part …` in the source directory), not after catalog add or install.
 

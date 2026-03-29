@@ -7,7 +7,7 @@ This note explores options for supporting multiple types of prompt matter (e.g.,
 
 ## Current Limitation
 
-Currently, a package has a single global `type` (Rule, Skill, Mcp, etc.). All files listed in the `components` property are assigned this type during catalog addition. This prevents a single package from providing both a rule (background context) and a skill (specific agent instruction).
+Currently, a package has a single global `type` (Rule, Prompt, Skill, Hook, Mcp, etc.). All files listed in the `components` property are assigned this type during catalog addition. This prevents a single package from providing both a rule (background context) and a skill (specific agent instruction).
 
 ## Proposed Alternatives
 
