@@ -238,6 +238,11 @@ have different types because a rule can have many markdown components, so all th
 files can be packaged in a single part. If types are repeated, a warning should be
 printed for the user to see but it is not a fatal error.
 
+Editing **parts** (including removing a part or a part’s component or bundle) is an **authoring-time**
+workflow in the package directory via `atp package …` commands. Once a package is catalogued and
+installed, removal is **whole-package** only (`atp remove safehouse` / `atp remove station`); ATP does
+not remove a subset of parts from an installation.
+
 A **bundle list** is a list of objects, where each object contains:
 - `path`: The relative path to the bundle directory.
 - `exec-filter`: A glob pattern (relative to the package root) identifying executable files.

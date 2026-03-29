@@ -36,7 +36,7 @@ New and updated commands will be implemented to support multi-part authoring:
 - `atp package part <n> usage <text>`: Sets usage for a specific part.
 - `atp package part <n> component <path>`: Stages a component for a specific part.
 - `atp package part <n> bundle <path> [--exec-filter <glob>]`: Stages a bundle for a specific part.
-- `atp package part <n> remove`: Removes a part and its associated staged files, triggering a re-index.
+- `atp package part <n> remove`: **Authoring only** — removes a part and its associated staged files in the package source tree, triggering a re-index (not available for catalog or installed copies).
 
 ## Validation and Utility
 
@@ -48,7 +48,7 @@ New and updated commands will be implemented to support multi-part authoring:
 
 - **Installation:** `atp install` will iterate through all parts of a multi-type package, installing each into its agent-relevant path (e.g., Rule -> `rules/`, Skill -> `skills/`).
 - **Atomic Install:** Installation should ideally be atomic; if one part fails, the whole package should be rolled back or marked as partially failed with clear instructions.
-- **Removal:** Both `safehouse` and `station` removal will uninstall all artifacts associated with all parts of the package.
+- **Removal (installed packages):** `atp remove safehouse` / `atp remove station` remove the **entire** catalog package only. Per-part, per-component, or per-bundle removal exists **only** during package authoring (`atp package part …` in the source directory), not after catalog add or install.
 
 # Risks and Concerns
 

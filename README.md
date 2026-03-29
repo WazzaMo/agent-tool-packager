@@ -16,22 +16,41 @@ Cursor summarised this project as:
 Contribution to this project is supported and contributors will be recognised.
 Created by Warwick Molloy Feb 2026.
 
-# Why Agent Tools?
+# Why Agent Tools - Packager (ATP) ?
 
 Ever wanted to install your standard prompt markdown files in a project
-in a convenient way?
+in a convenient way? I use Cursor at home and OpenAI's Codex at work
+and I want to write my packages for Agentic tools once. How do I do that?
 
-Ever wanted to install MCP servers, skills etc in a convenient manner?
+Each AI Agent company having their own marketplace does not solve this problem.
+It doesn't even solve the problem of how do I make a package and do test installs
+project directories....
 
-Me too...
-
-And that drove me to create the Agent Tools Packager **ATP**.
+But ATP does!
 
 Welcome to "Q Branch" !!
 We're going to build the next generation of agent tools together!
 
+# Creating an using a package - a quickstart guide
 
-## Installation
+I am assuming a UNIX-like (Linux, BSD, MacOS) environment in these examples.
+Will it work in Windows? Maybe... I make no promises about Windows (yet).
+
+## Before you start.
+
+You need a Station for your agents to get their packages.
+This is where the catalog of packages lives.
+
+`atp station init`
+
+That will create the station at ${HOME}/.atp_station
+
+## Creating your own package
+
+
+-----------------------------------------------------
+
+# Installation
 
 ```bash
 npm install -g @wazzamo-agent-tools/packager
@@ -51,6 +70,8 @@ atp safehouse list
 atp remove station <pkg> [--exfiltrate]
 atp remove safehouse <pkg>
 ```
+
+Removal from Safehouse or Station is always for the **whole** package (no per-part uninstall after install).
 
 ## Project
 

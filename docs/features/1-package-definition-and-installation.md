@@ -325,6 +325,10 @@ template, to support re-installation or handover to another agent.
 
 The proper word for the opposite of installing, is removing, not uninstall.
 
+**Scope:** `atp remove station` and `atp remove safehouse` always remove the **whole** catalog
+package. Per-part or per-artifact removal exists only during **package authoring** (`atp package …`
+in the source tree), not for installed copies. See [Feature 4](4-multi-type-packages.md).
+
 Packages can be removed from the Station (user's central location) or from 
 the project's Safehouse. Removing a package from a Station can be done with
 the --exfiltrate option to trigger migrating the binaries and Station package

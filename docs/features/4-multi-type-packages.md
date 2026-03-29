@@ -401,6 +401,19 @@ Yes. There is no such thing as partially installing a package. The multi-type pa
 to eliminate the need for splitting types up across packages with dependencies. A multi-type package
 has parts that ARE INTENDED TO WORK TOGETHER.
 
+## Authoring vs installed packages (removal)
+
+**While authoring** in a package source directory (before `atp catalog add package`), Multi-type
+packages support `atp package part …` commands that can remove a whole part, or remove a component
+or bundle from a part, and re-stage `atp-package.yaml` / `stage.tar`. That is **package development
+only**.
+
+**After the package is in the catalog** (and in particular **after install** into a project
+Safehouse or Station-wide), ATP does **not** support removing individual parts, components, or
+bundles from that installation. **`atp remove safehouse <pkg>`** and **`atp remove station <pkg>`**
+always remove the **entire package** under that catalog name. The unit of install and remove is the
+whole catalog package: it is either fully present or fully gone.
+
 ## Can package authoring switch from single-type to multi-type?
 
 No. Conversion is not needed and not supported. The packaging commands and logic need
@@ -440,8 +453,8 @@ This validation method should be used wherever validation is required:
 
   4.  `atp catalog add` as a pre-condition to performing the add.
 
-If the integrity of the package files are maintained, then package installation and uninstallation
-should work as planned.
+If the integrity of the package files are maintained, then package installation and whole-package
+removal should work as planned (see **Authoring vs installed packages (removal)** above).
 
 
 --------------------------------------------------------------------------------
@@ -465,6 +478,11 @@ should work as planned.
 --------------------------------------------------------------------------------
 
 # ATP command specifics (multi-type authoring)
+
+The commands in this section operate on the **package under development** in the current working
+directory. They do **not** apply to packages already published in the catalog or to files already
+installed under a Safehouse or Station (including part, component, and bundle **remove** authoring
+subcommands).
 
 ## `atp create package` / `atp create package skeleton`
 
@@ -512,6 +530,8 @@ Adds a **Part** with `type` set from the keyword map (`rule` → `Rule`, etc., p
 --------------------------------------------------------------------------------
 
 ## `atp package part <n> remove`
+
+**Authoring only:** unpublished package directory; not used against catalog entries or install trees.
 
 Only works when type is "Multi" and not in legacy skeleton packages.
 
@@ -619,6 +639,8 @@ at install time.
 
 ## `atp package part <n> component remove <path>`
 
+**Authoring only:** same scope as `part <n> remove` (package source tree, not Safehouse/Station).
+
 When a component is added accidentally, and needs to be removed, this
 command can remove a component by matching the filename from the path
 and keep the part. The part will need at least one component or bundle
@@ -636,6 +658,8 @@ if not an error message must be shown.
 --------------------------------------------------------------------------------
 
 ## `atp package part <n> bundle remove <path>`
+
+**Authoring only:** same scope as `part <n> remove` (package source tree, not Safehouse/Station).
 
 Like the similar command : `atp package part <n> component remove <path>`
 
@@ -756,10 +780,12 @@ Rule → rules dir, Skill → skills, Mcp → MCP config, etc.
 | Aspect            | Proposal                                                                |
 |-------------------|-------------------------------------------------------------------------|
 | Scope             | Remove **all** artefacts installed from that manifest (all parts).      |
-| Manifest tracking | Safehouse manifest records enough to uninstall by package name, see (1) |
+| Manifest tracking | Safehouse manifest records enough to remove the whole package by name, see (1) |
 
-(1) Safehouse manifest records enough to uninstall by package name (today’s model), extended if per-part install
-    paths need teardown.
+(1) The manifest identifies the **catalog package** (by name and related metadata). Teardown removes
+    everything ATP installed for that package. There is **no** CLI to remove a single part (or a
+    single component or bundle) from an installed copy; use **`atp remove … <pkg>`** for the full
+    package only.
 
 
 ### Acceptance criteria
