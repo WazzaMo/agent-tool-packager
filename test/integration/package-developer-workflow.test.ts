@@ -76,7 +76,7 @@ describe("Integration: package developer - validate fails when incomplete", () =
 
   it("atp validate package exits non-zero when only type is set", () => {
     const o = atpCwd(pkgDir, stationDir);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
 
     const result = runAtpExpectExit(["validate", "package"], 2, o);

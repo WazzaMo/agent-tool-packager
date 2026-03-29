@@ -37,7 +37,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   it("catalog add package fails with exit 1 when package is incomplete", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
 
     const result = runAtpExpectExit(["catalog", "add", "package"], 1, o);
@@ -91,7 +91,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   it("package usage sets a usage list entry in atp-package.yaml", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(
       ["package", "usage", "When working on TypeScript code the coding rule should apply"],
       o
@@ -131,7 +131,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
     const manifestBefore = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
     expect(manifestBefore).toMatch(/skeleton-pkg/);
-    runAtp(["create", "package", "skeleton"], atpCwd(pkgDir, stationDir));
+    runAtp(["create", "package", "skeleton", "--legacy"], atpCwd(pkgDir, stationDir));
     expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(false);
     const manifestAfter = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
     expect(manifestAfter).not.toMatch(/skeleton-pkg/);
@@ -222,7 +222,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   it("atp package summary lists set items and missing (Feature 2)", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
     runAtp(["package", "name", "summary-pkg"], o);
     runAtp(["package", "version", "0.1.0"], o);
@@ -318,7 +318,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     const o = atpCwd(pkgDir, stationDir);
     fs.writeFileSync(path.join(pkgDir, "ref.md"), "# Ref\n");
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
     runAtp(["package", "name", "exit1-pkg"], o);
     runAtp(["package", "version", "0.1.0"], o);

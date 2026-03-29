@@ -29,11 +29,18 @@ describe("createPackageSkeleton", () => {
     }
   });
 
-  it("creates atp-package.yaml when neither exists", () => {
+  it("creates Multi atp-package.yaml with empty parts by default (Feature 4)", () => {
     createPackageSkeleton(cwd);
     expect(fs.existsSync(path.join(cwd, "atp-package.yaml"))).toBe(true);
     const content = fs.readFileSync(path.join(cwd, "atp-package.yaml"), "utf8");
-    expect(content).toMatch(/type/);
+    expect(content).toMatch(/type:\s*Multi/i);
+    expect(content).toMatch(/parts:\s*\[\]/);
+  });
+
+  it("creates legacy skeleton with empty type when legacy option set", () => {
+    createPackageSkeleton(cwd, { legacy: true });
+    const content = fs.readFileSync(path.join(cwd, "atp-package.yaml"), "utf8");
+    expect(content).toMatch(/type:\s*""/);
   });
 
   it("removes existing atp-package.yaml and stage.tar, creates fresh manifest", () => {

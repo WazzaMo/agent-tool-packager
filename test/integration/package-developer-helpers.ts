@@ -50,7 +50,7 @@ export function initPackage(
 ): { stationDir: string; pkgDir: string } {
   const o = atpCwd(pkgDir, stationDir);
   runAtp(["station", "init"], o);
-  runAtp(["create", "package", "skeleton"], o);
+  runAtp(["create", "package", "skeleton", "--legacy"], o);
   runAtp(["package", "type", opts.type], o);
   runAtp(["package", "name", opts.name], o);
   runAtp(["package", "version", opts.version ?? "0.1.0"], o);
