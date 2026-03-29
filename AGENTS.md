@@ -36,7 +36,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Concepts (from design notes)
 
-- **Package:** Versioned unit with manifest (`atp-package.yaml`) containing name, version, type (Rule, Skill, Mcp, Command, Experimental), components (e.g. markdown files), and optionally bundles (e.g. executables). Catalog entries point at paths or URLs; install copies from there into the project.
+- **Package:** Versioned unit with manifest (`atp-package.yaml`) containing name, version, type (Rule, Prompt, Skill, Hook, Mcp, Command, Experimental), components (e.g. markdown files), and optionally bundles (e.g. executables). Catalog entries point at paths or URLs; install copies from there into the project.
 - **Catalog:** Single index at the Station (`atp-catalog.yaml`) listing available packages (standard + user). All installs source from this catalog.
 - **Safehouse manifest:** Each project’s `.atp_safehouse` holds `manifest.yaml` listing installed packages for that project; it does not hold a catalog.
 - **Config:** `~/.atp_station/atp-config.yaml` defines version, agent-paths (cursor, claude, etc.), and standard-catalog URL. See [configuration](docs/configuration.md).
