@@ -7,6 +7,9 @@ export interface AgentPathEntry {
   home_path: string;
   project_path?: string;
   rule?: string;
+  prompts?: string;
+  /** Hook scripts directory under project agent path (e.g. `.cursor/hooks/`). */
+  hooks?: string;
   commands?: string;
   skills?: string;
 }

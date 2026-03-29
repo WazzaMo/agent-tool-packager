@@ -4,7 +4,14 @@
  */
 
 /** Canonical package kinds used in manifests and validation. */
-export type PackageType = "Rule" | "Skill" | "Mcp" | "Command" | "Experimental";
+export type PackageType =
+  | "Rule"
+  | "Prompt"
+  | "Skill"
+  | "Hook"
+  | "Mcp"
+  | "Command"
+  | "Experimental";
 
 /** Bundle entry with optional exec glob for non-UNIX layouts. */
 export interface BundleDefinition {

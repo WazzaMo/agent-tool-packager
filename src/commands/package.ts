@@ -136,7 +136,7 @@ export function registerPackageCommands(program: Command): void {
 
   pkg
     .command("type <typename>")
-    .description("Set package type: rule, skill, mcp, shell, other, multi")
+    .description("Set package type: rule, prompt, skill, hook, mcp, shell, other, multi")
     .action((typename: string) => {
       const m = loadDevManifestOrExit(process.cwd());
       const t = typename.toLowerCase();
@@ -171,7 +171,7 @@ export function registerPackageCommands(program: Command): void {
 
   pkg
     .command("newpart <typeKeyword>")
-    .description("Add a part to a Multi-type package (rule, skill, mcp, shell, other)")
+    .description("Add a part to a Multi-type package (rule, prompt, skill, hook, mcp, shell, other)")
     .action((typeKeyword: string) => {
       packageNewpart(process.cwd(), typeKeyword);
     });

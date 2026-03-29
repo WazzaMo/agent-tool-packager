@@ -6,7 +6,7 @@
 /** One installable asset row from the catalog / enriched manifest. */
 export interface PackageAsset {
   path: string;
-  type: "skill" | "rule" | "program" | "sub-agent";
+  type: "skill" | "rule" | "prompt" | "hook" | "program" | "sub-agent";
   name: string;
 }
 
