@@ -13,6 +13,8 @@ import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
 import { registerValidateCommands } from "./commands/validate.js";
 
+import { atp_version } from "./version.js";
+
 const greetingMessage = `
     AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
   AAAAAA   GG    GG  EE       NNN   NN  T  TT  T      T  TT  T   OOOOOOOO    OOOOOOOO   LL        SS  SS
@@ -34,7 +36,7 @@ const program = new Command();
 program
   .name("atp")
   .description(greetingMessage)
-  .version(process.env.ATP_VERSION || "0.0.0-dev");
+  .version( atp_version() );
 
 registerStationCommands(program);
 registerSafehouseCommands(program);

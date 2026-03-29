@@ -7,6 +7,9 @@ import type { CatalogRoot } from "../catalog/types.js";
 
 import type { AgentPaths } from "./types.js";
 
+import { atp_version } from "../version.js";
+
+
 /** Remote or local URL prefix for the standard catalog payload. */
 export interface StandardCatalogConfig {
   url: string;
@@ -45,7 +48,7 @@ export const DEFAULT_AGENT_PATHS: AgentPaths = {
 
 export const DEFAULT_STATION_CONFIG: StationConfig = {
   configuration: {
-    version: "0.1.0",
+    version: atp_version(),
     "agent-paths": DEFAULT_AGENT_PATHS,
     "standard-catalog": {
       url: "https://agent-tool-packager.example.com/packages/0.1.0/",
