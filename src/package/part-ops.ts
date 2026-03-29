@@ -15,12 +15,14 @@ import {
 } from "./manifest-layout.js";
 import { validatePackage } from "./validate.js";
 import { wouldBundleBasenameCollideForPartAdd } from "./part-bundle-uniqueness.js";
+import { componentBasenameCollisionForPartAdd } from "./part-component-uniqueness.js";
 import {
   mutateStageTarContents,
   removePathUnderExtractRoot,
   renameDirectoryUnderExtractRoot,
 } from "./stage-tar-mutate.js";
 import { stageMultiBundleTree, stageMultiComponentFile } from "./stage-multi.js";
+import { resolveComponentSourcePath } from "./resolve-component-source.js";
 
 /**
  * @param cwd - Package root directory.
@@ -121,7 +123,9 @@ export function packageNewpart(cwd: string, keyword: string): void {
   }
   const canonical = keywordToPackageType(keyword);
   if (!canonical) {
-    console.error(`Unknown part type keyword: ${keyword}. Use rule, skill, mcp, shell, or other.`);
+    console.error(
+      `Unknown part type keyword: ${keyword}. Use rule, prompt, skill, hook, mcp, shell, or other.`
+    );
     process.exit(1);
   }
 
@@ -144,17 +148,12 @@ export function packageNewpart(cwd: string, keyword: string): void {
 }
 
 /**
- * @param filePath - Path relative to package root.
- * @param pkgRoot - Resolved package root.
- * Exits when path escapes the package or is not an existing file.
+ * @param filePath - Path relative to package root or absolute (same rules as `cp` source).
+ * @param pkgRoot - Resolved package root (CLI cwd).
+ * Exits when the path is not an existing file.
  */
-function assertComponentPathUnderPackageOrExit(filePath: string, pkgRoot: string): void {
-  const resolved = path.resolve(pkgRoot, filePath);
-  const rel = path.relative(pkgRoot, resolved);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) {
-    console.error(`Invalid path to component given: ${filePath}`);
-    process.exit(1);
-  }
+function assertComponentSourceExistsOrExit(filePath: string, pkgRoot: string): void {
+  const resolved = resolveComponentSourcePath(pkgRoot, filePath);
   if (!fs.existsSync(resolved)) {
     console.error("Nominated path or file does not exist.");
     process.exit(1);
@@ -218,23 +217,34 @@ export function packagePartAddUsage(cwd: string, indexStr: string, textParts: st
 export function packagePartComponentAdd(cwd: string, indexStr: string, filePath: string): void {
   const index1 = parsePartIndex1OrExit(indexStr);
   const pkgRoot = path.resolve(cwd);
-  assertComponentPathUnderPackageOrExit(filePath, pkgRoot);
+  assertComponentSourceExistsOrExit(filePath, pkgRoot);
+  const sourceAbs = resolveComponentSourcePath(pkgRoot, filePath);
 
   const m = loadDevManifestOrExit(cwd);
   exitUnlessMultiDevManifest(m);
   const part = getPartAtIndexOrExit(m, index1);
   const canonical = part.type;
   const prefix = partStagePrefix(index1, canonical);
-  const baseName = path.basename(path.resolve(pkgRoot, filePath));
+  const baseName = path.basename(sourceAbs);
+
+  const collision = componentBasenameCollisionForPartAdd(m.parts, index1, baseName);
+  if (collision === "same-part") {
+    console.error(`Component ${baseName} is already listed for part ${index1}.`);
+    process.exit(1);
+  }
+  if (collision === "other-part") {
+    console.error(
+      `Component basename "${baseName}" must be unique across all parts in the package.`
+    );
+    process.exit(1);
+  }
 
   const components = part.components ?? [];
-  if (!components.includes(baseName)) {
-    components.push(baseName);
-  }
+  components.push(baseName);
   part.components = components;
   saveDevManifest(cwd, m);
 
-  stageMultiComponentFile(pkgRoot, prefix, path.resolve(pkgRoot, filePath));
+  stageMultiComponentFile(pkgRoot, prefix, sourceAbs);
   console.log(`Component ${baseName} added to part ${index1}.`);
 }
 
@@ -342,13 +352,7 @@ export function packagePartComponentRemove(
 ): void {
   const index1 = parsePartIndex1OrExit(indexStr);
   const pkgRoot = path.resolve(cwd);
-  const resolved = path.resolve(pkgRoot, filePath);
-  const rel = path.relative(pkgRoot, resolved);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) {
-    console.error(`Invalid path to component given: ${filePath}`);
-    process.exit(1);
-  }
-  const baseName = path.basename(resolved);
+  const baseName = path.basename(filePath.trim());
 
   const m = loadDevManifestOrExit(cwd);
   exitUnlessMultiDevManifest(m);

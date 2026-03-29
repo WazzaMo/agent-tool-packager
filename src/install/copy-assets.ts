@@ -11,9 +11,35 @@ import type { PackageAsset, PackageManifest } from "./types.js";
 const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
   skill: "skills",
   rule: "rules",
+  prompt: "prompts",
   "sub-agent": "rules",
   program: "bin",
 };
+
+/**
+ * Resolve destination directory and file path for a non-program asset under the agent tree.
+ * Hook packages follow Cursor layout: `hooks.json` at the agent root, other files under `hooks/`.
+ *
+ * @param agentBase - Agent project directory (e.g. `.cursor/`).
+ * @param asset - Asset row (must not be `program`).
+ * @returns Parent directory to create and final file path.
+ */
+export function agentDestinationForAsset(
+  agentBase: string,
+  asset: Pick<PackageAsset, "type" | "path">
+): { dir: string; filePath: string } {
+  const baseName = path.basename(asset.path);
+  if (asset.type === "hook") {
+    if (baseName === "hooks.json") {
+      return { dir: agentBase, filePath: path.join(agentBase, "hooks.json") };
+    }
+    const dir = path.join(agentBase, "hooks");
+    return { dir, filePath: path.join(dir, baseName) };
+  }
+  const subdir = ASSET_TYPES_TO_AGENT_SUBDIR[asset.type] ?? "skills";
+  const dir = path.join(agentBase, subdir);
+  return { dir, filePath: path.join(dir, baseName) };
+}
 
 /**
  * Patch {bundle_name} placeholders in markdown content.
@@ -72,17 +98,18 @@ function copyAsset(
     return;
   }
 
-  const subdir = ASSET_TYPES_TO_AGENT_SUBDIR[asset.type] ?? "skills";
-  const targetDir = path.join(agentBase, subdir);
+  const { dir: targetDir, filePath: destPath } = agentDestinationForAsset(agentBase, asset);
 
   const srcPath = path.join(pkgDir, asset.path);
   if (!fs.existsSync(srcPath)) return;
 
   fs.mkdirSync(targetDir, { recursive: true });
-  const baseName = path.basename(asset.path);
-  const destPath = path.join(targetDir, baseName);
 
-  const isMarkdown = asset.type === "skill" || asset.type === "rule" || asset.type === "sub-agent";
+  const isMarkdown =
+    asset.type === "skill" ||
+    asset.type === "rule" ||
+    asset.type === "prompt" ||
+    asset.type === "sub-agent";
   if (isMarkdown && bundlePathMap && Object.keys(bundlePathMap).length > 0) {
     const content = fs.readFileSync(srcPath, "utf8");
     const patched = patchPlaceholders(content, bundlePathMap);

@@ -19,14 +19,16 @@ export interface CatalogAssetRow {
 type YamlBundle = string | { path: string; "exec-filter"?: string };
 
 /**
- * Choose markdown-derived asset kind for a part based on its type.
+ * Choose install asset kind for a part's file components from its package type.
  *
  * @param partType - Canonical part type string.
- * @returns `skill` only when type is Skill; otherwise `rule` for markdown assets.
+ * @returns Install `assets[].type` value for staged files.
  */
-function markdownAssetTypeForPart(partType: string): "rule" | "skill" {
+function componentAssetTypeForPart(partType: string): "rule" | "skill" | "prompt" | "hook" {
   const t = partType.toLowerCase();
   if (t === "skill") return "skill";
+  if (t === "prompt") return "prompt";
+  if (t === "hook") return "hook";
   return "rule";
 }
 
@@ -126,12 +128,14 @@ function appendRootLevelBundlePrograms(
 
 /**
  * @param manifest - Parsed manifest (for root `type`).
- * @returns Asset `type` string for markdown files from a single-type package.
+ * @returns Install `assets[].type` for each listed component file.
  */
-function singleTypeMarkdownAssetType(manifest: DevPackageManifest): "rule" | "skill" {
+function singleTypeComponentAssetType(manifest: DevPackageManifest): "rule" | "skill" | "prompt" | "hook" {
   const t = (manifest.type ?? "Rule").toLowerCase();
   if (t === "rule") return "rule";
   if (t === "skill") return "skill";
+  if (t === "prompt") return "prompt";
+  if (t === "hook") return "hook";
   return "rule";
 }
 
@@ -149,7 +153,7 @@ export function enrichSingleTypePackageAssets(
   manifest: DevPackageManifest
 ): CatalogAssetRow[] {
   const assets: CatalogAssetRow[] = [];
-  const assetType = singleTypeMarkdownAssetType(manifest);
+  const assetType = singleTypeComponentAssetType(manifest);
   const components = (outManifest.components as string[]) ?? [];
   for (const p of components) {
     assets.push({
@@ -177,7 +181,7 @@ function appendMultiTypeMarkdownAndBundleAssets(
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     const prefix = partStagePrefix(i + 1, part.type);
-    const mdType = markdownAssetTypeForPart(part.type);
+    const mdType = componentAssetTypeForPart(part.type);
     for (const p of part.components ?? []) {
       const rel = `${prefix}/${p}`;
       assets.push({

@@ -29,6 +29,8 @@ export const DEFAULT_AGENT_PATHS: AgentPaths = {
     home_path: "~/.cursor/",
     project_path: ".cursor/",
     rule: "rules/",
+    prompts: "prompts/",
+    hooks: "hooks/",
     commands: "commands/",
     skills: "skills/",
   },
@@ -38,10 +40,21 @@ export const DEFAULT_AGENT_PATHS: AgentPaths = {
   claude: {
     home_path: "~/.claude",
   },
+  kiro: {
+    home_path: "~/.kiro/",
+    project_path: ".kiro/",
+    rule: "rules/",
+    prompts: "prompts/",
+    hooks: "hooks/",
+    commands: "commands/",
+    skills: "skills/",
+  },
   gemini: {
     home_path: "~/.gemini",
     project_path: ".gemini/",
     rule: "rules/",
+    prompts: "prompts/",
+    hooks: "hooks/",
     skills: "skills/",
   },
 };

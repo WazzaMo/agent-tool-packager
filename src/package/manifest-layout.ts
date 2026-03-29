@@ -30,7 +30,9 @@ export function keywordToPackageType(keyword: string): string | null {
   const t = keyword.trim().toLowerCase();
   const map: Record<string, string> = {
     rule: "Rule",
+    prompt: "Prompt",
     skill: "Skill",
+    hook: "Hook",
     mcp: "Mcp",
     shell: "Command",
     other: "Experimental",

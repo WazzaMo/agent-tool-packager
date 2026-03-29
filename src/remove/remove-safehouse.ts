@@ -28,13 +28,7 @@ import {
 } from "../install/resolve.js";
 
 import type { PackageAsset } from "../install/types.js";
-
-const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
-  skill: "skills",
-  rule: "rules",
-  "sub-agent": "rules",
-  program: "bin",
-};
+import { agentDestinationForAsset } from "../install/copy-assets.js";
 
 const LOCAL_BIN = "~/.local/bin";
 const LOCAL_SHARE = "~/.local/share";
@@ -135,9 +129,7 @@ function removeAgentCopies(
   for (const asset of assets) {
     if (asset.type === "program") continue;
 
-    const subdir = ASSET_TYPES_TO_AGENT_SUBDIR[asset.type] ?? "skills";
-    const baseName = path.basename(asset.path);
-    const destPath = path.join(agentBase, subdir, baseName);
+    const { filePath: destPath } = agentDestinationForAsset(agentBase, asset);
 
     if (fs.existsSync(destPath)) {
       try {

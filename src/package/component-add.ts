@@ -10,23 +10,9 @@ import type { DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
 import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
+import { resolveComponentSourcePath } from "./resolve-component-source.js";
 
 const STAGE_TAR = "stage.tar";
-
-/**
- * Exit if path is outside package root or is absolute.
- *
- * @param filePath - Path as given on the CLI (relative to cwd).
- * @param pkgRoot - Resolved package root directory.
- */
-function assertValidComponentPath(filePath: string, pkgRoot: string): void {
-  const resolved = path.resolve(pkgRoot, filePath);
-  const rel = path.relative(pkgRoot, resolved);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) {
-    console.error(`Invalid path to component given: ${filePath}`);
-    process.exit(1);
-  }
-}
 
 /**
  * Exit if path does not exist or is not a file.
@@ -90,13 +76,12 @@ function appendComponentToTar(
  * Validates path and manifest; updates manifest and tar (flat layout).
  *
  * @param cwd - Package root directory
- * @param filePath - Path to file (relative to cwd)
+ * @param filePath - Source file: relative to {@link cwd} (including `..`) or absolute
  */
 export function componentAdd(cwd: string, filePath: string): void {
   const pkgRoot = path.resolve(cwd);
-  const resolved = path.resolve(cwd, filePath);
+  const resolved = resolveComponentSourcePath(pkgRoot, filePath);
 
-  assertValidComponentPath(filePath, pkgRoot);
   assertComponentExistsAndIsFile(resolved, filePath);
 
   const manifest = loadManifestOrExit(cwd);

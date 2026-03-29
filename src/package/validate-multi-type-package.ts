@@ -50,6 +50,41 @@ function collectMultiPartStructureGaps(parts: PackagePart[], missing: string[]):
 }
 
 /**
+ * Append gaps when the same component basename appears more than once in one part
+ * or in more than one part (install/catalog layout requires unique basenames).
+ *
+ * @param parts - Declared parts.
+ * @param missing - List to append into.
+ */
+function collectDuplicateComponentBasenameGaps(parts: PackagePart[], missing: string[]): void {
+  const basenameToParts = new Map<string, Set<number>>();
+  for (let i = 0; i < parts.length; i++) {
+    const partComps = parts[i].components ?? [];
+    const seenInPart = new Set<string>();
+    for (const c of partComps) {
+      if (seenInPart.has(c)) {
+        missing.push(`duplicate component "${c}" in part ${i + 1} components list`);
+      }
+      seenInPart.add(c);
+      let set = basenameToParts.get(c);
+      if (!set) {
+        set = new Set();
+        basenameToParts.set(c, set);
+      }
+      set.add(i + 1);
+    }
+  }
+  for (const [bn, partNums] of basenameToParts) {
+    if (partNums.size > 1) {
+      const ordered = [...partNums].sort((a, b) => a - b);
+      missing.push(
+        `component basename "${bn}" must be unique across parts (used in parts ${ordered.join(", ")})`
+      );
+    }
+  }
+}
+
+/**
  * Compare staged tar paths to each part’s declared components and bundles.
  *
  * @param cwd - Package root directory.
@@ -175,8 +210,18 @@ export function validateMultiTypePackage(
   const parts = manifest.parts ?? [];
   collectMultiPartStructureGaps(parts, missing);
 
+  if (parts.length > 0) {
+    collectDuplicateComponentBasenameGaps(parts, missing);
+  }
+
+  const hasComponentUniquenessGap = missing.some(
+    (m) =>
+      m.startsWith("duplicate component ") ||
+      m.includes("must be unique across parts")
+  );
+
   const hasFatalStructuralGap = missing.some(isFatalMultiFieldMissing);
-  if (!hasFatalStructuralGap && parts.length > 0) {
+  if (!hasFatalStructuralGap && parts.length > 0 && !hasComponentUniquenessGap) {
     appendMultiTypeStagingGaps(cwd, parts, missing);
   }
 

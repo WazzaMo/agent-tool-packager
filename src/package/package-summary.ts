@@ -41,7 +41,9 @@ export function packageSummary(cwd: string): void {
       console.log(`  - ${m}`);
     }
     if (validation.missing.some((m) => m.includes("components") || m.includes("bundles"))) {
-      console.log("\nFor a rule, a list of markdown files would be normal.");
+      console.log(
+        "\nFor markdown-based types (rule, prompt, skill), component files are typical; for Hook, ship hooks.json and hook scripts (see Feature 2)."
+      );
     }
   } else {
     console.log("\nThis package can be added to the catalog.");
