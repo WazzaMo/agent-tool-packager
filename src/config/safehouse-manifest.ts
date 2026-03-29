@@ -19,6 +19,12 @@ const SAFEHOUSE_MANIFEST_FILE = "manifest.yaml";
 /** Top-level key in manifest.yaml per docs/features/3-package-install-process.md */
 const SAFEHOUSE_MANIFEST_KEY = "Safehouse-Manifest";
 
+/**
+ * Normalise YAML-loaded document into a {@link SafehouseManifest} or `null` if shape is invalid.
+ *
+ * @param raw - Value from `yaml.load`.
+ * @returns Manifest structure, or `null`.
+ */
 function parseManifest(raw: unknown): SafehouseManifest | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
@@ -32,7 +38,39 @@ function parseManifest(raw: unknown): SafehouseManifest | null {
   };
 }
 
-/** Serialize manifest with Safehouse-Manifest wrapper for manifest.yaml. */
+/**
+ * Absolute path to `manifest.yaml` under the project's Safehouse directory.
+ *
+ * @param projectBase - Project root containing `.atp_safehouse`.
+ * @returns Full path to the manifest file.
+ */
+function safehouseManifestFilePath(projectBase: string): string {
+  return path.join(getSafehousePath(projectBase), SAFEHOUSE_MANIFEST_FILE);
+}
+
+/**
+ * Write a manifest to disk under the given project base.
+ *
+ * @param projectBase - Project root containing `.atp_safehouse`.
+ * @param manifest - In-memory manifest to serialise.
+ */
+function writeSafehouseManifestToProject(
+  projectBase: string,
+  manifest: SafehouseManifest
+): void {
+  fs.writeFileSync(
+    safehouseManifestFilePath(projectBase),
+    writeManifestContent(manifest),
+    "utf8"
+  );
+}
+
+/**
+ * Serialize manifest with Safehouse-Manifest wrapper for manifest.yaml.
+ *
+ * @param manifest - Packages and station path reference.
+ * @returns YAML text including the `Safehouse-Manifest` wrapper key.
+ */
 export function writeManifestContent(manifest: SafehouseManifest): string {
   return yaml.dump(
     { [SAFEHOUSE_MANIFEST_KEY]: manifest },
@@ -49,7 +87,7 @@ export function loadSafehouseManifest(
   projectBase: string = process.cwd()
 ): SafehouseManifest | null {
   const safehousePath = getSafehousePath(projectBase);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
+  const manifestPath = safehouseManifestFilePath(projectBase);
 
   if (!pathExists(safehousePath) || !fs.existsSync(manifestPath)) {
     return null;
@@ -75,9 +113,6 @@ export function addPackageToSafehouseManifest(
   source: PackageSource = "station",
   projectBase: string = process.cwd()
 ): void {
-  const safehousePath = getSafehousePath(projectBase);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-
   const existing = loadSafehouseManifest(projectBase);
   const packages = existing?.packages ?? [];
   const stationPath = existing?.station_path ?? null;
@@ -90,11 +125,10 @@ export function addPackageToSafehouseManifest(
     binary_scope: binaryScope,
   });
 
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages: filtered, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(projectBase, {
+    packages: filtered,
+    station_path: stationPath,
+  });
 }
 
 /**
@@ -112,13 +146,7 @@ export function removePackageFromSafehouseManifest(
   const packages = (existing.packages ?? []).filter((p) => p.name !== name);
   const stationPath = existing.station_path ?? null;
 
-  const safehousePath = getSafehousePath(cwd);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(cwd, { packages, station_path: stationPath });
 }
 
 /**
@@ -140,13 +168,7 @@ export function updateSafehousePackageInManifest(
   );
   const stationPath = existing.station_path ?? null;
 
-  const safehousePath = getSafehousePath(cwd);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(cwd, { packages, station_path: stationPath });
 }
 
 /**

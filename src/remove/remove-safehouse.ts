@@ -40,19 +40,39 @@ const LOCAL_BIN = "~/.local/bin";
 const LOCAL_SHARE = "~/.local/share";
 const LOCAL_ETC = "~/.local/etc";
 
+/**
+ * Absolute path to the user's `~/.local/bin` directory.
+ *
+ * @returns Resolved bin directory.
+ */
 function getLocalBinPath(): string {
   return path.join(expandHome(LOCAL_BIN));
 }
 
+/**
+ * Absolute path to the user's `~/.local/share` root.
+ *
+ * @returns Resolved share root.
+ */
 function getLocalSharePath(): string {
   return path.join(expandHome(LOCAL_SHARE));
 }
 
+/**
+ * Absolute path to the user's `~/.local/etc` root.
+ *
+ * @returns Resolved etc root.
+ */
 function getLocalEtcPath(): string {
   return path.join(expandHome(LOCAL_ETC));
 }
 
-/** Remove package binaries and share from Station (~/.local) IF no other Safehouse uses them. */
+/**
+ * Remove user-wide binaries/share for `pkgName` when no other registered Safehouse still uses `user-bin`.
+ *
+ * @param pkgName - Package name.
+ * @param currentCwd - Project base whose Safehouse path is excluded from the "still in use" scan.
+ */
 function removeUserBinariesIfUnused(pkgName: string, currentCwd: string): void {
   const safehousePaths = loadSafehouseList();
   const others = safehousePaths.filter(
@@ -94,6 +114,13 @@ function removeUserBinariesIfUnused(pkgName: string, currentCwd: string): void {
   }
 }
 
+/**
+ * Delete skill/rule copies under the configured agent directory for listed assets.
+ *
+ * @param projectBase - Project root.
+ * @param pkgName - Package name (unused today; reserved for logging).
+ * @param assets - Manifest assets to remove from the agent tree.
+ */
 function removeAgentCopies(
   projectBase: string,
   pkgName: string,
@@ -122,7 +149,12 @@ function removeAgentCopies(
   }
 }
 
-/** Remove package binaries and share data from Safehouse. */
+/**
+ * Remove project-scoped `share/`, `etc/`, and named binary under the Safehouse tree.
+ *
+ * @param safehousePath - Path to `.atp_safehouse`.
+ * @param utility - Package name used as subdirectory / binary stem.
+ */
 function removeSafehouseBinariesAndShare(
   safehousePath: string,
   utility: string
@@ -145,6 +177,12 @@ function removeSafehouseBinariesAndShare(
   }
 }
 
+/**
+ * Remove a package from the project Safehouse manifest and clean up installed files.
+ *
+ * @param pkgName - Package name as recorded in the manifest.
+ * @param cwd - Project base directory; defaults to `process.cwd()`.
+ */
 export function removeSafehousePackage(
   pkgName: string,
   cwd: string = process.cwd()

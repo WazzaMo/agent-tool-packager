@@ -8,9 +8,9 @@ import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
 
 import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 
-import { expandHome } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 
+import { buildBundleInstallPathMap } from "./bundle-path-map.js";
 import {
   resolvePackage,
   resolvePackagePath,
@@ -18,36 +18,6 @@ import {
 } from "./resolve.js";
 
 import { copyPackageAssets } from "./copy-assets.js";
-import type { PackageManifest } from "./types.js";
-
-/**
- * Build bundle name -> install path map for text patching.
- * @param manifest - Package manifest with bundles.
- * @param binaryScope - user-bin or project-bin.
- * @param projectBase - Project root directory.
- * @returns Map of bundle name to bin directory path.
- */
-function buildBundlePathMap(
-  manifest: PackageManifest,
-  binaryScope: "user-bin" | "project-bin",
-  projectBase: string
-): Record<string, string> {
-  const bundles = manifest.bundles ?? [];
-  if (bundles.length === 0) return {};
-
-  const binDir =
-    binaryScope === "user-bin"
-      ? expandHome("~/.local/bin")
-      : path.join(projectBase, ".atp_safehouse", `${manifest.name}-exec`, "bin");
-
-  const map: Record<string, string> = {};
-  for (const b of bundles) {
-    const bundlePath = typeof b === "string" ? b : b.path;
-    const bundleName = path.basename(bundlePath) || bundlePath;
-    map[bundleName] = binDir;
-  }
-  return map;
-}
 
 /**
  * Resolve agent base path for the given agent.
@@ -64,7 +34,9 @@ function getAgentBasePath(projectBase: string, agentName: string): string {
 /**
  * Re-install all packages in the Safehouse manifest for the currently configured agent.
  * Used during agent handover to copy skills/rules to the new agent directory.
+ *
  * @param projectBase - Project root directory.
+ * @returns Resolves when each listed package has been re-copied (no-op when empty or no agent).
  */
 export async function reinstallSafehousePackages(
   projectBase: string
@@ -91,7 +63,11 @@ export async function reinstallSafehousePackages(
     if (!pkgManifest) continue;
 
     const binaryScope = pkgInfo.binary_scope ?? "user-bin";
-    const bundlePathMap = buildBundlePathMap(pkgManifest, binaryScope, projectBase);
+    const bundlePathMap = buildBundleInstallPathMap(
+      pkgManifest,
+      binaryScope,
+      projectBase
+    );
 
     // Only copy file assets (skills, rules). Programs are already in place.
     copyPackageAssets(pkgDir, pkgManifest, agentBase, bundlePathMap);

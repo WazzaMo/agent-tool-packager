@@ -10,10 +10,16 @@ import path from "node:path";
 import type { BundleDefinition, DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
+import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
 
 const STAGE_TAR = "stage.tar";
 
-/** Exit if path is outside pkg root or is absolute. */
+/**
+ * Exit if bundle path escapes package root or is absolute.
+ *
+ * @param execBase - Bundle path relative to cwd.
+ * @param pkgRoot - Resolved package root.
+ */
 function assertValidBundlePath(execBase: string, pkgRoot: string): void {
   const bundlePath = path.resolve(pkgRoot, execBase);
   const rel = path.relative(pkgRoot, bundlePath);
@@ -23,7 +29,12 @@ function assertValidBundlePath(execBase: string, pkgRoot: string): void {
   }
 }
 
-/** Exit if path does not exist or is not a directory. */
+/**
+ * Exit if bundle path is missing or not a directory.
+ *
+ * @param execBase - Bundle path relative to cwd.
+ * @param pkgRoot - Resolved package root.
+ */
 function assertBundleExistsAndIsDir(execBase: string, pkgRoot: string): void {
   const bundlePath = path.resolve(pkgRoot, execBase);
   if (!fs.existsSync(bundlePath)) {
@@ -36,7 +47,10 @@ function assertBundleExistsAndIsDir(execBase: string, pkgRoot: string): void {
   }
 }
 
-/** Load manifest or exit. */
+/**
+ * @param cwd - Package root directory.
+ * @returns Loaded manifest or exits when missing.
+ */
 function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
@@ -46,7 +60,12 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
   return manifest;
 }
 
-/** Exit if bundle has no bin/ and no --exec-filter. */
+/**
+ * Exit if bundle has no `bin/` and no `--exec-filter`.
+ *
+ * @param bundlePath - Absolute path to bundle root.
+ * @param opts - Optional exec filter from CLI.
+ */
 function assertUnixConformantOrExecFilter(
   bundlePath: string,
   opts?: { execFilter?: string }
@@ -61,7 +80,13 @@ function assertUnixConformantOrExecFilter(
   }
 }
 
-/** Append or create tar with bundle. */
+/**
+ * Append bundle directory tree to `stage.tar`, creating the archive when needed.
+ *
+ * @param pkgRoot - Package root (`tar -C` target).
+ * @param tarPath - Path to `stage.tar`.
+ * @param execBase - Bundle path relative to package root.
+ */
 function appendBundleToTar(pkgRoot: string, tarPath: string, execBase: string): void {
   try {
     execSync(`tar -rf "${tarPath}" -C "${pkgRoot}" "${execBase}"`, {
@@ -97,6 +122,7 @@ export function bundleAdd(
   assertBundleExistsAndIsDir(execBase, pkgRoot);
 
   const manifest = loadManifestOrExit(cwd);
+  exitIfMultiUsesRootStaging(manifest, "bundle add <dir>");
   const bundles = manifest.bundles ?? [];
 
   // Check if bundle already exists by path

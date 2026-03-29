@@ -26,6 +26,14 @@ export function isAgentInStationConfig(
   return Object.prototype.hasOwnProperty.call(paths, agentName);
 }
 
+/**
+ * Resolve the agent-relative project directory (rules, skills, commands root under the repo).
+ * Uses `agent-paths.<agent>.project_path` when set; otherwise `.{agent}/`.
+ *
+ * @param agentName - Agent key (e.g. `cursor`, `claude`).
+ * @param stationConfig - Loaded Station config; may be `null`.
+ * @returns Relative path with trailing slash when configured that way (e.g. `.cursor/`).
+ */
 export function resolveAgentProjectPath(
   agentName: string,
   stationConfig: StationConfig | null

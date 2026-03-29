@@ -1,5 +1,5 @@
 /**
- * Catalog subcommands: atp catalog list, etc.
+ * Catalog subcommands: `atp catalog list`, `atp catalog add package`.
  */
 
 import type { Command } from "commander";
@@ -8,13 +8,42 @@ import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/
 import type { CatalogPackage } from "../catalog/types.js";
 import { catalogAddPackage } from "../package/catalog-add.js";
 
-function formatPackage(pkg: CatalogPackage): string {
+/**
+ * Single-line display for one catalog entry.
+ *
+ * @param pkg - Catalog row.
+ * @returns Text for stdout.
+ */
+function formatCatalogPackageLine(pkg: CatalogPackage): string {
   if (pkg.version) {
     return `${pkg.name}  ${pkg.version}`;
   }
   return pkg.name;
 }
 
+/**
+ * Print effective catalog packages to stdout (or a placeholder when empty).
+ */
+function printStationCatalogList(): void {
+  const packages = effectiveStationCatalogPackages(loadStationCatalog());
+
+  if (packages.length === 0) {
+    console.log("(no packages)");
+    return;
+  }
+
+  for (const pkg of packages) {
+    if (pkg.name) {
+      console.log(formatCatalogPackageLine(pkg));
+    }
+  }
+}
+
+/**
+ * Register catalog subcommands.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerCatalogCommands(program: Command): void {
   const catalog = program
     .command("catalog")
@@ -24,18 +53,7 @@ export function registerCatalogCommands(program: Command): void {
     .command("list")
     .description("List packages in the Station catalog (atp-catalog.yaml)")
     .action(() => {
-      const packages = effectiveStationCatalogPackages(loadStationCatalog());
-
-      if (packages.length === 0) {
-        console.log("(no packages)");
-        return;
-      }
-
-      for (const pkg of packages) {
-        if (pkg.name) {
-          console.log(formatPackage(pkg));
-        }
-      }
+      printStationCatalogList();
     });
 
   catalog

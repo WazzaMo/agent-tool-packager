@@ -3,20 +3,32 @@
  * Supports both Package root (YAML) and flat format for compatibility with install.
  */
 
+/** Canonical package kinds used in manifests and validation. */
 export type PackageType = "Rule" | "Skill" | "Mcp" | "Command" | "Experimental";
 
-/** Flat structure we use when reading/writing atp-package.yaml */
+/** Bundle entry with optional exec glob for non-UNIX layouts. */
 export interface BundleDefinition {
   path: string;
   "exec-filter"?: string;
 }
 
+/** One typed slice of a Multi package (Feature 4). */
+export interface PackagePart {
+  type: string;
+  usage: string[];
+  components?: string[];
+  bundles?: (string | BundleDefinition)[];
+}
+
+/** In-memory shape for developer `atp-package.yaml` (flat format). */
 export interface DevPackageManifest {
   name: string;
   type: string;
   version: string;
   usage: string[];
   components: string[];
+  /** Present when root type is Multi (Feature 4). */
+  parts?: PackagePart[];
   developer?: string;
   license?: string;
   copyright?: string[];

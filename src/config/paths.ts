@@ -64,35 +64,69 @@ const PROJECT_BASE_MARKERS = [".git", ".vscode"];
 const PROJECT_BASE_RADIUS = 2;
 
 /**
+ * Resolve project base from `SAFEHOUSE_PROJECT_PATH` when it points at an existing directory.
+ *
+ * @returns Absolute directory path, or `null` when unset or invalid.
+ */
+function projectBaseFromEnvOverride(): string | null {
+  const envPath = process.env.SAFEHOUSE_PROJECT_PATH;
+  if (!envPath) {
+    return null;
+  }
+  const resolvedEnvPath = path.resolve(expandHome(envPath));
+  if (fs.existsSync(resolvedEnvPath) && fs.statSync(resolvedEnvPath).isDirectory()) {
+    return resolvedEnvPath;
+  }
+  return null;
+}
+
+/**
+ * Whether any configured project-root marker exists directly under `dir`.
+ *
+ * @param dir - Directory to inspect (absolute or normalised).
+ * @returns `true` if `.git` or `.vscode` exists under `dir`.
+ */
+function directoryContainsProjectMarker(dir: string): boolean {
+  return PROJECT_BASE_MARKERS.some((marker) =>
+    fs.existsSync(path.join(dir, marker))
+  );
+}
+
+/**
+ * Walk up from `startDir` at most `PROJECT_BASE_RADIUS` steps seeking a marker directory.
+ *
+ * @param startDir - Absolute starting directory.
+ * @returns Project base path or `null`.
+ */
+function findProjectBaseWalkingUp(startDir: string): string | null {
+  let dir = startDir;
+  for (let i = 0; i <= PROJECT_BASE_RADIUS; i++) {
+    if (directoryContainsProjectMarker(dir)) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+/**
  * Find project base directory by examining cwd and parents (radius 2).
  * Respects SAFEHOUSE_PROJECT_PATH environment variable if set.
  * Looks for .git or .vscode as evidence of project base. Feature 3 acceptance criteria.
+ *
  * @param cwd - Directory to start from. Defaults to process.cwd().
  * @returns Project base path or null if not found.
  */
 export function findProjectBase(cwd: string = process.cwd()): string | null {
-  // Check environment variable override first
-  const envPath = process.env.SAFEHOUSE_PROJECT_PATH;
-  if (envPath) {
-    const resolvedEnvPath = path.resolve(expandHome(envPath));
-    if (fs.existsSync(resolvedEnvPath) && fs.statSync(resolvedEnvPath).isDirectory()) {
-      return resolvedEnvPath;
-    }
+  const fromEnv = projectBaseFromEnvOverride();
+  if (fromEnv) {
+    return fromEnv;
   }
-
-  let dir = path.resolve(cwd);
-  for (let i = 0; i <= PROJECT_BASE_RADIUS; i++) {
-    for (const marker of PROJECT_BASE_MARKERS) {
-      const markerPath = path.join(dir, marker);
-      if (fs.existsSync(markerPath)) {
-        return dir;
-      }
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
+  return findProjectBaseWalkingUp(path.resolve(cwd));
 }
 
 /**

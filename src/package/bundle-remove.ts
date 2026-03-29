@@ -10,6 +10,7 @@ import path from "node:path";
 import type { DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
+import { exitIfMultiDevManifestForLegacyRemove } from "./root-staging-guard.js";
 
 const STAGE_TAR = "stage.tar";
 
@@ -134,6 +135,7 @@ export function bundleRemove(cwd: string, execBase: string): void {
   const relBase = path.relative(pkgRoot, path.resolve(cwd, execBase));
 
   const manifest = loadManifestOrExit(cwd);
+  exitIfMultiDevManifestForLegacyRemove(manifest);
   assertBundleInManifest(manifest, relBase);
   const tarPath = assertStageTarExists(cwd);
   assertBundleInTar(tarPath, relBase, pkgRoot);

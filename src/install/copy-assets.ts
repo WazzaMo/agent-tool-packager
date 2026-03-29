@@ -33,7 +33,12 @@ function patchPlaceholders(
   return result;
 }
 
-/** Escape special regex characters for safe use in RegExp. */
+/**
+ * Escape special regex characters for safe use in `RegExp` construction.
+ *
+ * @param s - Raw placeholder fragment or string.
+ * @returns Escaped string safe to embed in a character class or pattern.
+ */
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -87,10 +92,11 @@ function copyAsset(
 
 /**
  * Copy all assets from manifest to agent directory (skills, rules) and optionally to bin.
+ *
  * @param pkgDir - Package directory.
  * @param manifest - Package manifest with assets.
  * @param agentBase - Agent base path.
- * @param bundlePathMap - Optional map for {bundle_name} placeholder patching.
+ * @param bundlePathMap - Optional map for `{bundle_name}` placeholder patching.
  * @param installBinDir - Optional bin directory for program assets.
  */
 export function copyPackageAssets(

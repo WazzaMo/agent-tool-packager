@@ -6,10 +6,22 @@
 import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 import { getSafehousePath, pathExists } from "../config/paths.js";
 
-function pad(str: string, width: number): string {
+/**
+ * Pad a string for fixed-width CLI columns.
+ *
+ * @param str - Cell text.
+ * @param width - Minimum column width.
+ * @returns Padded string.
+ */
+function padCell(str: string, width: number): string {
   return str.padEnd(Math.max(width, str.length));
 }
 
+/**
+ * List packages recorded in the project Safehouse manifest (stdout table).
+ *
+ * @param cwd - Project base directory; defaults to `process.cwd()`.
+ */
 export function safehouseList(cwd: string = process.cwd()): void {
   const safehousePath = getSafehousePath(cwd);
 
@@ -29,10 +41,10 @@ export function safehouseList(cwd: string = process.cwd()): void {
   const nameW = Math.max(4, ...packages.map((p) => p.name.length));
   const versionW = Math.max(7, ...packages.map((p) => (p.version ?? "-").length));
 
-  console.log(pad("NAME", nameW) + "  VERSION");
+  console.log(padCell("NAME", nameW) + "  VERSION");
   console.log("-".repeat(nameW + versionW + 2));
 
   for (const p of packages) {
-    console.log(pad(p.name, nameW) + "  " + (p.version ?? "-"));
+    console.log(padCell(p.name, nameW) + "  " + (p.version ?? "-"));
   }
 }

@@ -1,6 +1,5 @@
 /**
- * Agent Tools Packager(ATP) CLI - entry point
- * CLI for agentic dev workflows: installs prompts, MCP servers, skills.
+ * Agent Tool Packager (ATP) CLI entry: registers subcommands and parses `process.argv`.
  */
 
 import { Command } from "commander";
@@ -47,5 +46,8 @@ registerCreateCommands(program);
 registerPackageCommands(program);
 registerValidateCommands(program);
 
+/**
+ * Parse argv and run the matching subcommand (Commander).
+ */
 program.parse();
 

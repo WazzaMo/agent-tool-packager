@@ -7,10 +7,12 @@ import type { CatalogRoot } from "../catalog/types.js";
 
 import type { AgentPaths } from "./types.js";
 
+/** Remote or local URL prefix for the standard catalog payload. */
 export interface StandardCatalogConfig {
   url: string;
 }
 
+/** Root of `atp-config.yaml` under the Station directory. */
 export interface StationConfig {
   configuration: {
     version: string;
@@ -51,6 +53,7 @@ export const DEFAULT_STATION_CONFIG: StationConfig = {
   },
 };
 
+/** `atp-safehouse-list.yaml`: known project Safehouse paths registered with Station. */
 export interface SafehouseListConfig {
   safehouse_paths: string[];
 }

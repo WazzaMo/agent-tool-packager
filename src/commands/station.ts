@@ -1,11 +1,16 @@
 /**
- * Station subcommands: atp station init, atp station list, etc.
+ * Station subcommands: `atp station init`, `atp station list`.
  */
 
 import type { Command } from "commander";
 import { stationInit } from "../init/station-init.js";
 import { stationList } from "../station/list.js";
 
+/**
+ * Register Station-related commands on the program.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerStationCommands(program: Command): void {
   const station = program
     .command("station")

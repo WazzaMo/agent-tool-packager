@@ -14,12 +14,21 @@ const STATION_CATALOG_FILE = "atp-catalog.yaml";
 
 const EMPTY_PACKAGES: CatalogPackages = { standard: [], user: [] };
 
-/** Catalog with no packages (missing Station or missing file). */
+/**
+ * In-memory catalog with empty `standard` and `user` package lists.
+ *
+ * @returns Default empty catalog shape.
+ */
 export function emptyCatalog(): Catalog {
   return { packages: { ...EMPTY_PACKAGES } };
 }
 
-/** Parse one list item: must be a non-array object with a non-empty `name` string. */
+/**
+ * Parse one list item: must be a non-array object with a non-empty `name` string.
+ *
+ * @param entry - One YAML list element.
+ * @returns Package descriptor, or `null` when invalid.
+ */
 function parseCatalogPackageObject(entry: unknown): CatalogPackage | null {
   if (
     entry === null ||
@@ -47,6 +56,9 @@ function parseCatalogPackageObject(entry: unknown): CatalogPackage | null {
  * Parse `packages` from catalog YAML. Requires an object with `standard` and `user` arrays
  * of package objects (not name-only strings). Legacy flat `packages: [ ... ]` is rejected.
  * Any invalid shape or bad list item yields empty `standard` and `user`.
+ *
+ * @param packages - Raw `packages` field from YAML.
+ * @returns Normalised standard and user arrays (possibly empty).
  */
 export function parseCatalogPackagesField(packages: unknown): CatalogPackages {
   if (packages == null) {
@@ -83,6 +95,12 @@ export function parseCatalogPackagesField(packages: unknown): CatalogPackages {
   return { standard, user };
 }
 
+/**
+ * Unwrap `catalog` root or treat the document as a bare {@link Catalog} object.
+ *
+ * @param data - Root YAML value.
+ * @returns Inner catalog object, or `null`.
+ */
 function resolveCatalogData(data: unknown): Catalog | null {
   if (!data || typeof data !== "object") return null;
   const root = data as Record<string, unknown>;
@@ -92,6 +110,12 @@ function resolveCatalogData(data: unknown): Catalog | null {
   return data as Catalog;
 }
 
+/**
+ * Re-parse `packages` so list semantics are enforced after loading.
+ *
+ * @param data - Catalog object before package list normalisation.
+ * @returns Catalog with validated `packages`.
+ */
 function normalizeLoadedCatalog(data: Catalog): Catalog {
   return {
     ...data,
@@ -99,13 +123,21 @@ function normalizeLoadedCatalog(data: Catalog): Catalog {
   };
 }
 
-/** All packages from a catalog (standard entries, then user entries). */
+/**
+ * All packages from a catalog (`standard` first, then `user`), without deduplication.
+ *
+ * @param catalog - Loaded station catalog.
+ * @returns Concatenated list in file order.
+ */
 export function listAllCatalogPackages(catalog: Catalog): CatalogPackage[] {
   return [...catalog.packages.standard, ...catalog.packages.user];
 }
 
 /**
  * Unique packages by name for install and `catalog list`: `user` overrides `standard`.
+ *
+ * @param catalog - Loaded station catalog.
+ * @returns De-duplicated list; later `user` entries win over `standard`.
  */
 export function effectiveStationCatalogPackages(catalog: Catalog): CatalogPackage[] {
   const byName = new Map<string, CatalogPackage>();
@@ -119,7 +151,8 @@ export function effectiveStationCatalogPackages(catalog: Catalog): CatalogPackag
 }
 
 /**
- * Load the Station catalog (${STATION_PATH}/atp-catalog.yaml).
+ * Load the Station catalog (`${STATION_PATH}/atp-catalog.yaml`).
+ *
  * @returns Parsed catalog, or empty packages if Station or file is missing.
  */
 export function loadStationCatalog(): Catalog {

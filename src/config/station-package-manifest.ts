@@ -11,9 +11,10 @@ import { getStationPath, pathExists } from "./paths.js";
 const STATION_MANIFEST_DIR = "manifest";
 
 /**
- * Write Station package manifest. Station manifest directory must exist.
- * @param name Package name
- * @param manifest - manifest object
+ * Write Station package manifest under `manifest/<name>.yaml`.
+ *
+ * @param name - Package name (filename stem).
+ * @param manifest - Serialized manifest fields.
  */
 export function writeStationPackageManifest(
   name: string,
@@ -34,8 +35,9 @@ export function writeStationPackageManifest(
 
 /**
  * Check if Station has a package manifest for the given name.
- * @param name - package file name
- * @returns boolean true if file exists, false otherwise
+ *
+ * @param name - Package name (filename stem).
+ * @returns `true` when `manifest/<name>.yaml` exists.
  */
 export function stationHasPackage(name: string): boolean {
   const stationPath = getStationPath();
@@ -44,8 +46,9 @@ export function stationHasPackage(name: string): boolean {
 }
 
 /**
- * Delete Station package manifest.
- * @param name - YAML filename
+ * Delete Station package manifest file when present.
+ *
+ * @param name - Package name (filename stem).
  */
 export function deleteStationPackageManifest(name: string): void {
   const stationPath = getStationPath();

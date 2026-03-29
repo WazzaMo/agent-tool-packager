@@ -9,10 +9,16 @@ import path from "node:path";
 import type { DevPackageManifest } from "./types.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { saveDevManifest } from "./save-manifest.js";
+import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
 
 const STAGE_TAR = "stage.tar";
 
-/** Exit if path is outside pkg root or is absolute. */
+/**
+ * Exit if path is outside package root or is absolute.
+ *
+ * @param filePath - Path as given on the CLI (relative to cwd).
+ * @param pkgRoot - Resolved package root directory.
+ */
 function assertValidComponentPath(filePath: string, pkgRoot: string): void {
   const resolved = path.resolve(pkgRoot, filePath);
   const rel = path.relative(pkgRoot, resolved);
@@ -22,7 +28,12 @@ function assertValidComponentPath(filePath: string, pkgRoot: string): void {
   }
 }
 
-/** Exit if path does not exist or is not a file. */
+/**
+ * Exit if path does not exist or is not a file.
+ *
+ * @param resolved - Absolute path to the nominated file.
+ * @param filePath - Original user path (for error messages).
+ */
 function assertComponentExistsAndIsFile(resolved: string, filePath: string): void {
   if (!fs.existsSync(resolved)) {
     console.error("Nominated path or file does not exist.");
@@ -34,7 +45,10 @@ function assertComponentExistsAndIsFile(resolved: string, filePath: string): voi
   }
 }
 
-/** Load manifest or exit. */
+/**
+ * @param cwd - Package root directory.
+ * @returns Loaded manifest or exits when missing.
+ */
 function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
@@ -44,7 +58,14 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
   return manifest;
 }
 
-/** Append or create tar with component file. */
+/**
+ * Append one file to `stage.tar`, creating the archive when needed.
+ *
+ * @param pkgRoot - Package root (tar cwd).
+ * @param tarPath - Path to `stage.tar`.
+ * @param fileDir - Directory containing the file (`tar -C` target).
+ * @param baseName - File name only.
+ */
 function appendComponentToTar(
   pkgRoot: string,
   tarPath: string,
@@ -79,6 +100,7 @@ export function componentAdd(cwd: string, filePath: string): void {
   assertComponentExistsAndIsFile(resolved, filePath);
 
   const manifest = loadManifestOrExit(cwd);
+  exitIfMultiUsesRootStaging(manifest, "component <path>");
   const baseName = path.basename(resolved);
   const components = manifest.components ?? [];
 

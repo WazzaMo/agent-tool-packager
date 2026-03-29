@@ -1,91 +1,102 @@
 /**
- * Validate package definition. Used by atp validate package and atp catalog add package.
+ * Validate package definition: dispatches to single-type vs multi-type routines.
+ * See docs/features/4-multi-type-packages.md.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { loadDevManifest } from "./load-manifest.js";
+import {
+  isMultiDevManifest,
+  legacyHasPartsConflict,
+  multiHasRootPayloadConflict,
+} from "./manifest-layout.js";
+import type { ValidateResult } from "./validate-types.js";
+import { validateSingleTypePackage } from "./validate-single-type-package.js";
+import { validateMultiTypePackage } from "./validate-multi-type-package.js";
 
-const STAGE_FILE = "stage.tar";
+export type { ValidateResult } from "./validate-types.js";
 
-/** Result of package validation. */
-export interface ValidateResult {
-  ok: boolean;
-  exitCode: 0 | 1 | 2;
-  missing: string[];
-  message: string;
+const PACKAGE_FILE = "atp-package.yaml";
+
+/**
+ * @param cwd - Directory containing `atp-package.yaml`.
+ * @returns Outcome when the manifest file is missing.
+ */
+function manifestFileMissingResult(): ValidateResult {
+  return {
+    ok: false,
+    exitCode: 2,
+    missing: ["atp-package.yaml"],
+    message: "No atp-package.yaml found. Run 'atp create package skeleton' first.",
+  };
 }
 
 /**
- * Validate atp-package.yaml and stage.tar in the package directory.
+ * @returns Outcome when YAML could not be parsed into a manifest.
+ */
+function manifestParseFailedResult(): ValidateResult {
+  return {
+    ok: false,
+    exitCode: 2,
+    missing: ["Valid atp-package.yaml"],
+    message: "Could not parse atp-package.yaml.",
+  };
+}
+
+/**
+ * @returns Outcome when a singular root type is paired with a non-empty `parts` list.
+ */
+function legacyPartsConflictResult(): ValidateResult {
+  return {
+    ok: false,
+    exitCode: 1,
+    missing: ["parts (not allowed with single root type)"],
+    message: "Legacy package cannot list parts alongside a singular root type.",
+  };
+}
+
+/**
+ * @returns Outcome when Multi root type still has root usage/components/bundles.
+ */
+function multiRootPayloadConflictResult(): ValidateResult {
+  return {
+    ok: false,
+    exitCode: 1,
+    missing: ["root usage/components/bundles (use parts for Multi layout)"],
+    message: "Multi package must define usage, components, and bundles under parts, not at the root.",
+  };
+}
+
+/**
+ * Validate `atp-package.yaml` and `stage.tar` in the package directory.
  *
- * @param cwd - Package root directory
- * @returns Validation result with ok, exitCode, missing fields, and message
+ * @param cwd - Package root directory.
+ * @returns Aggregated validation result for CLI or programmatic use.
  */
 export function validatePackage(cwd: string): ValidateResult {
-  const pkgPath = path.join(cwd, "atp-package.yaml");
-  const stagePath = path.join(cwd, STAGE_FILE);
-
-  const missing: string[] = [];
+  const pkgPath = path.join(cwd, PACKAGE_FILE);
 
   if (!fs.existsSync(pkgPath)) {
-    return {
-      ok: false,
-      exitCode: 2,
-      missing: ["atp-package.yaml"],
-      message: "No atp-package.yaml found. Run 'atp create package skeleton' first.",
-    };
+    return manifestFileMissingResult();
   }
 
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
-    return {
-      ok: false,
-      exitCode: 2,
-      missing: ["Valid atp-package.yaml"],
-      message: "Could not parse atp-package.yaml.",
-    };
+    return manifestParseFailedResult();
   }
 
-  if (!manifest.name || String(manifest.name).trim() === "") missing.push("name");
-  if (!manifest.type || String(manifest.type).trim() === "") missing.push("type");
-  if (!manifest.version || String(manifest.version).trim() === "") missing.push("version");
-  if (!manifest.usage || manifest.usage.length === 0) missing.push("usage");
-  const hasComponents = manifest.components && manifest.components.length > 0;
-  const hasBundles = manifest.bundles && manifest.bundles.length > 0;
-  if (!hasComponents && !hasBundles) missing.push("components or bundles");
-
-  const hasStage = fs.existsSync(stagePath) && fs.statSync(stagePath).size > 0;
-  if (!hasStage) missing.push("stage.tar (non-empty)");
-
-  if (missing.length === 0) {
-    return {
-      ok: true,
-      exitCode: 0,
-      missing: [],
-      message: "Package appears complete. Mandatory minimal values are set.",
-    };
+  if (legacyHasPartsConflict(manifest)) {
+    return legacyPartsConflictResult();
   }
 
-  const hasMandatoryMissing = missing.some(
-    (m) =>
-      m === "name" ||
-      m === "type" ||
-      m === "version" ||
-      m === "usage" ||
-      m.includes("atp-package")
-  );
-  const exitCode: 1 | 2 = hasMandatoryMissing ? 2 : 1;
+  if (multiHasRootPayloadConflict(manifest)) {
+    return multiRootPayloadConflictResult();
+  }
 
-  let message = "Only package type is set and many properties remain to make the package viable to install, such as:";
-  if (missing.includes("name")) message += "\n- name";
-  if (missing.includes("usage")) message += "\n- usage (help) information";
-  if (missing.includes("components or bundles") || missing.includes("stage.tar (non-empty)")) message += "\n- file components or bundles";
+  if (isMultiDevManifest(manifest)) {
+    return validateMultiTypePackage(cwd, manifest);
+  }
 
-  return {
-    ok: false,
-    exitCode,
-    missing,
-    message,
-  };
+  return validateSingleTypePackage(cwd, manifest);
 }

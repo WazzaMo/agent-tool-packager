@@ -1,14 +1,21 @@
 /**
  * Print package summary: set items and missing (from validate).
- * See docs/features/2-package-developer-support.md.
  */
 
 import { loadDevManifest } from "./load-manifest.js";
 import { validatePackage } from "./validate.js";
+import { isMultiDevManifest } from "./manifest-layout.js";
+import {
+  printManifestCommonHeader,
+  printMultiTypePartsSection,
+  printSingleTypePayloadSection,
+} from "./package-summary-sections.js";
 
 /**
- * Print package summary and exit with validate exit code.
- * @param cwd - Package root directory
+ * Print package summary (metadata, parts or root payload, missing list) and exit
+ * with the same code as {@link validatePackage}.
+ *
+ * @param cwd - Package root directory.
  */
 export function packageSummary(cwd: string): void {
   const manifest = loadDevManifest(cwd);
@@ -20,21 +27,12 @@ export function packageSummary(cwd: string): void {
   const validation = validatePackage(cwd);
 
   console.log("Package summary:");
-  if (manifest.name) console.log(`  Name: ${manifest.name}`);
-  if (manifest.type) console.log(`  Type: ${manifest.type}`);
-  if (manifest.developer) console.log(`  Developer: ${manifest.developer}`);
-  if (manifest.license) console.log(`  License: ${manifest.license}`);
-  if (manifest.version) console.log(`  Version: ${manifest.version}`);
-  if (manifest.copyright?.length) {
-    console.log(`  Copyright: ${manifest.copyright.join(", ")}`);
-  }
-  if (manifest.usage?.length) console.log(`  Usage: ${manifest.usage.join(" ")}`);
-  if (manifest.components?.length) {
-    console.log(`  Components: ${manifest.components.join(", ")}`);
-  }
-  if (manifest.bundles?.length) {
-    const paths = manifest.bundles.map((b) => (typeof b === "string" ? b : b.path));
-    console.log(`  Bundles: ${paths.join(", ")}`);
+  printManifestCommonHeader(manifest);
+
+  if (isMultiDevManifest(manifest)) {
+    printMultiTypePartsSection(manifest);
+  } else {
+    printSingleTypePayloadSection(manifest);
   }
 
   if (validation.missing.length > 0) {

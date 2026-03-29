@@ -16,6 +16,7 @@ import { writeStationPackageManifest } from "../config/station-package-manifest.
 import { expandHome, findProjectBase } from "../config/paths.js";
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 
+import { buildBundleInstallPathMap } from "./bundle-path-map.js";
 import {
   resolvePackage,
   resolvePackagePath,
@@ -28,12 +29,16 @@ import type { PackageManifest } from "./types.js";
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
+/** Whether install prompts apply to the project Safehouse or Station scope. */
 export type PromptScope = "project" | "station";
+/** Where program assets are installed when applicable. */
 export type BinaryScope = "user-bin" | "project-bin";
 
+/** Options for {@link installPackage}. */
 export interface InstallOptions {
   promptScope: PromptScope;
   binaryScope: BinaryScope;
+  /** When true, recursively install `program_dependencies` from the catalog first. */
   dependencies: boolean;
 }
 
@@ -59,36 +64,6 @@ function checkDependencies(
 }
 
 /**
- * Build bundle name -> install path map for text patching.
- * Feature 3: {bundle_name} placeholder in rules/skills.
- * @param manifest - Package manifest with bundles.
- * @param binaryScope - user-bin or project-bin.
- * @param projectBase - Project root directory.
- * @returns Map of bundle name to absolute install path.
- */
-function buildBundlePathMap(
-  manifest: PackageManifest,
-  binaryScope: "user-bin" | "project-bin",
-  projectBase: string
-): Record<string, string> {
-  const bundles = manifest.bundles ?? [];
-  if (bundles.length === 0) return {};
-
-  const binDir =
-    binaryScope === "user-bin"
-      ? expandHome("~/.local/bin")
-      : path.join(projectBase, ".atp_safehouse", `${manifest.name}-exec`, "bin");
-
-  const map: Record<string, string> = {};
-  for (const b of bundles) {
-    const bundlePath = typeof b === "string" ? b : b.path;
-    const bundleName = path.basename(bundlePath) || bundlePath;
-    map[bundleName] = binDir;
-  }
-  return map;
-}
-
-/**
  * Resolve agent base path (project agent dir) for skills/rules.
  * @param projectBase - Project root directory.
  * @returns Absolute path to agent directory (e.g. .cursor/).
@@ -104,9 +79,11 @@ function getAgentBasePath(projectBase: string): string {
 /**
  * Run install for a single package.
  * Feature 3: resolve scope, find safehouse, copy assets, patch placeholders, update manifest.
+ *
  * @param packageName - Name of package to install.
  * @param opts - Install scope options (promptScope, binaryScope, dependencies).
  * @param cwd - Current working directory (default process.cwd()).
+ * @returns Resolves when install completes; may `process.exit` on fatal errors.
  */
 export async function installPackage(
   packageName: string,
@@ -158,7 +135,11 @@ export async function installPackage(
   }
 
   const agentBase = getAgentBasePath(projectBase);
-  const bundlePathMap = buildBundlePathMap(manifest, opts.binaryScope, projectBase);
+  const bundlePathMap = buildBundleInstallPathMap(
+    manifest,
+    opts.binaryScope,
+    projectBase
+  );
 
   const hasProgramAssets = (manifest.assets ?? []).some(
     (a) => a.type === "program"

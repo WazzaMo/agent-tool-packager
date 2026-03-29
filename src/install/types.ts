@@ -3,12 +3,14 @@
  * Schema from docs/features/1-package-definition-and-installation.md.
  */
 
+/** One installable asset row from the catalog / enriched manifest. */
 export interface PackageAsset {
   path: string;
   type: "skill" | "rule" | "program" | "sub-agent";
   name: string;
 }
 
+/** Optional program metadata for dependencies and runtimes. */
 export interface ProgramDefinition {
   asset_name: string;
   runtime?: "node" | "deno" | "bun" | "python" | "x64" | "arm";
@@ -17,6 +19,7 @@ export interface ProgramDefinition {
   dependency?: { name: string; version?: string };
 }
 
+/** Parsed install manifest (developer or enriched) used during install/remove. */
 export interface PackageManifest {
   name: string;
   version?: string;

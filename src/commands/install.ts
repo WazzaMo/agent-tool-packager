@@ -1,10 +1,40 @@
 /**
- * Install command: atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
+ * Install command: `atp install <package>` with project/station and bin scope flags.
  */
 
 import type { Command } from "commander";
-import { installPackage } from "../install/install.js";
+import {
+  installPackage,
+  type InstallOptions,
+} from "../install/install.js";
 
+/**
+ * Map Commander flags to {@link InstallOptions}.
+ *
+ * @param opts - Parsed CLI options.
+ * @returns Options for {@link installPackage}.
+ */
+function installOptionsFromCliFlags(opts: {
+  project?: boolean;
+  station?: boolean;
+  userBin?: boolean;
+  projectBin?: boolean;
+  dependencies?: boolean;
+}): InstallOptions {
+  const promptScope = opts.station ? "station" : "project";
+  const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
+  return {
+    promptScope,
+    binaryScope,
+    dependencies: opts.dependencies ?? false,
+  };
+}
+
+/**
+ * Register `install` and delegate to {@link installPackage}.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerInstallCommand(program: Command): void {
   program
     .command("install")
@@ -41,15 +71,9 @@ export function registerInstallCommand(program: Command): void {
           dependencies?: boolean;
         }
       ) => {
-        const promptScope = opts.station ? "station" : "project";
-        const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
         await installPackage(
           pkgName,
-          {
-            promptScope,
-            binaryScope,
-            dependencies: opts.dependencies ?? false,
-          },
+          installOptionsFromCliFlags(opts),
           process.cwd()
         );
       }

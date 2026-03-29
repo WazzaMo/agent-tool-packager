@@ -1,5 +1,5 @@
 /**
- * Safehouse subcommands: atp safehouse init, atp safehouse list, etc.
+ * Safehouse subcommands: `atp safehouse init`, `atp safehouse list`.
  */
 
 import type { Command } from "commander";
@@ -8,6 +8,21 @@ import { safehouseList } from "../safehouse/list.js";
 
 import { findProjectBase } from "../config/paths.js";
 
+/**
+ * Resolve project base for Safehouse list (fallback to cwd when markers missing).
+ *
+ * @param cwd - Current working directory.
+ * @returns Directory passed to {@link safehouseList}.
+ */
+function projectBaseForSafehouseList(cwd: string): string {
+  return findProjectBase(cwd) || cwd;
+}
+
+/**
+ * Register Safehouse-related commands on the program.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerSafehouseCommands(program: Command): void {
   const safehouse = program
     .command("safehouse")
@@ -27,7 +42,6 @@ export function registerSafehouseCommands(program: Command): void {
     .description("List packages installed in the project Safehouse")
     .action(() => {
       const cwd = process.cwd();
-      const projectBase = findProjectBase(cwd) || cwd;
-      safehouseList(projectBase);
+      safehouseList(projectBaseForSafehouseList(cwd));
     });
 }

@@ -29,6 +29,12 @@ const CONFIG_FILE = "atp-config.yaml";
 const MANIFEST_FILE = "manifest.yaml";
 const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 
+/**
+ * Prefer `~` prefix when `p` is under the current user's home directory (for list display).
+ *
+ * @param p - Absolute or normalised path.
+ * @returns Tilde-prefixed path when under home; otherwise `p`.
+ */
 function toTildePath(p: string): string {
   const home = os.homedir();
   if (p.startsWith(home + path.sep) || p === home) {
@@ -37,6 +43,11 @@ function toTildePath(p: string): string {
   return p;
 }
 
+/**
+ * Append this Safehouse path to the Station safehouse list when Station and list file exist.
+ *
+ * @param safehousePath - Absolute path to `.atp_safehouse`.
+ */
 function registerSafehouseInStation(safehousePath: string): void {
   const stationPath = getStationPath();
   const listPath = path.join(stationPath, SAFEHOUSE_LIST_FILE);
@@ -57,9 +68,36 @@ function registerSafehouseInStation(safehousePath: string): void {
 }
 
 /**
+ * Write default Safehouse config and manifest (with `station_path` filled from Station).
+ *
+ * @param safehousePath - Path to `.atp_safehouse` (must exist).
+ */
+function writeDefaultSafehouseConfigAndManifest(safehousePath: string): void {
+  const configPath = path.join(safehousePath, CONFIG_FILE);
+  const manifestPath = path.join(safehousePath, MANIFEST_FILE);
+  const stationPath = getStationPath();
+
+  fs.writeFileSync(
+    configPath,
+    yaml.dump(DEFAULT_SAFEHOUSE_CONFIG, { lineWidth: 80 }),
+    "utf8"
+  );
+  fs.writeFileSync(
+    manifestPath,
+    writeManifestContent({
+      ...DEFAULT_SAFEHOUSE_MANIFEST,
+      station_path: stationPath,
+    }),
+    "utf8"
+  );
+}
+
+/**
  * Initialize Safehouse in project directory. Creates .atp_safehouse with config and manifest.
  * Uses findProjectBase; rejects home directory. Registers with Station if present.
  * Feature 3: atp safehouse init acceptance criteria.
+ *
+ * @returns Resolves after creation or early return when Safehouse already exists.
  */
 export async function safehouseInit(): Promise<void> {
   const cwd = process.cwd();
@@ -109,23 +147,7 @@ export async function safehouseInit(): Promise<void> {
 
   fs.mkdirSync(safehousePath, { recursive: true });
 
-  const configPath = path.join(safehousePath, CONFIG_FILE);
-  const manifestPath = path.join(safehousePath, MANIFEST_FILE);
-  const stationPath = getStationPath();
-
-  fs.writeFileSync(
-    configPath,
-    yaml.dump(DEFAULT_SAFEHOUSE_CONFIG, { lineWidth: 80 }),
-    "utf8"
-  );
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({
-      ...DEFAULT_SAFEHOUSE_MANIFEST,
-      station_path: stationPath,
-    }),
-    "utf8"
-  );
+  writeDefaultSafehouseConfigAndManifest(safehousePath);
 
   registerSafehouseInStation(safehousePath);
 
