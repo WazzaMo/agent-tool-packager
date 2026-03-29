@@ -145,7 +145,7 @@ export function registerAgentCommands(program: Command): void {
     });
 
   agent
-    .argument("<name>", "Agent to assign (e.g. cursor, claude)")
+    .argument("<name>", "Agent to assign (e.g. cursor, claude, kiro)")
     .description("Assign agent to this project (run from project with .atp_safehouse)")
     .action((name: string) => {
       const cwd = process.cwd();
