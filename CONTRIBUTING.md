@@ -87,7 +87,7 @@ Contributions of all kinds are welcome:
 - Bug fixes
 
 - New features or tool improvements
-    - New rules, skills
+    - New rules, prompts, skills, hooks
     - extending the type, or number, of agents supported.
 
 - Test coverage improvements
