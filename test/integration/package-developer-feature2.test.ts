@@ -137,18 +137,30 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     expect(manifestAfter).not.toMatch(/skeleton-pkg/);
   });
 
-  it("component add with invalid path exits 1", () => {
+  it("component add accepts source outside package directory (../)", () => {
     initPackage(pkgDir, stationDir, {
       type: "rule",
       name: "x",
       usage: "x",
     });
-    const result = runAtpExpectExit(
-      ["package", "component", "add", "../other/file.md"],
-      1,
-      atpCwd(pkgDir, stationDir)
-    );
-    expect(result.stdout + result.stderr).toMatch(/Invalid path/);
+    const extDir = path.join(path.dirname(pkgDir), `atp-cli-ext-${Date.now()}`);
+    fs.mkdirSync(extDir, { recursive: true });
+    const extFile = path.join(extDir, "outside.md");
+    fs.writeFileSync(extFile, "# Outside\n");
+    try {
+      const rel = path.join("..", path.basename(extDir), "outside.md");
+      runAtp(["package", "component", "add", rel], atpCwd(pkgDir, stationDir));
+      const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      expect(manifest).toMatch(/outside\.md/);
+      const list = listStageTar(pkgDir);
+      expect(list).toMatch(/outside\.md/);
+    } finally {
+      try {
+        fs.rmSync(extDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
   });
 
   it("bundle remove when bundle not in package exits 1", () => {

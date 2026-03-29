@@ -6,7 +6,10 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { copyPackageAssets } from "../../src/install/copy-assets.js";
+import {
+  agentDestinationForAsset,
+  copyPackageAssets,
+} from "../../src/install/copy-assets.js";
 
 function createTempDir(): string {
   const dir = path.join(os.tmpdir(), `atp-copy-assets-${Date.now()}`);
@@ -54,6 +57,44 @@ describe("copyPackageAssets", () => {
 
     const dest = path.join(agentBase, "rules", "RULE.md");
     expect(fs.existsSync(dest)).toBe(true);
+  });
+
+  it("places hook hooks.json at agent root and other hook files under hooks/", () => {
+    fs.writeFileSync(path.join(pkgDir, "hooks.json"), '{"version":1}');
+    fs.writeFileSync(path.join(pkgDir, "audit.sh"), "#!/bin/sh\n");
+    copyPackageAssets(pkgDir, {
+      name: "test",
+      assets: [
+        { path: "hooks.json", type: "hook", name: "hooks" },
+        { path: "audit.sh", type: "hook", name: "audit" },
+      ],
+    }, agentBase);
+
+    expect(fs.existsSync(path.join(agentBase, "hooks.json"))).toBe(true);
+    expect(fs.readFileSync(path.join(agentBase, "hooks.json"), "utf8")).toBe('{"version":1}');
+    expect(fs.existsSync(path.join(agentBase, "hooks", "audit.sh"))).toBe(true);
+  });
+
+  it("agentDestinationForAsset matches Hook layout", () => {
+    const base = path.join(os.tmpdir(), "atp-dest-hook");
+    expect(
+      agentDestinationForAsset(base, { type: "hook", path: "hooks.json" }).filePath
+    ).toBe(path.join(base, "hooks.json"));
+    expect(
+      agentDestinationForAsset(base, { type: "hook", path: "fmt.sh" }).filePath
+    ).toBe(path.join(base, "hooks", "fmt.sh"));
+  });
+
+  it("copies prompt asset to agent prompts/ directory", () => {
+    fs.writeFileSync(path.join(pkgDir, "review.md"), "# Review prompt");
+    copyPackageAssets(pkgDir, {
+      name: "test",
+      assets: [{ path: "review.md", type: "prompt", name: "review" }],
+    }, agentBase);
+
+    const dest = path.join(agentBase, "prompts", "review.md");
+    expect(fs.existsSync(dest)).toBe(true);
+    expect(fs.readFileSync(dest, "utf8")).toBe("# Review prompt");
   });
 
   it("skips missing source files", () => {

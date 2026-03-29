@@ -1,5 +1,5 @@
 /**
- * Integration tests for package developer workflow (Rule, Skill, Command, Experimental, Bundle).
+ * Integration tests for package developer workflow (Rule, Prompt, Skill, Hook, Command, Experimental, Bundle).
  * See docs/features/2-package-developer-support.md Test Approach.
  */
 

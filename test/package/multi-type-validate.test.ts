@@ -88,6 +88,54 @@ parts:
     expect(r.exitCode).toBe(0);
   });
 
+  it("fails when the same component basename appears in two parts", () => {
+    fs.writeFileSync(
+      path.join(cwd, "atp-package.yaml"),
+      `type: Multi
+name: dup-bn
+version: 0.1.0
+parts:
+  - type: Prompt
+    usage:
+      - u1
+    components:
+      - doc-guide.md
+  - type: Rule
+    usage:
+      - u2
+    components:
+      - doc-guide.md
+`,
+      "utf8"
+    );
+    const r = validatePackage(cwd);
+    expect(r.ok).toBe(false);
+    expect(r.exitCode).toBe(1);
+    expect(r.missing.some((m) => m.includes("must be unique across parts"))).toBe(true);
+  });
+
+  it("fails when duplicate basename is listed twice on one part", () => {
+    fs.writeFileSync(
+      path.join(cwd, "atp-package.yaml"),
+      `type: Multi
+name: dup-list
+version: 0.1.0
+parts:
+  - type: Skill
+    usage:
+      - u
+    components:
+      - SKILL.md
+      - SKILL.md
+`,
+      "utf8"
+    );
+    const r = validatePackage(cwd);
+    expect(r.ok).toBe(false);
+    expect(r.exitCode).toBe(1);
+    expect(r.missing.some((m) => m.includes("duplicate component"))).toBe(true);
+  });
+
   it("fails when staged path missing for a part component", () => {
     fs.writeFileSync(
       path.join(cwd, "atp-package.yaml"),
