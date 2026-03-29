@@ -78,7 +78,7 @@ Then define its name, copyright, license, version for the package as base metada
 
 ```bash
 atp package name clean-docs-and-code
-atp package copyright "Warwick Molloy 2026" "All rights reserved"
+atp package developer Warwick_M
 atp package license "Apache License 2.0"
 atp package version 0.1.0
 ```
@@ -100,10 +100,73 @@ Then check if the package definition is complete enough. An integrity check, bas
 Get a summary of the definition and contents... and an indication if the package
 is complete enough, by running...
 
-`atp package summary`
+```bash
+atp package summary`
 
+Package summary:
+  Name: clean-docs-and-code
+  Type: Multi
+  Developer: Warwick_M
+  License: Apache License 2.0
+  Version: 0.1.0
+  Parts (1):
+    Part 1: type Rule
+      Usage: Always ready to keep code clean and markdown mean.
+      Components: doc-guide.md, clean-code.md
+
+This package can be added to the catalog.
+```
+
+
+This is a complete package and it can be added to the Station's catalog, like this:
+
+```bash
+atp catalog add package
+
+atp catalog list
+clean-docs-and-code
+
+```
+
+Then I create a new development project directory and initialise git because ATP
+checks for signs that the directory is a project directory and git is a great sign!
+
+```bash
+$ mkdir -p src/test
+$ git init -b main
+```
+
+Now have ATP initialise a safehouse in the project field of operation
+and nominate an agent. ATP won't allow a package to be installed without
+a nominated agent. A good quartermaster wants to know what agent
+is responsible for their tech :-)
+
+```bash
+$ atp safehouse init
+Safehouse created at /home/warwick/src/test/.atp_safehouse
+  - atp-config.yaml
+  - manifest.yaml
+
+$ atp agent cursor # to tell ATP which agent to configure and install into.
+Assigned cursor to this project (.cursor/)
+```
+
+And now we can install the package and see the files are installed in the
+correct directory for cursor to use.
+
+```bash
+$ atp install clean-docs-and-code
+Installed clean-docs-and-code 0.1.0 (prompts:project, bin:user-bin)
+
+$ ls -la .cursor/rules
+-rw-r--r-- 1 warwick warwick 3979 Mar 30 05:08 clean-code.md
+-rw-r--r-- 1 warwick warwick 5631 Mar 30 05:08 doc-guide.md
+```
+
+The Station configuration has the agent-relative paths for installing files for different agents.
 
 -----------------------------------------------------
+
 
 # How to install ATP on your computer
 
@@ -148,6 +211,8 @@ GitHub: [https://github.com/WazzaMo/agent-tool-packager](https://github.com/Wazz
  AA    AA    By Warwick Molloy Melbourne, Australia      TT        OOOO        OOOO     LLLLLLLL   SSSS
 
 ```
+
+# Working with this project's code
 
 ## Build, test and run
 
