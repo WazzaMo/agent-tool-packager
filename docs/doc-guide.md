@@ -114,7 +114,12 @@ For product-led engineering, features can be described and documented
 in a way to focus on consistent definitions with use cases
 and acceptance criteria that gives intent around user impact.
 
-They will be found in `docs/features`
+They will be found in `docs/features`.
+
+When documentation lists **package** or **part** types, use the same canonical set as
+[Feature 2 — Package developer support](./features/2-package-developer-support.md):
+Rule, Prompt, Skill, Hook, Mcp, Command, and Experimental (plus the Multi root type for
+multi-part packages in Feature 4). Keep those lists aligned when adding or renaming types.
 
 ## Epics and Stories
 

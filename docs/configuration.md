@@ -74,12 +74,14 @@ configuration:
   version: "0.1.0"
 
   # Path configurations for different AI agents supported by ATP.
-  # These define where the agents expect their rules, commands, and skills.
+  # These define where the agents expect their rules, prompts, hooks, commands, and skills.
   agent-paths:
     cursor:
       home_path: "~/.cursor/"
       project_path: ".cursor/"
       rule: "rules/"
+      prompts: "prompts/"
+      hooks: "hooks/"
       commands: "commands/"
       skills: "skills/"
     
@@ -93,6 +95,17 @@ configuration:
       home_path: "~/.gemini"
       project_path: ".gemini/"
       rule: "rules/"
+      prompts: "prompts/"
+      hooks: "hooks/"
+      skills: "skills/"
+
+    kiro:
+      home_path: "~/.kiro/"
+      project_path: ".kiro/"
+      rule: "rules/"
+      prompts: "prompts/"
+      hooks: "hooks/"
+      commands: "commands/"
       skills: "skills/"
 
   # The standard catalog URL provides the default source for package updates.
