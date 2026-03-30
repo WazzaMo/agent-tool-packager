@@ -16,6 +16,26 @@ Cursor summarised this project as:
 Contribution to this project is supported and contributors will be recognised.
 Created by Warwick Molloy Feb 2026.
 
+## Project
+
+```
+    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
+  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T      T  TT  T   OOOOOOOO    OOOOOOOO   LL        SS  SS
+ AA    AA  GG        EE       NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
+ AA    AA  GG        EEEEE    NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS
+ AA    AA  GG  GGGG  EEEEE    NN NN NN     TT            TT     OO      OO  OO      OO  LL        SSS
+ AAAAAAAA  GG  G GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL         SSS
+ AAAAAAAA  GG    GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL           SSS
+ AA    AA   GG  GG   EE       NN    NN     TT            TT     OO      OO  OO      OO  LL             SS
+ AA    AA    GGGG    EEEEEEE  NN    NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
+ AA    AA ==========================================     TT      OOOOOOOO    OOOOOOOO   LL        SS  SS
+ AA    AA    By Warwick Molloy Melbourne, Australia      TT        OOOO        OOOO     LLLLLLLL   SSSS
+
+```
+
+GitHub: [https://github.com/WazzaMo/agent-tool-packager](https://github.com/WazzaMo/agent-tool-packager)
+
+
 # Why Agent Tools - Packager (ATP) ?
 
 Ever wanted to install your standard prompt markdown files in a project
@@ -30,11 +50,6 @@ But ATP does!
 
 Welcome to "Q Branch" !!
 We're going to build the next generation of agent tools together!
-
-# Creating an using a package - a quickstart guide
-
-I am assuming a UNIX-like (Linux, BSD, MacOS) environment in these examples.
-Will it work in Windows? Maybe... I make no promises about Windows (yet).
 
 ## What can ATP do?
 
@@ -59,6 +74,24 @@ So ATP, right now, lets you define and stage a package of tools for agentic work
 add that package to the Station's catalog and then install that package, or other packages you create,
 to any project's Safehouse, or to an agent's user-central installation in the Station.
 
+------------------------------------------------------------------------
+
+# A Quickstart Guide
+
+I am assuming a UNIX-like (Linux, BSD, MacOS) environment in these examples.
+Not yet tested in Windows or windows-like environments Reactos.org.
+You will need a modern Nodejs in your environment, say version 24+.
+
+
+## Creating and using a package for agents
+
+This guide will show you how to author a package from material you might be using
+in a project that you find useful with your Agents. This guide will show you how
+to validate the package is ready and to add the package to a catalog. It will also
+show you how to install the package into a new, or existing project, so that you
+may see the same benefits, so that the agents you use for your work have the tools
+they need.
+
 ## Before you start.
 
 You need a Station for your agents to get their packages.
@@ -66,15 +99,20 @@ This is where the catalog of packages lives.
 
 `atp station init`
 
-That will create the station at ${HOME}/.atp_station
+That will create the station at ${HOME}/.atp_station where configuration and the
+catalog of packages will reside. The station is the in-country base for your agents.
 
 ## Creating your own package
 
-Create a skeleton of a package.
+### 1. Create a skeleton and give it a description
+
+Create the skeleton of a package as a starting point.
 
 `atp create package skeleton`
 
 Then define its name, copyright, license, version for the package as base metadata.
+The "developer" is the author of the package. This is the metadata that helps people
+select a package to use from a list of packages.
 
 ```bash
 atp package name clean-docs-and-code
@@ -83,7 +121,14 @@ atp package license "Apache License 2.0"
 atp package version 0.1.0
 ```
 
-Add some file assets with hints on how to use them in one or more parts....
+### 2. Add one or more packages
+
+Add some file assets with hints on how to use them in one or more parts.
+A part needs type, which is given when you declare a new part (with `newpart`) that
+indicates if the part holds a rule, prompt, hook, command, MCP server etc.
+It needs some usage information. Finally, it needs a component that is the markdown file
+or it needs a bundle containing executable code, configuration etc to perform a task,
+such as an mcp or command.
 
 ```bash
 atp package newpart rule
@@ -92,10 +137,11 @@ atp package part 1 component docs/doc-guide.md
 atp package part 1 component docs/coding-standard.md # -- add another markdown file
 ```
 
+### 3. Check the package has enough parts and information to be useful in the field
+
 Then check if the package definition is complete enough. An integrity check, basically...
 
 `atp validate package`
-
 
 Get a summary of the definition and contents... and an indication if the package
 is complete enough, by running...
@@ -117,6 +163,7 @@ Package summary:
 This package can be added to the catalog.
 ```
 
+### 4. Add the package to the catalog in the Station
 
 This is a complete package and it can be added to the Station's catalog, like this:
 
@@ -128,6 +175,13 @@ clean-docs-and-code
 
 ```
 
+### 5. Use the package in a new project
+
+You might have other projects where your agent will need your new package.
+Here, we will create a new project to explain and demonstrate ATP.
+
+#### 5.1 Create the demo/test project workspace
+
 Then I create a new development project directory and initialise git because ATP
 checks for signs that the directory is a project directory and git is a great sign!
 
@@ -135,6 +189,8 @@ checks for signs that the directory is a project directory and git is a great si
 $ mkdir -p src/test
 $ git init -b main
 ```
+
+#### 5.2 Create a safehouse in the field for your agent
 
 Now have ATP initialise a safehouse in the project field of operation
 and nominate an agent. ATP won't allow a package to be installed without
@@ -146,13 +202,22 @@ $ atp safehouse init
 Safehouse created at /home/warwick/src/test/.atp_safehouse
   - atp-config.yaml
   - manifest.yaml
+```
 
+Assign an agent to the safehouse.
+
+```bash
 $ atp agent cursor # to tell ATP which agent to configure and install into.
 Assigned cursor to this project (.cursor/)
 ```
 
+You can use this command to re-assign a new agent to the safehouse, so you can switch
+from cursor to claude if you want.
+
+#### 5.3 Install the package into the Safehouse in the project
+
 And now we can install the package and see the files are installed in the
-correct directory for cursor to use.
+correct directory for cursor, as current agent, to use.
 
 ```bash
 $ atp install clean-docs-and-code
@@ -165,7 +230,7 @@ $ ls -la .cursor/rules
 
 The Station configuration has the agent-relative paths for installing files for different agents.
 
------------------------------------------------------
+-------------------------------------------------------------------------------------------------
 
 
 # How to install ATP on your computer
@@ -191,26 +256,6 @@ atp remove safehouse <pkg>
 
 Removal from Safehouse or Station is always for the **whole** package (no per-part uninstall after install).
 
-## Project
-
-GitHub: [https://github.com/WazzaMo/agent-tool-packager](https://github.com/WazzaMo/agent-tool-packager)
-
-## Banner!
-
-```
-    AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
-  AAAAAA   GG    GG  EE       NNN   NN  T  TT  T      T  TT  T   OOOOOOOO    OOOOOOOO   LL        SS  SS
- AA    AA  GG        EE       NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
- AA    AA  GG        EEEEE    NNNN  NN     TT            TT     OO      OO  OO      OO  LL       SS
- AA    AA  GG  GGGG  EEEEE    NN NN NN     TT            TT     OO      OO  OO      OO  LL        SSS
- AAAAAAAA  GG  G GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL         SSS
- AAAAAAAA  GG    GG  EE       NN  NNNN     TT     ##     TT     OO      OO  OO      OO  LL           SSS
- AA    AA   GG  GG   EE       NN    NN     TT            TT     OO      OO  OO      OO  LL             SS
- AA    AA    GGGG    EEEEEEE  NN    NN     TT            TT     OO      OO  OO      OO  LL       SS    SS
- AA    AA ==========================================     TT      OOOOOOOO    OOOOOOOO   LL        SS  SS
- AA    AA    By Warwick Molloy Melbourne, Australia      TT        OOOO        OOOO     LLLLLLLL   SSSS
-
-```
 
 # Working with this project's code
 
