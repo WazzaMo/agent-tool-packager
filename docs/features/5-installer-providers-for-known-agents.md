@@ -2,8 +2,9 @@
 
 For all the types of parts that the packages support, we need ATP to have
 provider logic that can complete the installation of the part by contributing
-to creating or amending `mcp.json`, `hooks.json`, or (for Claude Code) hook
-entries inside `settings.json`, as needed by different agents
+to creating or amending `mcp.json`, `hooks.json`, or (for Claude Code and
+Gemini CLI) hook and `mcpServers` entries inside `settings.json`, as needed
+by different agents
 for different types. Sometimes it is enough to write markdown to the correct directory
 and sometimes more is needed.
 
@@ -50,12 +51,16 @@ as a break-out, "other" type.
 ## Support vs Type matrix
 
 Each row reflects that product's official docs. The `claude` rows map
-to **Claude Code** (terminal/IDE Claude Code), per
+to **Claude Code** (terminal/IDE), per
 [Extend Claude Code](https://code.claude.com/docs/en/features-overview).
+The `gemini` rows map to **Gemini CLI**, per the
+[Gemini CLI documentation](https://geminicli.com/docs/) hub.
 Cursor paths use `.cursor/` or `~/.cursor/`; Claude Code uses `.claude/`,
-project-root files such as `CLAUDE.md` and `.mcp.json`, and `~/.claude/`.
-References for each type are under the matching **Cursor** or **Claude Code**
-subsection below.
+project-root files such as `CLAUDE.md` and `.mcp.json`, and `~/.claude/`;
+Gemini CLI uses `.gemini/` and `~/.gemini/` (including `settings.json` for
+hooks and MCP).
+References for each type are under the matching **Cursor**, **Claude Code**,
+or **Gemini CLI** subsection below.
 
 | Agent  | Type         | Sup. | JSON? | Where (summary)                      |
 |--------|--------------|------|-------|--------------------------------------|
@@ -73,11 +78,19 @@ subsection below.
 | claude | Mcp          | Y    | Y     | `.mcp.json`, `~/.claude.json`        |
 | claude | Command      | Y    | N     | `.claude/commands/` (skill-style)    |
 | claude | Experimental | TBD  | —     | —                                    |
+| gemini | Rule         | Y    | N     | `GEMINI.md`, `~/.gemini/GEMINI.md`   |
+| gemini | Prompt       | Part | N     | Chat UX; MCP; `.toml` custom cmds    |
+| gemini | Skill        | Y    | N     | `.gemini/skills/`, `.agents/skills/` |
+| gemini | Hook         | Y    | Y     | `hooks` in `settings.json` + scripts |
+| gemini | Mcp          | Y    | Y     | `mcpServers` in `settings.json`      |
+| gemini | Command      | Y    | N     | `.gemini/commands/*.toml`            |
+| gemini | Experimental | TBD  | —     | —                                    |
 
-Partial: neither vendor defines a first-class on-disk Prompt install like
-rules or skills; chat UX and MCP capabilities are the documented touchpoints.
-Cursor: MCP Prompts and `/migrate-to-skills`. Claude Code: MCP resources via
-`@` and dynamic tool lists. Sup. = supported for provider work.
+Partial: no first-class on-disk Prompt install like rules or skills; chat UX
+and MCP capabilities are the documented touchpoints. Cursor: MCP Prompts and
+`/migrate-to-skills`. Claude Code: MCP resources via `@`. Gemini CLI:
+[Custom commands](https://geminicli.com/docs/cli/custom-commands) (TOML
+prompts) and MCP resources via `@`. Sup. = supported for provider work.
 
 # Cursor
 
@@ -196,4 +209,76 @@ Reference: [Extend Claude Code](https://code.claude.com/docs/en/features-overvie
 
 TBD: which experimental surfaces get stable ATP install paths (for example
 agent teams, channel-only workflows).
+
+# Gemini CLI
+
+Reference (hub): [Gemini CLI documentation](https://geminicli.com/docs/).
+Feature index covers [Agent Skills](https://geminicli.com/docs/cli/skills),
+[Hooks](https://geminicli.com/docs/hooks), [MCP servers](https://geminicli.com/docs/tools/mcp-server),
+[Custom commands](https://geminicli.com/docs/cli/custom-commands), and
+[Extensions](https://geminicli.com/docs/extensions).
+
+## Rule
+
+Reference: [Project context (GEMINI.md)](https://geminicli.com/docs/cli/gemini-md);
+[Memory import processor](https://geminicli.com/docs/reference/memport).
+
+- **Hierarchy:** Global `~/.gemini/GEMINI.md`, workspace `GEMINI.md` files (parents of configured workspaces), and just-in-time files when tools touch paths (ancestors up to a trusted root). Contents concatenate into context for prompts.
+- **Imports:** `@path` syntax pulls other markdown files; see the memport reference for processing rules.
+- **Alternate names:** `context.fileName` in `settings.json` can list filenames such as `AGENTS.md` alongside `GEMINI.md`.
+- **Commands:** `/memory show`, `/memory reload`, `/memory add` for inspection and global append.
+
+## Prompt
+
+Reference: [Custom commands](https://geminicli.com/docs/cli/custom-commands);
+[MCP servers](https://geminicli.com/docs/tools/mcp-server) (tools, resources, prompts).
+
+- **Chat:** Session prompts and context are primary input; there is no separate vendor-defined prompts directory beyond context files and commands.
+- **Custom commands:** Reusable prompts live as `.toml` files under `~/.gemini/commands/` and `.gemini/commands/` (project overrides user on name clash), with optional `{{args}}`, `!{...}` shell injection, and `@{...}` file injection.
+- **MCP:** `/mcp` lists tools and prompts; resource URIs can be attached with `@server://resource/path` syntax per the MCP guide.
+
+## Skill
+
+Reference: [Agent Skills](https://geminicli.com/docs/cli/skills);
+[Create Agent Skills](https://geminicli.com/docs/cli/creating-skills);
+[Extensions](https://geminicli.com/docs/extensions).
+
+- **Standard:** Based on [Agent Skills](https://agentskills.io/); discovery injects name and description into the system prompt; activation uses the `activate_skill` tool with user consent, then loads `SKILL.md` and grants the skill directory on the allow path.
+- **Tiers:** Workspace `.gemini/skills/` or `.agents/skills/` (within tier, `.agents/skills/` wins over `.gemini/skills/`), user `~/.gemini/skills/` or `~/.agents/skills/`, and extension-bundled skills. Precedence: workspace > user > extension.
+- **Management:** `/skills` and `gemini skills` for list, link, install, enable, and disable.
+
+## Hook
+
+Reference: [Gemini CLI hooks](https://geminicli.com/docs/hooks);
+[Hooks reference](https://geminicli.com/docs/hooks/reference);
+[Writing hooks](https://geminicli.com/docs/hooks/writing-hooks).
+
+- **Configuration:** `hooks` object in merged `settings.json` (project `.gemini/settings.json`, user `~/.gemini/settings.json`, system `/etc/gemini-cli/settings.json`, plus extensions). Not a standalone `hooks.json`.
+- **Handlers:** Currently `type: "command"` with `command`, optional `matcher`, `timeout` (ms), `name`. JSON on stdin/stdout; exit `0` with JSON decisions, `2` for a hard block, other codes as warnings.
+- **Scripts:** Often under `.gemini/hooks/`; `$GEMINI_PROJECT_DIR` (and `CLAUDE_PROJECT_DIR` alias) identifies the project root.
+- **UI:** `/hooks panel`, `/hooks enable|disable`, `/hooks enable-all|disable-all`.
+
+## Mcp
+
+Reference: [MCP servers with the Gemini CLI](https://geminicli.com/docs/tools/mcp-server).
+
+- **Configuration:** Top-level `mcpServers` and optional global `mcp` allow/exclude rules inside the same `settings.json` merge layers as hooks.
+- **Transports:** stdio (`command` / `args` / `cwd` / `env`), SSE (`url`), streamable HTTP (`httpUrl`); OAuth, trust, and tool allow/deny lists per server.
+- **Operations:** `/mcp`, `/mcp auth`; tokens stored under `~/.gemini/mcp-oauth-tokens.json` for OAuth flows.
+
+## Command
+
+Reference: [Custom commands](https://geminicli.com/docs/cli/custom-commands);
+[Command reference](https://geminicli.com/docs/reference/commands).
+
+- **Format:** TOML v1 with required `prompt` and optional `description`; namespaced paths map to slash commands (for example `git/commit.toml` → `/git:commit`).
+- **Reload:** `/commands reload` after edits without restarting the CLI.
+
+## Experimental
+
+Reference: [Gemini CLI documentation](https://geminicli.com/docs/) (features
+marked experimental in the index, including [Subagents](https://geminicli.com/docs/core/subagents)
+and [Plan mode](https://geminicli.com/docs/cli/plan-mode)).
+
+TBD: stable ATP install paths for experimental core features as they graduate.
 
