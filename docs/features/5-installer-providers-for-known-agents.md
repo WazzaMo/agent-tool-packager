@@ -2,9 +2,10 @@
 
 For all the types of parts that the packages support, we need ATP to have
 provider logic that can complete the installation of the part by contributing
-to creating or amending `mcp.json`, `hooks.json`, or (for Claude Code and
-Gemini CLI) hook and `mcpServers` entries inside `settings.json`, as needed
-by different agents
+to creating or amending `mcp.json`, `hooks.json`, JSON hook configs next to
+Codex config layers, or (for Claude Code and Gemini CLI) hook and `mcpServers`
+entries inside `settings.json`, or (for Codex CLI) `[mcp_servers.*]` tables and
+hook entries in `config.toml` / `hooks.json`, as needed by different agents
 for different types. Sometimes it is enough to write markdown to the correct directory
 and sometimes more is needed.
 
@@ -55,12 +56,16 @@ to **Claude Code** (terminal/IDE), per
 [Extend Claude Code](https://code.claude.com/docs/en/features-overview).
 The `gemini` rows map to **Gemini CLI**, per the
 [Gemini CLI documentation](https://geminicli.com/docs/) hub.
+The `codex` rows map to **Codex CLI**, per
+[Codex CLI](https://developers.openai.com/codex/cli) on OpenAI Developers.
 Cursor paths use `.cursor/` or `~/.cursor/`; Claude Code uses `.claude/`,
 project-root files such as `CLAUDE.md` and `.mcp.json`, and `~/.claude/`;
 Gemini CLI uses `.gemini/` and `~/.gemini/` (including `settings.json` for
-hooks and MCP).
+hooks and MCP); Codex CLI uses `~/.codex/` and project `.codex/` (including
+`config.toml` for MCP and other defaults, and optional `hooks.json` when the
+hooks feature is enabled).
 References for each type are under the matching **Cursor**, **Claude Code**,
-or **Gemini CLI** subsection below.
+**Gemini CLI**, or **Codex CLI** subsection below.
 
 | Agent  | Type         | Sup. | JSON? | Where (summary)                      |
 |--------|--------------|------|-------|--------------------------------------|
@@ -85,12 +90,23 @@ or **Gemini CLI** subsection below.
 | gemini | Mcp          | Y    | Y     | `mcpServers` in `settings.json`      |
 | gemini | Command      | Y    | N     | `.gemini/commands/*.toml`            |
 | gemini | Experimental | TBD  | —     | —                                    |
+| codex  | Rule         | Y    | N     | `AGENTS.md`, `~/.codex/AGENTS.md`    |
+| codex  | Prompt       | Part | N     | Chat UX; MCP; `@` context            |
+| codex  | Skill        | Y    | N     | `.agents/skills/`, `~/.agents/skills/` |
+| codex  | Hook         | Part | Y     | `hooks.json`; `codex_hooks` flag     |
+| codex  | Mcp          | Y    | Y     | `config.toml` `[mcp_servers.*]`    |
+| codex  | Command      | Part | N     | Built-in `/`; skills for workflows   |
+| codex  | Experimental | TBD  | —     | —                                    |
 
 Partial: no first-class on-disk Prompt install like rules or skills; chat UX
 and MCP capabilities are the documented touchpoints. Cursor: MCP Prompts and
 `/migrate-to-skills`. Claude Code: MCP resources via `@`. Gemini CLI:
 [Custom commands](https://geminicli.com/docs/cli/custom-commands) (TOML
-prompts) and MCP resources via `@`. Sup. = supported for provider work.
+prompts) and MCP resources via `@`. Codex CLI:
+[Prompting Codex](https://developers.openai.com/codex/prompting) and
+[Agent Skills](https://developers.openai.com/codex/skills); lifecycle
+[Hooks](https://developers.openai.com/codex/hooks) are experimental and gated
+by `codex_hooks`. Sup. = supported for provider work.
 
 # Cursor
 
@@ -281,4 +297,81 @@ marked experimental in the index, including [Subagents](https://geminicli.com/do
 and [Plan mode](https://geminicli.com/docs/cli/plan-mode)).
 
 TBD: stable ATP install paths for experimental core features as they graduate.
+
+# Codex CLI
+
+Reference (hub): [Codex CLI](https://developers.openai.com/codex/cli).
+Related: [Best practices](https://developers.openai.com/codex/learn/best-practices),
+[Config basics](https://developers.openai.com/codex/config-basic),
+[Model Context Protocol](https://developers.openai.com/codex/mcp),
+[Agent Skills](https://developers.openai.com/codex/skills),
+[Slash commands](https://developers.openai.com/codex/cli/slash-commands).
+
+## Rule
+
+Reference: [Custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md);
+[Config basics](https://developers.openai.com/codex/config-basic) (config layers);
+[Project instructions discovery](https://developers.openai.com/codex/config-advanced#project-instructions-discovery).
+
+- **Global:** Under `~/.codex` (or `CODEX_HOME`), `AGENTS.override.md` wins over `AGENTS.md` when present; only one non-empty file applies at that level.
+- **Project:** From repo root down to the current working directory, each directory contributes at most one of `AGENTS.override.md`, `AGENTS.md`, or names in `project_doc_fallback_filenames` in `config.toml`. Files concatenate root-to-leaf (later overrides earlier).
+- **Limits:** Combined instruction size is capped by `project_doc_max_bytes` (default 32 KiB).
+- **Scaffold:** `/init` creates a starter `AGENTS.md` in the current directory.
+
+## Prompt
+
+Reference: [Prompting Codex](https://developers.openai.com/codex/prompting);
+[Best practices](https://developers.openai.com/codex/learn/best-practices) (context and prompts);
+[Model Context Protocol](https://developers.openai.com/codex/mcp).
+
+- **Session input:** Goals, constraints, and `@` file or folder mentions (see `/mention`) supply task context; durable rules belong in `AGENTS.md` or skills.
+- **MCP:** Servers extend tools and context; configure under `[mcp_servers.<name>]` in `config.toml` or via `codex mcp add`. Use `/mcp` in the TUI to inspect tools.
+
+## Skill
+
+Reference: [Agent Skills](https://developers.openai.com/codex/skills);
+[open agent skills standard](https://agentskills.io/).
+
+- **Format:** Directory with `SKILL.md` (YAML frontmatter with required `name` and `description`) plus optional scripts, references, and `agents/openai.yaml` for app metadata and invocation policy.
+- **Discovery:** Repo paths from `$CWD` up to `$REPO_ROOT` (`.agents/skills`), user `$HOME/.agents/skills`, admin `/etc/codex/skills`, and bundled system skills. Symlinks are followed. Duplicate names can both appear in selectors.
+- **Invocation:** Explicit `$skill` or `/skills`, or implicit when the description matches the task (`allow_implicit_invocation` in `agents/openai.yaml` can disable implicit use).
+- **Distribution:** [Plugins](https://developers.openai.com/codex/plugins/build) package skills for sharing; `$skill-creator` and `$skill-installer` help author and fetch skills.
+
+## Hook
+
+Reference: [Hooks](https://developers.openai.com/codex/hooks);
+[Config basics](https://developers.openai.com/codex/config-basic#feature-flags) (`codex_hooks`).
+
+- **Status:** Experimental; under active development; temporarily disabled on Windows.
+- **Enable:** Set `codex_hooks = true` under `[features]` in `config.toml` (or use `/experimental` per slash-commands docs).
+- **Locations:** `hooks.json` beside active config layers, especially `~/.codex/hooks.json` and `<project>/.codex/hooks.json`. All matching files load; layers do not replace one another for hooks.
+- **Shape:** Event names (for example `SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`), matcher groups, and `command`-type handlers; JSON on stdin/out per the hooks doc.
+- **Caveats:** Current `PreToolUse` / `PostToolUse` focus on `Bash`; matchers for other tool names may not match yet.
+
+## Mcp
+
+Reference: [Model Context Protocol](https://developers.openai.com/codex/mcp);
+[Config basics](https://developers.openai.com/codex/config-basic).
+
+- **Storage:** `[mcp_servers.<name>]` tables in `~/.codex/config.toml` and trusted-project `.codex/config.toml` (CLI and IDE share layers). Use `codex mcp add` or edit TOML directly.
+- **Transports:** Stdio (`command`, `args`, `env`, `cwd`, and related fields) and streamable HTTP (`url` with OAuth or bearer token env vars per server table).
+- **TUI:** `/mcp` lists configured MCP tools in session.
+
+## Command
+
+Reference: [Slash commands in Codex CLI](https://developers.openai.com/codex/cli/slash-commands);
+[Agent Skills](https://developers.openai.com/codex/skills).
+
+- **Built-in:** Fixed slash commands (for example `/model`, `/plan`, `/compact`, `/mcp`, `/init`) are product-defined; there is no documented user-authored slash-command file format comparable to Gemini custom commands.
+- **Repeatable workflows:** Package them as [skills](https://developers.openai.com/codex/skills) (`$skill` or implicit activation) or document them in `AGENTS.md`.
+
+## Experimental
+
+Reference: [Codex CLI](https://developers.openai.com/codex/cli);
+[Hooks](https://developers.openai.com/codex/hooks);
+[Subagents](https://developers.openai.com/codex/concepts/subagents);
+[Config basics](https://developers.openai.com/codex/config-basic#feature-flags) (feature maturity table).
+
+TBD: ATP alignment as hooks and other flagged features stabilize (for example
+Windows hooks, expanded tool events).
 
