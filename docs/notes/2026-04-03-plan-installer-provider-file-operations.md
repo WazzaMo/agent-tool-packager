@@ -185,7 +185,8 @@ the target schema stabilises.
 # Next steps (planning)
 
 1. Freeze a **provider capability matrix**: which operations each
-   (agent × part type) requires.
+   (agent × part type) requires. **Done:** see
+   [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md).
 
 2. Define **internal DTOs** for “config patch” vs “file tree” vs “assembled
    rule” before touching serializers.
