@@ -67,36 +67,36 @@ hooks feature is enabled).
 References for each type are under the matching **Cursor**, **Claude Code**,
 **Gemini CLI**, or **Codex CLI** subsection below.
 
-| Agent  | Type         | Sup. | JSON? | Where (summary)                      |
-|--------|--------------|------|-------|--------------------------------------|
-| cursor | Rule         | Y    | N     | `.cursor/rules/`, AGENTS.md          |
-| cursor | Prompt       | Part | N     | Chat UX; MCP Prompts                 |
-| cursor | Skill        | Y    | N     | `.cursor/skills/` etc.               |
-| cursor | Hook         | Y    | Y     | `hooks.json` + scripts               |
-| cursor | Mcp          | Y    | Y     | `mcp.json`                           |
-| cursor | Command      | Part | N     | Slash cmds → skills                  |
-| cursor | Experimental | TBD  | —     | —                                    |
-| claude | Rule         | Y    | N     | `CLAUDE.md`, `.claude/rules/`        |
-| claude | Prompt       | Part | N     | Chat UX; MCP; @ MCP resources        |
-| claude | Skill        | Y    | N     | `.claude/skills/` etc.               |
-| claude | Hook         | Y    | Y     | `hooks` in `settings.json` + scripts |
-| claude | Mcp          | Y    | Y     | `.mcp.json`, `~/.claude.json`        |
-| claude | Command      | Y    | N     | `.claude/commands/` (skill-style)    |
-| claude | Experimental | TBD  | —     | —                                    |
-| gemini | Rule         | Y    | N     | `GEMINI.md`, `~/.gemini/GEMINI.md`   |
-| gemini | Prompt       | Part | N     | Chat UX; MCP; `.toml` custom cmds    |
-| gemini | Skill        | Y    | N     | `.gemini/skills/`, `.agents/skills/` |
-| gemini | Hook         | Y    | Y     | `hooks` in `settings.json` + scripts |
-| gemini | Mcp          | Y    | Y     | `mcpServers` in `settings.json`      |
-| gemini | Command      | Y    | N     | `.gemini/commands/*.toml`            |
-| gemini | Experimental | TBD  | —     | —                                    |
-| codex  | Rule         | Y    | N     | `AGENTS.md`, `~/.codex/AGENTS.md`    |
-| codex  | Prompt       | Part | N     | Chat UX; MCP; `@` context            |
+| Agent  | Type         | Sup. | JSON? | Where (summary)                        |
+|--------|--------------|------|-------|----------------------------------------|
+| cursor | Rule         | Y    | N     | `.cursor/rules/`, AGENTS.md            |
+| cursor | Prompt       | Part | N     | Chat UX; MCP Prompts                   |
+| cursor | Skill        | Y    | N     | `.cursor/skills/` etc.                 |
+| cursor | Hook         | Y    | Y     | `hooks.json` + scripts                 |
+| cursor | Mcp          | Y    | Y     | `mcp.json`                             |
+| cursor | Command      | Part | N     | Slash cmds → skills                    |
+| cursor | Experimental | TBD  | —     | —                                      |
+| claude | Rule         | Y    | N     | `CLAUDE.md`, `.claude/rules/`          |
+| claude | Prompt       | Part | N     | Chat UX; MCP; @ MCP resources          |
+| claude | Skill        | Y    | N     | `.claude/skills/` etc.                 |
+| claude | Hook         | Y    | Y     | `hooks` in `settings.json` + scripts   |
+| claude | Mcp          | Y    | Y     | `.mcp.json`, `~/.claude.json`          |
+| claude | Command      | Y    | N     | `.claude/commands/` (skill-style)      |
+| claude | Experimental | TBD  | —     | —                                      |
+| gemini | Rule         | Y    | N     | `GEMINI.md`, `~/.gemini/GEMINI.md`     |
+| gemini | Prompt       | Part | N     | Chat UX; MCP; `.toml` custom cmds      |
+| gemini | Skill        | Y    | N     | `.gemini/skills/`, `.agents/skills/`   |
+| gemini | Hook         | Y    | Y     | `hooks` in `settings.json` + scripts   |
+| gemini | Mcp          | Y    | Y     | `mcpServers` in `settings.json`        |
+| gemini | Command      | Y    | N     | `.gemini/commands/*.toml`              |
+| gemini | Experimental | TBD  | —     | —                                      |
+| codex  | Rule         | Y    | N     | `AGENTS.md`, `~/.codex/AGENTS.md`      |
+| codex  | Prompt       | Part | N     | Chat UX; MCP; `@` context              |
 | codex  | Skill        | Y    | N     | `.agents/skills/`, `~/.agents/skills/` |
-| codex  | Hook         | Part | Y     | `hooks.json`; `codex_hooks` flag     |
-| codex  | Mcp          | Y    | Y     | `config.toml` `[mcp_servers.*]`    |
-| codex  | Command      | Part | N     | Built-in `/`; skills for workflows   |
-| codex  | Experimental | TBD  | —     | —                                    |
+| codex  | Hook         | Part | Y     | `hooks.json`; `codex_hooks` flag       |
+| codex  | Mcp          | Y    | Y     | `config.toml` `[mcp_servers.*]`        |
+| codex  | Command      | Part | N     | Built-in `/`; skills for workflows     |
+| codex  | Experimental | TBD  | —     | —                                      |
 
 Partial: no first-class on-disk Prompt install like rules or skills; chat UX
 and MCP capabilities are the documented touchpoints. Cursor: MCP Prompts and
