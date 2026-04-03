@@ -79,11 +79,10 @@ Notes can have one of the following kinds...
 
 1. plan - ideas, concerns and risks for implementing a feature, epic or a user story.
 2. coding - a summary of what code changes were recently made.
-3. bug - a bug that was found that needs to be addressed, the root cause and acceptance criteria
-4. todo - a deferred thought or path for exploration
-5. concern - a question that explores a possible limitation and may result in a plan or coding change.
-6. test - unit or integration tests that were added with a summary of coverage and pass rate.
-7. other - when nothing else fits
+3. todo - a deferred thought or path for exploration
+4. concern - a question that explores a possible limitation and may result in a plan or coding change.
+5. test - unit or integration tests that were added with a summary of coverage and pass rate.
+6. other - when nothing else fits
 
 
 Notes are held in the `docs/notes` directory and follow this document guide for formatting.
@@ -102,7 +101,7 @@ Release notes are held in `docs/release-notes` and follow the formatting rules i
 guide. Their naming convention is {semver}-Release-{date}.md where "semver" means semantic versioning
 with Major.Minor.Revision numbers and date is in YYYY-MM-DD format.
 
-Describe what new features was added in the commits that resulted in this release.
+Describe what new features were added in the commits that resulted in this release.
 
 Release notes can collect information from a sequence of notes (docs/notes) where there are
 notes of kinds in a series:
@@ -144,7 +143,9 @@ which is part of the final system.
 Some sub agents are directed to find bugs during unit and integration
 testing and work to validate that the bugs are repeatable.
 
-When bugs are found, write it up in a bugs note (see kind above) docs/notes/{YYYY-MM-DD-id}-bug-{short-description}.md
+When bugs are found, write it up in a bugs note (see kind above) docs/bugs/{YYYY-MM-DD}-bug-{bug-id:DDDDD}-{short-description}.md
+
+`bug-id` is a 5 digit value that would be assigned as an Issue in GitHub.
 
 It should cover:
 
