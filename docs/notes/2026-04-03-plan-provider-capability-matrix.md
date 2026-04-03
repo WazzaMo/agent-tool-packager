@@ -236,6 +236,9 @@ or **Partial** (per matrix).
 
 # Open decisions (to lock in implementation)
 
+NOTE: The answers for these questions are below. The Operation ID numbers in these questions make
+it hard to read these questions.
+
 1. **Layer policy:** Which project vs user vs global combinations does ATP v1
    support (Feature 5 lists many layers)?
 
@@ -250,6 +253,77 @@ or **Partial** (per matrix).
 
 5. **Idempotency key:** One namespace per (agent, layer, path, logical entry)
    shared across **1**, **7**, **8**?
+
+## Answering open decisions
+
+1. Layer Policy is too simple a question
+
+There are really only two layers of installation, because packages are either installed
+into a project Safehouse or the user's Station. In general, installing the project's
+Safehouse is the scope that needs focus because it makes sense that this would be used
+most often in the early stages of ATP's development as it represents the least-risk choice.
+
+Layers versus capability. There is another aspect, the file level operations we are
+now defining are about capability. The capability to install a package by unpacking and
+copying the files into the correct directory; the capability to create or amend a JSON or TOML
+file to configure a new MCP server or hook; regardless of any layering, capabilities must be
+developed and proven to work reliably, every single time.
+
+2. Single versus multi provider.
+
+A package will be installed to a project Safehouse that is configured for a given agent. One agent only.
+Or the package will be installed to a user's Station and this should have nominated a given agent.
+Station association with a particular agent is less defined right now, and because of the earlier
+point that installing to project Safehouses is more important at this moment in time, it's not
+a big issue but will be solved in a later version of ATP.
+
+Therefore installation is a single-provider consideration because there will only be one
+agent at-a-time. Now it is possible that the user may switch agents after the package were installed
+and a conversion process will need to be undertaken - the simplest of which is to uninstall the package
+and reinstall it for the new agent.
+
+3. Codex hooks is op 1 - meaning config merge
+
+Codex hooks need to have hooks enabled in the feature flag config TOML file and also in a hooks.json file.
+See [Codex Hooks](https://developers.openai.com/codex/hooks) for details.
+
+Codex development is moving quickly and we should treat hooks as being a supported feature because
+if they aren't right now, they probably will be very soon. Therefore, do not treat as experimental.
+We should WARN the user if the feature flag in `config.toml` has hooks disabled, and ask if they
+want it enabled prior to changes and installation, because that may break things. 
+THE USER MUST BE IN CONTROL OF THEIR SYSTEM.
+
+4. Cursor rules - .mdc or .md filename when the package is markdown-only?
+
+Markdown-only tells me the YAML front-matter is missing. We should allow the provider to support
+and extend the package validation process, so the user gets more specific and causal information about
+why a particular file is needed or a change is needed to their package.
+
+For widest compatibility reasons, we should REQUIRE the package validation rules check for YAML frontmatter
+YAML files being one of the part components such that foo.md rule markdown is accompanied by foo.yaml that
+supplies the YAML frontmatter.
+
+Cursor will treat and process .md and .mdc files equivalently, so the filename is much less important
+than the YAML frontmatter being omitted for agents that need it. Missing frontmatter will mean the
+rule is not used.
+
+5. Idempotency key: one namespace per agent, layer, path or logical entry
+
+This is a realiability issue and the capability to update configuration safely is CRITICAL.
+If an MCP server has been registered in a settings file (mcp.json, settings.json etc) then
+it should not be added again. This requires being able to prove the configuration is uniquely
+associated with the MCP server being installed at that moment - or any other part that requires
+registration updates (hook etc). If ATP cannot confirm that the configuration is already in place
+and, therefore is uncertain whether to proceed with patching the configuration file, it should ask the user
+to make a decision which requires ATP to explain the ambiguous situation and for the user to give an override switch to force the installation of the package. The CLI switch should be called `--force-config` to make
+ATP perform the configuration update and `--skip-config` to skip the process. THIS KEEPS THE USER IN CONTROL.
+
+The assumption is that the installation path that installing the package targets will either collide
+with existing configuration or not. This will be on a per-agent basis because the configuration file
+typically exists only in the agent's project or user directory.
+
+This logic should exist in the agent provider because only the provider knows the needs of the agent
+that is configured for the project's safehouse, and later for the user's station.
 
 # Next step (step 3)
 
