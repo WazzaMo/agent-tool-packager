@@ -24,7 +24,8 @@ and only made "nicer" to read when rendered as HTML or other manner.
 
 3. Use Mermaid for images where they add value
 
-4. Use headings instead of **highlight**.
+4. Prefer structural headings over **bold** used as pseudo-headings for labels.
+   Bold in normal prose is fine; the anti-pattern is bold labels that should be subheadings.
 
 5. Try to format the table so it looks clear in the markdown text file.
 
@@ -45,7 +46,7 @@ width to be consistent for each row. When a cell is too long, find a way
 to continue that long-form text outside the table, afterwards.
 
 | Category   | Description                                  |
-|------------|--------------------------------------------- |
+|------------|----------------------------------------------|
 | Long Note  | ~ 10 char on why and then refer to (1) below |
 | Short Note | make it easy to read                         |
 
@@ -56,8 +57,7 @@ just in the text file, without needing to render it. It's beautiful!
 
 Using a level 4 heading gives more room for lengthier answers.
 
-
-... is better than
+That pattern is better than:
 
 # Labelled line
 
@@ -132,6 +132,7 @@ features into smaller, buildable components.
 These are to be written into `docs/stories/`
 
 Write requirements to docs/stories/{epic|story}-{feature-name}-{component}-{description}.md
+(for example `docs/stories/story-package-install-cli-flags.md` or `docs/stories/epic-catalog-multi-source-sync.md`).
 
 Stories should be used to take the intention written in a feature
 and turn it into a set of epics and stories that should be used
@@ -143,7 +144,7 @@ which is part of the final system.
 Some sub agents are directed to find bugs during unit and integration
 testing and work to validate that the bugs are repeatable.
 
-When bugs are found, write it up in a bugs note (see kind above) docs/bugs/{YYYY-MM-DD}-bug-{bug-id:DDDDD}-{short-description}.md
+When bugs are found, write them up at docs/bugs/{YYYY-MM-DD}-bug-{bug-id:DDDDD}-{short-description}.md
 
 `bug-id` is a 5 digit value that would be assigned as an Issue in GitHub.
 
