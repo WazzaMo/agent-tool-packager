@@ -189,7 +189,8 @@ the target schema stabilises.
    [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md).
 
 2. Define **internal DTOs** for “config patch” vs “file tree” vs “assembled
-   rule” before touching serializers.
+   rule” before touching serializers. **Done:** see
+   [2026-04-03-plan-provider-internal-dtos](./2026-04-03-plan-provider-internal-dtos.md).
 
 3. Prototype **merge** for one JSON target (`mcp.json`) and one nested target
    (`settings.json` `mcpServers`) to validate collision and formatting.

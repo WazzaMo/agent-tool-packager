@@ -251,8 +251,8 @@ or **Partial** (per matrix).
 5. **Idempotency key:** One namespace per (agent, layer, path, logical entry)
    shared across **1**, **7**, **8**?
 
-# Next step (step 2)
+# Next step (step 3)
 
-Proceed to **internal DTOs** (file-operations plan step 2) using this matrix as
-the contract: each cell’s Req/Opt set maps to an ordered list of **provider
-actions** from the install pipeline.
+Prototype **merge** for `mcp.json` and `settings.json` `mcpServers` (see
+file-operations plan step 3). Step 2 (**internal DTOs**) is recorded in
+[2026-04-03-plan-provider-internal-dtos](./2026-04-03-plan-provider-internal-dtos.md).
