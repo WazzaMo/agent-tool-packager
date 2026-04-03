@@ -65,6 +65,10 @@ List of labelled infos:
 
 1. **Note1:** Not easy to read as a text file.
 
+Do not use this format. Instead, make it the next lower heading type - if parent heading were level 3 (###) then
+format this line as `#### Note 1: much easier to read` because this will be more effective than a bullet
+point with highlight that gets squashed in the noise.
+
 # Purposeful Markdown
 
 ## Notes
