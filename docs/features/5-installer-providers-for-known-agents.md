@@ -165,67 +165,152 @@ blocks that can be very well specified and tested.
 
 ## Thinking bottom-up
 
-### The Low-level operations
+### The low-level operations
 
-These operations are nearest the bottom of the tech stack.
+These operations are nearest the bottom of the tech stack. Many can stay as
+**stateless functions** with injected dependencies (for example filesystem and
+path policy); **agent provider classes** compose them and supply agent-specific
+paths and merge targets.
 
-There are a number of similar file operations:
-- locate a given configuration file of type JSON
-- locate a given configuration file of type TOML
-- Common operations for both configuration formats:
-  - create the file if it is definitely missing
-  - have techniques to be sure that the file is missing
-  - if unsure, have ways to ask the user to 
+#### Configuration files (JSON and TOML)
 
-Markdown with YAML frontmatter
-- rules as defined by Cursor
-- skills standard, defined by Anthropic
+- Locate the correct JSON or TOML file for a given concern (MCP, hooks, flags).
 
-Directory location operations:
-- confirming the project directory from the Safehouse location
-- finding the agent configuration directory within a project directory.
-- finding the configuration files for an agent in the project/agent directory
+- Common behaviours for both formats:
 
-These operations represent the low-level functions that all agent providers need
-in order to configure and install packages correctly so that the facilities they
-provide will be discovered and used by the agent.
+  - Create the file when it is definitely missing.
 
-### The Agent Providers
+  - Detect “definitely safe to create” versus “exists or ambiguous” before writing.
 
-#### Agent Provider Interface
+  - When a merge would overwrite or conflict with user-owned content the tool
+    cannot prove is ATP’s, surface ambiguity and honour CLI policy: for example
+    **`--force-config`** to apply the change and **`--skip-config`** to skip
+    structured config mutation while still allowing file-tree installs where
+    policy allows (see capability-matrix decisions).
 
-Agent providers are a concept and a protocol that call on installation services.
-The agent provider implementation knows the specifics of dealing with that agent.
-The agent provider interface, defines a common protocol for ATP's CLI tool to 
-call on provider services during inspection and installation of packages.
+#### Markdown with YAML frontmatter
 
-The exported interface should be called `AgentProvider` as the generic definition
-of representing the CLI-provider contract.
+- Rule assembly (for example Cursor `.mdc`).
 
-#### Agent Provider Implementations
+- Skill and related layouts aligned with the Agent Skills standard where applicable.
 
-Each agent has different locations and configurations needs. These needs must be known
-somewhere in ATP's software and the Agent Provider instance is that place.
+#### Directory and path resolution
 
-The `CursorAgentProvider` implements the `AgentProvider` interface with concrete implementations
-of the services promised by the `AgentProvider` contract that use the low-level operations
-based on what it knows about the Cursor Agent.
+- Resolve project root from Safehouse layout.
 
-There should be classes for each agent:
+- Resolve the agent configuration root within the project (and optional user or
+  global layers when ATP supports them).
 
-- CursorAgentProvider for Cursor
-- ClaudeAgentProvider for Claude
-- CodexAgentProvider for Codex
-- GeminiAgentProvider for Gemini CLI.
+- Map logical targets (rules dir, skills dir, `mcp.json`, `hooks.json`, etc.)
+  to concrete paths under that root.
 
-This allows each implemenation of the `AgentProvider` to be tested through unit ant integration tests.
-It also allows one of the providers to be extended and maintained as the Agent it supports changes or adopts
-new features, without impacting any other agent provider because each class is completely separate.
+These low-level pieces are what every agent provider needs so installed package
+parts are discovered and used by the agent.
 
-#### Dependency Injection in ATP CLI
+### Internal DTOs and plans
 
-The ATP CLI can use its Safehouse configuration, at the project level, to know which agent provider
-to instantiate and use for performing installation, removal and any inspection work.
+The interchange between “what the CLI wants” and “what hits disk” should stay
+**neutral and ordered**: one **`ProviderPlan`** per logical install unit (for
+example one package part for the active agent and layer), made of discriminated
+**`ProviderAction`** values, each carrying **`AtpProvenance`** for idempotency
+and uninstall. That contract is specified in
+[Provider internal DTOs (step 2)](../notes/2026-04-03-plan-provider-internal-dtos.md)
+and ties file-level operations to numeric **operation IDs** in
+[Installer provider file-level operations](../notes/2026-04-03-plan-installer-provider-file-operations.md).
+**AgentProvider** implementations produce those plans; a small **executor**
+walks **`actions`** in order and invokes the right low-level helpers.
+
+### The agent providers
+
+#### Agent provider interface
+
+Agent providers are the agent-specific policy layer: they know paths, which
+operation IDs apply per part kind, and how to fill **`ProviderAction`**
+payloads. The shared **TypeScript interface** should be named **`AgentProvider`**
+and is the contract the CLI uses for planning and applying installs and removals
+(and optional validation).
+
+#### Proposed `AgentProvider` surface (TypeScript)
+
+The names below are a **proposal** for the first wiring into `atp install`;
+concrete parameter types for “one staged part” will align with the existing
+install pipeline and Feature 4 multi-part manifests. Types **`InstallContext`**,
+**`ProviderPlan`**, **`AtpProvenance`**, and **`ProviderAction`** are defined in
+the internal DTO note.
+
+```typescript
+/**
+ * CLI merge policy for structured config (MCP, hooks, settings slices, TOML).
+ * Propagated from `atp install` into merge helpers.
+ */
+interface ProviderMergeOptions {
+  forceConfig: boolean;
+  skipConfig: boolean;
+}
+
+/**
+ * Minimal handle for one part ready to install from staging (exact fields TBD).
+ * The install pipeline fills this from the package manifest and extract dir.
+ */
+interface StagedPartInstallInput {
+  partKind: PartKind;
+  partIndex: number;
+  /** Relative paths under InstallContext.stagingDir; payloads as read by install. */
+  stagingRelPaths: string[];
+}
+
+interface AgentProvider {
+  /**
+   * Build an ordered plan of side effects for one install unit.
+   * Does not touch disk; suitable for logging, tests, and future dry-run.
+   */
+  planInstall(
+    ctx: InstallContext,
+    part: StagedPartInstallInput,
+    merge: ProviderMergeOptions
+  ): ProviderPlan;
+
+  /** Execute a plan returned by this provider (same agent / layer as `ctx`). */
+  applyPlan(plan: ProviderPlan, merge: ProviderMergeOptions): Promise<void>;
+
+  /**
+   * Build a plan that removes ATP-owned artefacts identified by provenance
+   * (for example one MCP `fragmentKey`, one rule path, one hook handler id).
+   */
+  planRemove(ctx: InstallContext, target: AtpProvenance): ProviderPlan;
+
+  /**
+   * Optional: fail fast with author-facing errors before planning (missing YAML
+   * sidecar, wrong part kind for this agent, etc.).
+   */
+  validatePart?(part: StagedPartInstallInput): void;
+}
+```
+
+**Separation of plan and apply** keeps unit tests cheap (**planInstall** only)
+and leaves room for a future **`--dry-run`** without changing the contract.
+
+#### Agent provider implementations
+
+Each agent has different locations and configuration needs. Those rules live in
+one place: the provider class for that agent.
+
+**`CursorAgentProvider`**, **`ClaudeAgentProvider`**, **`GeminiAgentProvider`**,
+and **`CodexAgentProvider`** implement **`AgentProvider`**, using shared
+low-level operations (MCP JSON merge, rule assembly, future hook graph merge,
+and so on) according to the capability matrix.
+
+Each implementation can be exercised with **unit** tests (plan shape, paths,
+operation IDs) and **integration** tests (temp project + real files). Changes to
+one agent do not require editing another provider class.
+
+#### Dependency injection in the ATP CLI
+
+The CLI reads **Safehouse** (and later station) configuration to determine the
+active **`AgentId`**, constructs the matching **`AgentProvider`** (and any
+injected services such as filesystem adapters), and passes **`ProviderMergeOptions`**
+from **`atp install`** options. No global singleton is required for v1: a small
+**factory** or registry keyed by **`AgentId`** is enough.
 
 
 # Cursor
