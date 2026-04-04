@@ -14,8 +14,8 @@ Feature 5 maps agents, part types, and targets (`mcp.json`, `hooks.json`,
 `settings.json`, `config.toml`, markdown trees, skill layouts, etc.). Providers
 must choose **where** to write and **how** to merge without breaking user-owned
 config. Many surfaces need **create-if-missing** and **amend-if-present**
-behaviour, with clear idempotency and uninstall semantics (out of scope here but
-constrained by operation design).
+behaviour, with clear idempotency and uninstall semantics (uninstall handlers are
+tracked in **Next steps** below; each install operation should remain reversible).
 
 # Operation categories
 
@@ -193,9 +193,38 @@ the target schema stabilises.
    [2026-04-03-plan-provider-internal-dtos](./2026-04-03-plan-provider-internal-dtos.md).
 
 3. Prototype **merge** for one JSON target (`mcp.json`) and one nested target
-   (`settings.json` `mcpServers`) to validate collision and formatting.
+   (`settings.json` `mcpServers`) to validate collision, ambiguity, and
+   formatting. **Done:** `src/provider/mcp-merge/` (see coding note
+   `2026-04-04-coding-mcp-json-merge-provider.md`).
 
-4. Prototype **MD+YAML → .mdc** with golden-file tests for Cursor rules.
+4. Prototype **MD+YAML → `.mdc`** for **Cursor** rules (operation **2**), with unit
+   and golden-file tests. **Done** for items **4.1–4.6** in
+   [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md#implementation-checklist)
+   (`src/provider/rule-assembly/`). Further agents and formats (**4.7+** in that checklist) remain.
 
-5. Document **non-goals** (for example Team/Enterprise-only Cursor paths) until
+5. **Wire providers into `atp install`:** after individual operation prototypes
+   stabilise, route install by agent + part type through a provider layer that
+   builds ordered action lists from internal DTOs and executes them (replacing or
+   complementing ad-hoc copy in `copy-assets.ts` where appropriate).
+
+6. **Implement remaining file operations** not yet prototyped: hook JSON graph
+   merge (**7**), `settings.json` **hooks** slice (**8**), Codex TOML config
+   merge (**1** TOML variant), directory tree materialise (**3**), markdown
+   aggregate / plain emit (**4**, **5**), Gemini command TOML generate (**6**),
+   executable install (**9**), interpolation validate (**10**), discovery hints
+   (**11**), experimental drop (**12**), as needed per capability matrix.
+
+7. **User control for ambiguous config merges:** expose **`--force-config`**
+   (overwrite conflicting MCP/hook/settings fragments) and **`--skip-config`**
+   (skip config mutation; file/tree installs may still run) on `atp install`
+   (and any provider entry that performs structured merges), aligned with
+   [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md).
+
+8. **Uninstall support in providers:** define functions (or mirrored action
+   handlers) that remove **ATP-owned fragments** using the same **provenance /
+   `fragmentKey`** identity as install (e.g. remove one `mcpServers` entry,
+   delete staged rule path, remove hook handlers registered for that package),
+   so `atp remove safehouse` / station remove can delegate reversals safely.
+
+9. Document **non-goals** (for example Team/Enterprise-only Cursor paths) until
    ATP has a story for those layers.

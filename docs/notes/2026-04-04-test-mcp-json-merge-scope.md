@@ -1,58 +1,83 @@
 # Test: MCP JSON merge scope
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 
-## Scope
+# Scope
 
-This note records **test coverage** for the MCP **`mcpServers`** merge prototype (`src/provider/mcp-merge/`). It does not re-document product behaviour; see [2026-04-04-coding-mcp-json-merge-provider](./2026-04-04-coding-mcp-json-merge-provider.md).
+This note records test coverage for the MCP `mcpServers` merge prototype (`src/provider/mcp-merge/`). It does not re-document product behaviour; see [2026-04-04-coding-mcp-json-merge-provider](./2026-04-04-coding-mcp-json-merge-provider.md).
 
-## Unit tests
+# Unit tests
 
-**File:** `test/provider/mcp-json-merge.test.ts`  
-**Target:** `mergeMcpJsonDocument` (in-memory only).
+### Location
 
-| Area | What is asserted |
-|------|------------------|
-| Create | Missing document + payload → **applied**, document equals payload shape. |
-| Amend | Unrelated top-level keys preserved when adding a server. |
-| Idempotency | Second merge with same payload → **noop**, document unchanged. |
-| Ambiguity | Same server name, different config → `McpMergeAmbiguousError` (name + code). |
-| Force | `forceConfig: true` overwrites conflicting entry. |
-| Skip | `skipConfig: true` → **skipped**, existing document unchanged; missing doc → `{}`. |
-| Validation | Payload without `mcpServers`, non-object `mcpServers`, existing `mcpServers` not a plain object → appropriate errors. |
+`test/provider/mcp-json-merge.test.ts`
 
-**Count:** 10 tests.
+### Target
 
-## Integration tests
+`mergeMcpJsonDocument` (in-memory only).
 
-**File:** `test/integration/mcp-json-merge-files.test.ts`  
-**Target:** `applyMcpJsonMergeToFile`, `readJsonObjectFile`, and one parity check on `mergeMcpJsonDocument` for a settings-shaped root.
+| Area        | Asserts (short)           |
+|-------------|---------------------------|
+| Create      | Applied; shape matches    |
+| Amend       | Extra keys preserved      |
+| Idempotency | Second run noop           |
+| Ambiguity   | Throws named error        |
+| Force       | Overwrite on conflict     |
+| Skip        | Skipped; doc unchanged    |
+| Validation  | Bad payload / shape err   |
 
-| Area | What is asserted |
-|------|------------------|
-| Create | Missing path → directories created, file written, round-trip JSON matches. |
-| Amend | Existing `settings.json`-like file gains a second server; unrelated key kept. |
-| Idempotency | Second apply → **noop**, file **mtime** unchanged (no rewrite). |
-| Ambiguity | On-disk conflict → rejects with `McpMergeAmbiguousError`. |
-| Force | `forceConfig` updates on-disk entry. |
-| Skip | `skipConfig` → no file created when missing. |
-| Invalid JSON | Existing corrupt file → `McpMergeInvalidDocumentError` / message mentions invalid JSON. |
-| Settings parity | `hooks` + `mcpServers` root: only `mcpServers` extended. |
+(1) Create: missing document plus payload yields applied and document equals payload shape.
 
-**Count:** 8 tests (7 file-focused + 1 parity).
+(2) Skip: `skipConfig: true` keeps existing document; missing doc yields `{}`.
 
-## Suite status
+(3) Validation: payload without `mcpServers`, non-object `mcpServers`, or existing `mcpServers` not a plain object.
 
-Full **`npm run test:run`**: **32** files, **225** tests, all passing (includes the **18** tests above).
+### Count
 
-## Gaps (not claimed)
+10 tests.
 
-- No tests yet for **CLI** flags (`--force-config`, `--skip-config`) or install pipeline integration.
+# Integration tests
+
+### Location
+
+`test/integration/mcp-json-merge-files.test.ts`
+
+### Target
+
+`applyMcpJsonMergeToFile`, `readJsonObjectFile`, and one parity case for `mergeMcpJsonDocument` on a settings-shaped root.
+
+| Area            | Asserts (short)         |
+|-----------------|-------------------------|
+| Create          | Dirs + file + JSON OK   |
+| Amend           | Second server + keys    |
+| Idempotency     | No rewrite; mtime same  |
+| Ambiguity       | Rejects on conflict     |
+| Force           | Overwrites on disk      |
+| Skip            | No file if missing      |
+| Invalid JSON    | Parse error surfaced    |
+| Settings parity | Only `mcpServers` grows |
+
+### Count
+
+8 tests (7 file-focused plus 1 parity).
+
+# Suite status
+
+Full `npm run test:run`: 34 test files, 234 tests, all passing (includes the 18 tests above).
+
+# Gaps (not claimed)
+
+- No tests yet for CLI flags (`--force-config`, `--skip-config`) or install pipeline integration.
+
 - No property-based or fuzz tests on JSON shapes.
-- No concurrent writers / locking.
-- Other file-operation ids (hooks graph, TOML, rules, trees) are **untested** here by design.
 
-## References
+- No concurrent writers or locking.
+
+- Other file-operation ids (hooks graph, TOML, rules, trees) are untested here by design.
+
+# References
 
 - [2026-04-04-coding-mcp-json-merge-provider](./2026-04-04-coding-mcp-json-merge-provider.md)
