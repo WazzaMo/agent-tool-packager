@@ -2,9 +2,10 @@
  * Station subcommands: `atp station init`, `atp station list`.
  */
 
-import type { Command } from "commander";
 import { stationInit } from "../init/station-init.js";
 import { stationList } from "../station/list.js";
+
+import type { Command } from "commander";
 
 /**
  * Register Station-related commands on the program.

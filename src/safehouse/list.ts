@@ -3,12 +3,12 @@
  * Reads .atp_safehouse/manifest.yaml packages array.
  */
 
-import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
-import { getSafehousePath, pathExists } from "../config/paths.js";
 import {
   readTypeSummaryFromPackageDir,
   AtpPackageYamlParseError,
 } from "../catalog/package-type-summary.js";
+import { getSafehousePath, pathExists } from "../config/paths.js";
+import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 import { resolvePackage, resolvePackagePath } from "../install/resolve.js";
 
 /**

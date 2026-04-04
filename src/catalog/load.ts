@@ -5,7 +5,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
+
 import { getStationPath, pathExists } from "../config/paths.js";
 
 import type { Catalog, CatalogPackage, CatalogPackages } from "./types.js";

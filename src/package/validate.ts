@@ -5,15 +5,18 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import { loadDevManifest } from "./load-manifest.js";
 import {
   isMultiDevManifest,
   legacyHasPartsConflict,
   multiHasRootPayloadConflict,
 } from "./manifest-layout.js";
-import type { ValidateResult } from "./validate-types.js";
-import { validateSingleTypePackage } from "./validate-single-type-package.js";
 import { validateMultiTypePackage } from "./validate-multi-type-package.js";
+import { validateSingleTypePackage } from "./validate-single-type-package.js";
+
+import type { ValidateResult } from "./validate-types.js";
+
 
 export type { ValidateResult } from "./validate-types.js";
 

@@ -5,11 +5,13 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
+
 import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
 
-import type { CatalogPackage } from "../catalog/types.js";
 import type { PackageManifest } from "./types.js";
+import type { CatalogPackage } from "../catalog/types.js";
 
 const MANIFEST_NAMES = ["atp-package.yaml", "package.yaml"];
 

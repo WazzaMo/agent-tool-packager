@@ -2,8 +2,9 @@
  * Guardrails: root-level component/bundle staging applies only to single-type packages.
  */
 
-import type { DevPackageManifest } from "./types.js";
 import { isMultiDevManifest } from "./manifest-layout.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 /**
  * Exit with code 1 when the manifest is Multi (part-scoped commands must be used).

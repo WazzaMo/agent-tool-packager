@@ -6,30 +6,27 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
   loadSafehouseConfig,
   loadStationConfig,
   safehouseExists,
 } from "../config/load.js";
-
+import { expandHome, findProjectBase } from "../config/paths.js";
 import { addPackageToSafehouseManifest } from "../config/safehouse-manifest.js";
-
 import { writeStationPackageManifest } from "../config/station-package-manifest.js";
 
-import { expandHome, findProjectBase } from "../config/paths.js";
-import { resolveAgentProjectPath } from "../config/agent-path.js";
-
-import type { CatalogPackage } from "../catalog/types.js";
-
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
+import { copyPackageAssets } from "./copy-assets.js";
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "./resolve.js";
 
-import { copyPackageAssets } from "./copy-assets.js";
 import type { PackageManifest } from "./types.js";
+import type { CatalogPackage } from "../catalog/types.js";
+
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";

@@ -4,9 +4,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
-import type { DevPackageManifest } from "./types.js";
+
 import { buildDevManifestYamlRecord } from "./manifest-yaml-serialise.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 const PACKAGE_FILE = "atp-package.yaml";
 

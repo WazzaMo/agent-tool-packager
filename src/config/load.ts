@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
 
 import {
@@ -15,7 +16,6 @@ import {
 } from "./paths.js";
 
 import type { StationConfig, SafehouseListConfig } from "./station-config.js";
-
 import type { SafehouseConfig } from "./types.js";
 
 const STATION_CONFIG_FILE = "atp-config.yaml";

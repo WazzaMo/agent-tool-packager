@@ -2,8 +2,9 @@
  * Validate package: `atp validate package`.
  */
 
-import type { Command } from "commander";
 import { validatePackage } from "../package/validate.js";
+
+import type { Command } from "commander";
 
 /**
  * Run package validation for `cwd` and print result; exit non-zero when incomplete.

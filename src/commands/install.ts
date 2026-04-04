@@ -2,11 +2,12 @@
  * Install command: `atp install <package>` with project/station and bin scope flags.
  */
 
-import type { Command } from "commander";
 import {
   installPackage,
   type InstallOptions,
 } from "../install/install.js";
+
+import type { Command } from "commander";
 
 /**
  * Map Commander flags to {@link InstallOptions}.

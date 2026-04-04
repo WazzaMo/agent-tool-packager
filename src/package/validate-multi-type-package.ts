@@ -4,8 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { DevPackageManifest, PackagePart } from "./types.js";
-import type { ValidateResult } from "./validate-types.js";
+
 import { partStagePrefix } from "./manifest-layout.js";
 import {
   STAGE_TAR_FILENAME,
@@ -13,6 +12,9 @@ import {
   tarEntriesHaveFileOrTree,
   tarEntriesHavePathPrefix,
 } from "./stage-tar-read.js";
+
+import type { DevPackageManifest, PackagePart } from "./types.js";
+import type { ValidateResult } from "./validate-types.js";
 
 /**
  * @param manifest - Parsed developer manifest.

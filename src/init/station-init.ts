@@ -4,9 +4,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import yaml from "js-yaml";
-import { getStationPath } from "../config/paths.js";
 
+import yaml from "js-yaml";
+
+import { getStationPath } from "../config/paths.js";
 import {
   DEFAULT_STATION_CONFIG,
   DEFAULT_SAFEHOUSE_LIST,

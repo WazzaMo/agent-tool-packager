@@ -3,13 +3,13 @@
  */
 
 import { loadDevManifest } from "./load-manifest.js";
-import { validatePackage } from "./validate.js";
 import { isMultiDevManifest } from "./manifest-layout.js";
 import {
   printManifestCommonHeader,
   printMultiTypePartsSection,
   printSingleTypePayloadSection,
 } from "./package-summary-sections.js";
+import { validatePackage } from "./validate.js";
 
 /**
  * Print package summary (metadata, parts or root payload, missing list) and exit

@@ -6,7 +6,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+
 import yaml from "js-yaml";
+
 import {
   getSafehousePath,
   getStationPath,
@@ -16,13 +18,12 @@ import {
   isHomeDirectory,
   isHomeSafehouseEscapeHatchActive,
 } from "../config/paths.js";
-
 import {
   DEFAULT_SAFEHOUSE_CONFIG,
   DEFAULT_SAFEHOUSE_MANIFEST,
 } from "../config/safehouse-config.js";
-
 import { writeManifestContent } from "../config/safehouse-manifest.js";
+
 import type { SafehouseListConfig } from "../config/station-config.js";
 
 const CONFIG_FILE = "atp-config.yaml";

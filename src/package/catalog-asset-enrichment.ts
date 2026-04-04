@@ -3,11 +3,14 @@
  * Shared bundle → program discovery; path layout differs by prefix.
  */
 
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
-import type { DevPackageManifest } from "./types.js";
+
 import { isMultiDevManifest, partStagePrefix } from "./manifest-layout.js";
+
+import type { DevPackageManifest } from "./types.js";
+
 
 /** One row written into `atp-package.yaml` under `assets` for installers. */
 export interface CatalogAssetRow {

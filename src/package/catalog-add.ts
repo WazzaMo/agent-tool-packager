@@ -3,19 +3,24 @@
  * See docs/features/2-package-developer-support.md.
  */
 
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import zlib from "node:zlib";
+
 import yaml from "js-yaml";
+
+import { parseCatalogPackagesField } from "../catalog/load.js";
 import { getStationPath } from "../config/paths.js";
 import { DEFAULT_CATALOG } from "../config/station-config.js";
-import { parseCatalogPackagesField } from "../catalog/load.js";
-import type { CatalogPackage } from "../catalog/types.js";
+
+import { enrichCatalogPackageManifestAssets } from "./catalog-asset-enrichment.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { validatePackage } from "./validate.js";
+
 import type { DevPackageManifest } from "./types.js";
-import { enrichCatalogPackageManifestAssets } from "./catalog-asset-enrichment.js";
+import type { CatalogPackage } from "../catalog/types.js";
+
 
 const USER_PACKAGES_DIR = "user_packages";
 const STAGE_TAR = "stage.tar";

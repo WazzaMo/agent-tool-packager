@@ -6,6 +6,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import type { PackageAsset, PackageManifest } from "./types.js";
 
 const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {

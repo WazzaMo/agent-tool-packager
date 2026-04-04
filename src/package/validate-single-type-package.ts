@@ -5,10 +5,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
-import type { ValidateResult } from "./validate-types.js";
+
 import { normalisedRootType } from "./manifest-layout.js";
 import { STAGE_TAR_FILENAME } from "./stage-tar-read.js";
+
+import type { DevPackageManifest } from "./types.js";
+import type { ValidateResult } from "./validate-types.js";
 
 /**
  * @param manifest - Parsed developer manifest.

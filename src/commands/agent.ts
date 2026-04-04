@@ -4,27 +4,24 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { Command } from "commander";
 
+
+import {
+  isAgentInStationConfig,
+  resolveAgentProjectPath,
+} from "../config/agent-path.js";
 import {
   loadSafehouseConfig,
   loadStationConfig,
   safehouseExists,
   writeSafehouseConfig,
 } from "../config/load.js";
-
-import {
-  isAgentInStationConfig,
-  resolveAgentProjectPath,
-} from "../config/agent-path.js";
-
 import { findProjectBase } from "../config/paths.js";
-
 import { reinstallSafehousePackages } from "../install/reinstall.js";
 
-import type { SafehouseConfig } from "../config/types.js";
-
 import type { StationConfig } from "../config/station-config.js";
+import type { SafehouseConfig } from "../config/types.js";
+import type { Command } from "commander";
 
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";

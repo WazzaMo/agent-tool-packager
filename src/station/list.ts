@@ -5,9 +5,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
-import { getStationPath, pathExists } from "../config/paths.js";
+
 import { readTypeSummaryFromPackageDir, AtpPackageYamlParseError } from "../catalog/package-type-summary.js";
+import { getStationPath, pathExists } from "../config/paths.js";
 
 import { StationManifestParseError } from "./list-errors.js";
 

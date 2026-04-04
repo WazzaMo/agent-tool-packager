@@ -5,22 +5,21 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
+import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
   safehouseExists,
   loadSafehouseConfig,
   loadStationConfig,
   loadSafehouseList,
 } from "../config/load.js";
-
+import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
 import {
   loadSafehouseManifest,
   removePackageFromSafehouseManifest,
   loadSafehouseManifestFromPath,
 } from "../config/safehouse-manifest.js";
-
-import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
-import { resolveAgentProjectPath } from "../config/agent-path.js";
-
+import { agentDestinationForAsset } from "../install/copy-assets.js";
 import {
   resolvePackage,
   resolvePackagePath,
@@ -28,7 +27,6 @@ import {
 } from "../install/resolve.js";
 
 import type { PackageAsset } from "../install/types.js";
-import { agentDestinationForAsset } from "../install/copy-assets.js";
 
 const LOCAL_BIN = "~/.local/bin";
 const LOCAL_SHARE = "~/.local/share";

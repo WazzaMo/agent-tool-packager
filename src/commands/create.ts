@@ -3,6 +3,7 @@
  */
 
 import { type Command } from "commander";
+
 import { createPackageSkeleton } from "../package/create-skeleton.js";
 
 /**

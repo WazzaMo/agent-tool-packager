@@ -6,19 +6,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import { stationExists, loadSafehouseList } from "../config/load.js";
-
-import {
-  stationHasPackage,
-  deleteStationPackageManifest,
-} from "../config/station-package-manifest.js";
-
+import { expandHome, pathExists } from "../config/paths.js";
 import {
   loadSafehouseManifestFromPath,
   updateSafehousePackageInManifest,
 } from "../config/safehouse-manifest.js";
-
-import { expandHome, pathExists } from "../config/paths.js";
+import {
+  stationHasPackage,
+  deleteStationPackageManifest,
+} from "../config/station-package-manifest.js";
 
 const LOCAL_BIN = "~/.local/bin";
 const LOCAL_SHARE = "~/.local/share";

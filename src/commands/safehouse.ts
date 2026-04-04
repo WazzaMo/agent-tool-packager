@@ -2,11 +2,11 @@
  * Safehouse subcommands: `atp safehouse init`, `atp safehouse list`.
  */
 
-import type { Command } from "commander";
+import { findProjectBase } from "../config/paths.js";
 import { safehouseInit } from "../init/safehouse-init.js";
 import { safehouseList } from "../safehouse/list.js";
 
-import { findProjectBase } from "../config/paths.js";
+import type { Command } from "commander";
 
 /**
  * Resolve project base for Safehouse list (fallback to cwd when markers missing).

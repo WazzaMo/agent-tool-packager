@@ -4,20 +4,20 @@
  */
 
 import path from "node:path";
-import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
-
-import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
+import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
+import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
+
 
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
+import { copyPackageAssets } from "./copy-assets.js";
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "./resolve.js";
 
-import { copyPackageAssets } from "./copy-assets.js";
 
 /**
  * Resolve agent base path for the given agent.

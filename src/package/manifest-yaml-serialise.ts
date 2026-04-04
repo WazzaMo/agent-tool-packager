@@ -2,8 +2,9 @@
  * Build the YAML-ready object for atp-package.yaml (single-type vs multi-type bodies).
  */
 
-import type { DevPackageManifest, PackagePart } from "./types.js";
 import { isMultiDevManifest } from "./manifest-layout.js";
+
+import type { DevPackageManifest, PackagePart } from "./types.js";
 
 const FIELD_MAX_LEN = 80;
 

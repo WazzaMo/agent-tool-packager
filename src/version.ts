@@ -1,4 +1,3 @@
-
 /** Returns the fixed version string set by the build automation from
  *  the source project-version text file.
  * 

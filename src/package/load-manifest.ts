@@ -4,7 +4,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
+
 import type { BundleDefinition, DevPackageManifest, PackagePart } from "./types.js";
 
 const PACKAGE_FILE = "atp-package.yaml";

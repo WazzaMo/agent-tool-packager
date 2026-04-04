@@ -2,11 +2,11 @@
  * Remove command group: `atp remove safehouse <pkg>`, `atp remove station <pkg> [--exfiltrate]`.
  */
 
-import type { Command } from "commander";
+import { findProjectBase } from "../config/paths.js";
 import { removeSafehousePackage } from "../remove/remove-safehouse.js";
 import { removeStationPackage } from "../remove/remove-station.js";
 
-import { findProjectBase } from "../config/paths.js";
+import type { Command } from "commander";
 
 /**
  * Resolve project base for Safehouse remove (fallback to cwd).

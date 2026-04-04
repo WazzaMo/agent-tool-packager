@@ -2,16 +2,16 @@
  * Catalog subcommands: `atp catalog list`, `atp catalog add package`.
  */
 
-import type { Command } from "commander";
 import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
-
-import type { CatalogPackage } from "../catalog/types.js";
 import {
   readTypeSummaryFromPackageDir,
   AtpPackageYamlParseError,
 } from "../catalog/package-type-summary.js";
-import { catalogAddPackage } from "../package/catalog-add.js";
 import { resolvePackagePath } from "../install/resolve.js";
+import { catalogAddPackage } from "../package/catalog-add.js";
+
+import type { CatalogPackage } from "../catalog/types.js";
+import type { Command } from "commander";
 
 /**
  * Single-line display for one catalog entry.

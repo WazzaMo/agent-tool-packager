@@ -6,11 +6,13 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
+
 import { loadDevManifest } from "./load-manifest.js";
-import { saveDevManifest } from "./save-manifest.js";
-import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
 import { resolveComponentSourcePath } from "./resolve-component-source.js";
+import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
+import { saveDevManifest } from "./save-manifest.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 const STAGE_TAR = "stage.tar";
 

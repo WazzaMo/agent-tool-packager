@@ -3,6 +3,7 @@
  */
 
 import { Command } from "commander";
+
 import { registerAgentCommands } from "./commands/agent.js";
 import { registerCatalogCommands } from "./commands/catalog.js";
 import { registerCreateCommands } from "./commands/create.js";
@@ -12,7 +13,6 @@ import { registerRemoveCommands } from "./commands/remove.js";
 import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
 import { registerValidateCommands } from "./commands/validate.js";
-
 import { atp_version } from "./version.js";
 
 const greetingMessage = `

@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
 
 /** Thrown when `atp-package.yaml` cannot be parsed; list commands should exit 2. */

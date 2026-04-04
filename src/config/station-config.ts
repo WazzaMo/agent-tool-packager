@@ -3,11 +3,10 @@
  * See docs/configuration.md for schema.
  */
 
-import type { CatalogRoot } from "../catalog/types.js";
+import { atp_version } from "../version.js";
 
 import type { AgentPaths } from "./types.js";
-
-import { atp_version } from "../version.js";
+import type { CatalogRoot } from "../catalog/types.js";
 
 
 /** Remote or local URL prefix for the standard catalog payload. */
