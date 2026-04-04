@@ -19,7 +19,7 @@ This file summarises the project’s markdown documentation so agents can work e
 ## Build and test
 
 - **Prerequisites:** Node.js v24.14.0 (the specific version required will change over time; always refer to `.node-version`). If your environment does not match, run `fnm use` to ensure the correct version is active.
-- **Commands:** `npm install`, `npm run build`, `npm run dev` (development)
+- **Commands:** `npm install`, `npm run lint`, `npm run build`, `npm run dev` (development), `npm run test:run` (tests).
 
 
 
