@@ -154,6 +154,80 @@ repeatable workflows.
 **Support column:** **Y** means supported for provider work; **Partial** means
 limited or indirect; **TBD** means not yet defined for ATP.
 
+# Software Design Strategy
+
+Strategy is a response to challenges and the challenges here are that there
+are a number of similar operations that need to be performed in different
+ways for different agents. This requires a distribution of know-how and
+software capability at different levels, to allow for software re-use,
+simplicity in solution, where the world is complex, and small, simple building
+blocks that can be very well specified and tested.
+
+## Thinking bottom-up
+
+### The Low-level operations
+
+These operations are nearest the bottom of the tech stack.
+
+There are a number of similar file operations:
+- locate a given configuration file of type JSON
+- locate a given configuration file of type TOML
+- Common operations for both configuration formats:
+  - create the file if it is definitely missing
+  - have techniques to be sure that the file is missing
+  - if unsure, have ways to ask the user to 
+
+Markdown with YAML frontmatter
+- rules as defined by Cursor
+- skills standard, defined by Anthropic
+
+Directory location operations:
+- confirming the project directory from the Safehouse location
+- finding the agent configuration directory within a project directory.
+- finding the configuration files for an agent in the project/agent directory
+
+These operations represent the low-level functions that all agent providers need
+in order to configure and install packages correctly so that the facilities they
+provide will be discovered and used by the agent.
+
+### The Agent Providers
+
+#### Agent Provider Interface
+
+Agent providers are a concept and a protocol that call on installation services.
+The agent provider implementation knows the specifics of dealing with that agent.
+The agent provider interface, defines a common protocol for ATP's CLI tool to 
+call on provider services during inspection and installation of packages.
+
+The exported interface should be called `AgentProvider` as the generic definition
+of representing the CLI-provider contract.
+
+#### Agent Provider Implementations
+
+Each agent has different locations and configurations needs. These needs must be known
+somewhere in ATP's software and the Agent Provider instance is that place.
+
+The `CursorAgentProvider` implements the `AgentProvider` interface with concrete implementations
+of the services promised by the `AgentProvider` contract that use the low-level operations
+based on what it knows about the Cursor Agent.
+
+There should be classes for each agent:
+
+- CursorAgentProvider for Cursor
+- ClaudeAgentProvider for Claude
+- CodexAgentProvider for Codex
+- GeminiAgentProvider for Gemini CLI.
+
+This allows each implemenation of the `AgentProvider` to be tested through unit ant integration tests.
+It also allows one of the providers to be extended and maintained as the Agent it supports changes or adopts
+new features, without impacting any other agent provider because each class is completely separate.
+
+#### Dependency Injection in ATP CLI
+
+The ATP CLI can use its Safehouse configuration, at the project level, to know which agent provider
+to instantiate and use for performing installation, removal and any inspection work.
+
+
 # Cursor
 
 Reference (hub): [Cursor documentation](https://cursor.com/docs).
