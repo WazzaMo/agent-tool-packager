@@ -325,8 +325,149 @@ typically exists only in the agent's project or user directory.
 This logic should exist in the agent provider because only the provider knows the needs of the agent
 that is configured for the project's safehouse, and later for the user's station.
 
-# Next step (step 3)
+# Implementation checklist
 
-Prototype **merge** for `mcp.json` and `settings.json` `mcpServers` (see
-file-operations plan step 3). Step 2 (**internal DTOs**) is recorded in
-[2026-04-03-plan-provider-internal-dtos](./2026-04-03-plan-provider-internal-dtos.md).
+Hierarchical progress against
+[2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
+`[x]` means done in the repo at the time of this update; `[ ]` is not done yet.
+
+## 1 Capability matrix (this document)
+
+- [x] **1.1** Per-agent tables (Cursor, Claude Code, Gemini CLI, Codex CLI) with **F5** / **Req** / **Opt**.
+
+- [x] **1.2** Operation ID legend (IDs **1–12**), short summaries, and consolidated **(C1)–(C12)** view.
+
+- [x] **1.3** Per-agent notes (paths, layers, deferred **Def** items).
+
+- [x] **1.4** Open decisions recorded and answered (layer vs capability, single provider per install,
+  Codex hooks + `config.toml`, Cursor rule packaging + `.md`/`.mdc`, idempotency + `--force-config` /
+  `--skip-config`).
+
+## 2 Internal DTOs
+
+- [x] **2.1** `OperationIds` / `OperationId` in code: `src/provider/operation-ids.ts` (numeric **1–12**,
+  JSDoc per constant).
+
+- [x] **2.2** DTO contract written up: `InstallContext`, `AtpProvenance`, `ProviderPlan`, `ProviderAction`
+  union and per-op payloads in
+  [2026-04-03-plan-provider-internal-dtos](./2026-04-03-plan-provider-internal-dtos.md).
+
+- [ ] **2.3** Typed TypeScript module mirroring the full DTO union for compile-time use across providers
+  (today the note is the source of truth; only operation IDs are in code).
+
+## 3 Config merge prototype — `mcpServers` in JSON (ops **1** / **8**)
+
+- [x] **3.1** Merge engine: `mergeMcpJsonDocument` / `mergeServerRecords` with idempotency and ambiguity
+  detection (`src/provider/mcp-merge/mcp-json-merge.ts`).
+
+- [x] **3.2** User guidance hooks in the merge API: `forceConfig`, `skipConfig` (aligned with open
+  decisions).
+
+- [x] **3.3** JSON shape helpers and cloning: `src/provider/mcp-merge/mcp-json-helpers.ts`.
+
+- [x] **3.4** Read/write adapter: `applyMcpJsonMergeToFile` (`src/provider/mcp-merge/apply-mcp-json-merge.ts`).
+
+- [x] **3.5** Typed errors: ambiguous merge, invalid document, invalid payload
+  (`src/provider/mcp-merge/errors.ts`).
+
+- [x] **3.6** Unit tests: `test/provider/mcp-json-merge.test.ts`.
+
+- [x] **3.7** Integration tests (temp files, create/amend/force/skip): `test/integration/mcp-json-merge-files.test.ts`.
+
+- [ ] **3.8** Additional JSON merge strategies from the DTO note (non-`mcpServers` paths, replace-at-pointer,
+  other agent files).
+
+- [ ] **3.9** TOML side of op **1** (Codex `[mcp_servers.*]`, `[features]`, hooks enablement warnings).
+
+## 4 Rule assembly (op **2**)
+
+Cursor **MD+YAML → `.mdc`** prototype (**4.1–4.6**) is done; **4.7–4.10** extend rule assembly to other
+artefacts and agents. Full use in installs still depends on step **5** (wire-up).
+
+- [x] **4.1** Cursor `.mdc` assembly: normalise YAML frontmatter + markdown body, emit `---` envelope
+  (`src/provider/rule-assembly/cursor-mdc.ts`).
+
+- [x] **4.2** Disk writer: create parent dirs, UTF-8 write (`src/provider/rule-assembly/write-cursor-mdc.ts`).
+
+- [x] **4.3** Input errors: `RuleAssemblyInvalidInputError` (`src/provider/rule-assembly/errors.ts`).
+
+- [x] **4.4** Barrel exports: `src/provider/rule-assembly/index.ts`.
+
+- [x] **4.5** Unit tests + golden fixture: `test/provider/cursor-mdc-assembly.test.ts`,
+  `test/fixtures/provider/cursor-rule-expected.mdc`.
+
+- [x] **4.6** Integration test (real path): `test/integration/rule-assembly-cursor-file.test.ts`.
+
+- [ ] **4.7** Cursor `.md` rule artefact (`cursor_md` / markdown-only paths where the matrix allows op **5**).
+
+- [ ] **4.8** Claude Code rule `.md` (frontmatter field names, `paths`, layout under `.claude/rules/`).
+
+- [ ] **4.9** Gemini / Codex rule-related flows (hierarchy files, `AGENTS.md` / `GEMINI.md` patterns, op **4** / **5**
+  as per matrix).
+
+- [ ] **4.10** Package validation integration (paired `foo.yaml` + rule body where required; clearer errors for
+  missing frontmatter metadata).
+
+## 5 Wire providers into `atp install`
+
+- [ ] **5.1** Resolve active `AgentId` from Safehouse / station config and select a provider module.
+
+- [ ] **5.2** Build ordered provider plans from staged package parts (internal DTOs → actions).
+
+- [ ] **5.3** Run actions after (or instead of) ad-hoc asset copy; keep behaviour aligned with Feature 4
+  multi-part installs.
+
+- [ ] **5.4** End-to-end tests: fixture packages leave expected config + rule + tree artefacts on disk.
+
+## 6 Remaining file operations (matrix-driven)
+
+- [ ] **6.1** Op **3** — tree materialise (skills, hook script dirs, prompt conventions).
+
+- [ ] **6.2** Op **4** — markdown aggregate / managed-block patch (`CLAUDE.md`, `GEMINI.md`, Codex `AGENTS.md`).
+
+- [ ] **6.3** Op **5** — plain markdown emit (no YAML assembly).
+
+- [ ] **6.4** Op **6** — Gemini custom-command `.toml` generate.
+
+- [ ] **6.5** Op **7** — `hooks.json` event → handler arrays (Cursor, Codex).
+
+- [ ] **6.6** Op **8** — `settings.json` `hooks` slice and any merge modes not covered by the current
+  `mcpServers` JSON helper path.
+
+- [ ] **6.7** Op **9** — executable materialise and `+x` (or platform equivalent).
+
+- [ ] **6.8** Op **10** — interpolation validate / normalise for MCP and hooks.
+
+- [ ] **6.9** Op **11** — discovery hints (`AGENTS.md` bullets, etc.).
+
+- [ ] **6.10** Op **12** — experimental / opaque drops.
+
+## 7 User control on the CLI
+
+- [ ] **7.1** Expose `--force-config` and `--skip-config` on `atp install` (and any helper command that runs
+  structured merges).
+
+- [ ] **7.2** Plumb flags into provider entry points and merge helpers consistently.
+
+- [ ] **7.3** User-facing documentation for conflict, skip, and force behaviour.
+
+## 8 Uninstall support in providers
+
+- [ ] **8.1** Define reverse operations using the same `fragmentKey` / provenance as install (MCP entries, etc.).
+
+- [ ] **8.2** Remove or replace ATP-owned rules, trees, hook handlers, generated commands.
+
+- [ ] **8.3** Integrate with `atp remove safehouse` / station remove so removals stay safe and idempotent.
+
+## 9 Non-goals and deferred layers
+
+- [ ] **9.1** Document non-goals (for example Team/Enterprise-only Cursor paths) until ATP scopes those
+  layers.
+
+# Next steps (see file-operations plan)
+
+MCP JSON merge (**step 3**) is implemented under `src/provider/mcp-merge/`. Cursor **MD+YAML → `.mdc`**
+(**step 4**, items **4.1–4.6** above) is implemented under `src/provider/rule-assembly/` with tests.
+**Next:** wire providers into `atp install` (**step 5**), then remaining operations (**6**), CLI flags (**7**),
+uninstall (**8**), and non-goals note (**9**) — see **Next steps** in
+[2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
