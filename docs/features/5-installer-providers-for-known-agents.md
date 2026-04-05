@@ -250,13 +250,46 @@ interface ProviderMergeOptions {
 
 /**
  * Minimal handle for one part ready to install from staging (exact fields TBD).
- * The install pipeline fills this from the package manifest and extract dir.
+ * The install pipeline starts with relative paths from the package and resolves them
+ * with help from the AgentProvider implementation.
  */
-interface StagedPartInstallInput {
+interface PartInstallInput {
+  /** Indicates if object represents absolute paths; false means relative. */
+  isResolvedAbsolutePaths: boolean;
   partKind: PartKind;
   partIndex: number;
+  /** Paths to part's files may be relative or absolute depending on stage.
+   Payloads as read by install. */
+  packagePaths: string[];
+}
+
+/**
+ * Minimal handle for one part ready to install from staging (exact fields TBD).
+ * The install pipeline fills this from the package manifest and extract dir.
+ * This represents that data taken from the package prior to the AgentProvider
+ * resolving final locations.
+ */
+class StagedPartInstallInput implements PartInstallInput {
+  public isResolvedAbsolutePaths: boolean = false;
+  public partKind: PartKind;
+  public partIndex: number;
+  public packagePaths: string[];
   /** Relative paths under InstallContext.stagingDir; payloads as read by install. */
-  stagingRelPaths: string[];
+  private stagingRelPaths: string[];
+}
+
+/**
+ * Represents the final locations from the AgentProvider, based on the
+ * StagedPartInstallInput object, and Agent's expected file structure.
+ */
+class ResolvedInstallInput implements PartInstallInput {
+  public isResolvedAbsolutePaths: boolean = false;
+  public partKind: PartKind;
+  public partIndex: number;
+  public packagePaths: string[];
+
+  /** Absolute paths resolved by the AgentProvider. */
+  private agentProviderResolvedPaths: string[];
 }
 
 interface AgentProvider {
