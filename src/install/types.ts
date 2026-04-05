@@ -3,6 +3,8 @@
  * Schema from docs/features/1-package-definition-and-installation.md.
  */
 
+import type { PackagePart } from "../package/types.js";
+
 /** One installable asset row from the catalog / enriched manifest. */
 export interface PackageAsset {
   path: string;
@@ -22,6 +24,8 @@ export interface ProgramDefinition {
 /** Parsed install manifest (developer or enriched) used during install/remove. */
 export interface PackageManifest {
   name: string;
+  /** Legacy single-type root kind, or `Multi` for Feature 4 multi-part packages. */
+  type?: string;
   version?: string;
   description?: string;
   repo_source?: {
@@ -38,6 +42,6 @@ export interface PackageManifest {
   bundles?: Array<string | { path: string; "exec-filter"?: string }>;
   program_dependencies?: string[];
   program_definitions?: ProgramDefinition[];
-  /** Feature 4: when present in catalog `atp-package.yaml`, install treats layout as multi-part. */
-  parts?: Array<Record<string, unknown>>;
+  /** Feature 4: when non-empty in catalog `atp-package.yaml`, install treats layout as multi-part. */
+  parts?: PackagePart[];
 }

@@ -16,6 +16,10 @@ import { expandHome, findProjectBase } from "../config/paths.js";
 import { addPackageToSafehouseManifest } from "../config/safehouse-manifest.js";
 import { writeStationPackageManifest } from "../config/station-package-manifest.js";
 
+import {
+  buildStagedPartInstallInputs,
+  coercePackageParts,
+} from "../file-ops/part-install-input.js";
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
 import { copyPackageAssets } from "./copy-assets.js";
 import {
@@ -26,6 +30,7 @@ import {
 
 import type { PackageManifest } from "./types.js";
 import type { CatalogPackage } from "../catalog/types.js";
+import type { StagedPartInstallInput } from "../file-ops/part-install-input.js";
 
 
 const SAFEHOUSE_REQUIRED_MSG =
@@ -63,11 +68,23 @@ export interface CatalogInstallContext {
  * @returns `multi` when `parts` is a non-empty array.
  */
 export function manifestInstallLayout(manifest: PackageManifest): "multi" | "legacy" {
-  const parts = manifest.parts;
-  if (Array.isArray(parts) && parts.length > 0) {
+  const parts = coercePackageParts(manifest.parts);
+  if (parts.length > 0) {
     return "multi";
   }
   return "legacy";
+}
+
+/**
+ * Build staged part handles for the active catalog install (provider planning input).
+ *
+ * @param ctx - Resolved {@link CatalogInstallContext}.
+ * @returns One entry per manifest part (multi) or a single synthetic part (legacy).
+ */
+export function prepareCatalogInstallPartInputs(
+  ctx: CatalogInstallContext
+): StagedPartInstallInput[] {
+  return buildStagedPartInstallInputs(ctx.manifest, ctx.pkgDir);
 }
 
 /**
@@ -143,6 +160,14 @@ async function executeCatalogInstall(
     opts,
     projectBase,
   } = ctx;
+
+  const stagedParts = prepareCatalogInstallPartInputs(ctx);
+  if (layout === "multi") {
+    const n = coercePackageParts(manifest.parts).length;
+    if (n > 0 && stagedParts.length !== n) {
+      throw new Error("Install internal error: staged part count does not match manifest parts.");
+    }
+  }
 
   const copied: string[] = [];
   try {
