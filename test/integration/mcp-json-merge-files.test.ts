@@ -12,7 +12,7 @@ import {
   readJsonObjectFile,
   mergeMcpJsonDocument,
   McpMergeAmbiguousError,
-} from "../../src/provider/mcp-merge/index.js";
+} from "../../src/file-ops/mcp-merge/index.js";
 
 describe("applyMcpJsonMergeToFile", () => {
   let tmp: string;

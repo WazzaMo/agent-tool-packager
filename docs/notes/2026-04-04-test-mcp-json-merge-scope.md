@@ -7,13 +7,13 @@ Contribution to this project is supported and contributors will be recognised.
 
 # Scope
 
-This note records test coverage for the MCP `mcpServers` merge prototype (`src/provider/mcp-merge/`). It does not re-document product behaviour; see [2026-04-04-coding-mcp-json-merge-provider](./2026-04-04-coding-mcp-json-merge-provider.md).
+This note records test coverage for the MCP `mcpServers` merge prototype (`src/file-ops/mcp-merge/`). It does not re-document product behaviour; see [2026-04-04-coding-mcp-json-merge-provider](./2026-04-04-coding-mcp-json-merge-provider.md).
 
 # Unit tests
 
 ### Location
 
-`test/provider/mcp-json-merge.test.ts`
+`test/file-ops/mcp-json-merge.test.ts`
 
 ### Target
 

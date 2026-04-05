@@ -21,7 +21,7 @@ This note records code and planning-doc updates after [2026-04-04-coding-mcp-jso
 
 # Cursor rule assembly
 
-Path: `src/provider/rule-assembly/`
+Path: `src/file-ops/rule-assembly/`
 
 Implements MD+YAML → `.mdc` for Cursor: frontmatter (`description`, `globs`, `alwaysApply`, …) plus body, with normalised newlines and optional stripping of a pasted `---` … `---` wrapper around the YAML.
 
@@ -38,8 +38,8 @@ Not yet wired into `atp install`; consumption is planned under Next steps in the
 
 | Artefact      | Path                                                  |
 |---------------|-------------------------------------------------------|
-| Golden file   | `test/fixtures/provider/cursor-rule-expected.mdc`     |
-| Unit tests    | `test/provider/cursor-mdc-assembly.test.ts`           |
+| Golden file   | `test/fixtures/file-ops/cursor-rule-expected.mdc`     |
+| Unit tests    | `test/file-ops/cursor-mdc-assembly.test.ts`           |
 | Integration   | `test/integration/rule-assembly-cursor-file.test.ts`  |
 
 See [2026-04-04-test-cursor-rule-assembly-scope](./2026-04-04-test-cursor-rule-assembly-scope.md) for test coverage.

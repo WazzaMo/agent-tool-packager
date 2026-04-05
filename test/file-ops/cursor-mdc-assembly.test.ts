@@ -11,11 +11,11 @@ import {
   assembleCursorMdcContent,
   normalizeCursorFrontmatterYaml,
   normalizeRuleBodyMarkdown,
-} from "../../src/provider/rule-assembly/cursor-mdc.js";
-import { RuleAssemblyInvalidInputError } from "../../src/provider/rule-assembly/errors.js";
+} from "../../src/file-ops/rule-assembly/cursor-mdc.js";
+import { RuleAssemblyInvalidInputError } from "../../src/file-ops/rule-assembly/errors.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const GOLDEN_PATH = path.join(__dirname, "../fixtures/provider/cursor-rule-expected.mdc");
+const GOLDEN_PATH = path.join(__dirname, "../fixtures/file-ops/cursor-rule-expected.mdc");
 
 const GOLDEN_FRONTMATTER = `description: Test rule for ATP golden file
 globs:

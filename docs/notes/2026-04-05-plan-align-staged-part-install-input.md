@@ -49,7 +49,7 @@ for **`StagedPartInstallInput`** are still to be chosen and documented.
 2. **Introduce a typed manifest slice for `parts`**
 
    - Prefer a **`PackagePart`** (name TBD) interface in `src/install/types.ts`
-     (or `src/provider/types.ts` if you want provider-facing types separate from
+     (or `src/file-ops/types.ts` if you want staging / file-op DTOs separate from
      raw YAML).
 
    - Align field names with **`atp-package.yaml`** / Feature 4 authoring docs
@@ -90,11 +90,14 @@ for **`StagedPartInstallInput`** are still to be chosen and documented.
 # Open questions
 
 - Should **`StagedPartInstallInput`** live next to **`PackageManifest`** or under
-  **`src/provider/`** to avoid install↔provider cycles?
+  **`src/file-ops/`** to avoid install↔provider cycles?
 
-ANSWER: `src/provider` should be reserved for provider types, like AgentProviders
-        and these types are part of the file operation, so they should be under
-        `src/file-ops` as a directory and logical namespace.
+ANSWER: **`StagedPartInstallInput`** and related staging/file-operation DTOs live
+        under **`src/file-ops/`** (alongside merge engines, rule assembly, and
+        **`operation-ids.ts`**). **`AgentProvider`** contracts and per-agent
+        implementations are intended for **`src/provider/`** (name TBD until
+        landed). Install orchestration can depend on `file-ops` types; providers
+        compose `file-ops` without reversing that dependency.
 
 - Do we pass **pre-resolved absolute paths** for some files instead of only
   **`stagingRelPaths`** to reduce path bugs in providers?
@@ -127,3 +130,4 @@ ANSWER: We need to strengthen the conceptual separation between AgentProviders
 | Install orchestration | `src/install/install.ts`, **`CatalogInstallContext`** |
 | Manifest types | `src/install/types.ts` (**`parts`** today) |
 | File operations checklist | [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md#implementation-checklist) |
+| File-operation engines (`operation-ids`, merge, rule assembly) | `src/file-ops/` |

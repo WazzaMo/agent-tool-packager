@@ -4,11 +4,11 @@
 
 import { describe, it, expect } from "vitest";
 
-import { mergeMcpJsonDocument } from "../../src/provider/mcp-merge/mcp-json-merge.js";
+import { mergeMcpJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-merge.js";
 import {
   McpMergeAmbiguousError,
   McpMergeInvalidPayloadError,
-} from "../../src/provider/mcp-merge/errors.js";
+} from "../../src/file-ops/mcp-merge/errors.js";
 
 const sample = {
   mcpServers: {

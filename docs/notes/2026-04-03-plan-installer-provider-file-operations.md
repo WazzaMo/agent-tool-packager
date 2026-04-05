@@ -194,13 +194,13 @@ the target schema stabilises.
 
 3. Prototype **merge** for one JSON target (`mcp.json`) and one nested target
    (`settings.json` `mcpServers`) to validate collision, ambiguity, and
-   formatting. **Done:** `src/provider/mcp-merge/` (see coding note
+   formatting. **Done:** `src/file-ops/mcp-merge/` (see coding note
    `2026-04-04-coding-mcp-json-merge-provider.md`).
 
 4. Prototype **MD+YAML → `.mdc`** for **Cursor** rules (operation **2**), with unit
    and golden-file tests. **Done** for items **4.1–4.6** in
    [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md#implementation-checklist)
-   (`src/provider/rule-assembly/`). Further agents and formats (**4.7+** in that checklist) remain.
+   (`src/file-ops/rule-assembly/`). Further agents and formats (**4.7+** in that checklist) remain.
 
 5. **Wire providers into `atp install`:** after individual operation prototypes
    stabilise, route install by agent + part type through a provider layer that

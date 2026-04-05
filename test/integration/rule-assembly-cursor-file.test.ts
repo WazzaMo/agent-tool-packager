@@ -8,10 +8,10 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { writeAssembledCursorMdcFile } from "../../src/provider/rule-assembly/write-cursor-mdc.js";
+import { writeAssembledCursorMdcFile } from "../../src/file-ops/rule-assembly/write-cursor-mdc.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const GOLDEN_PATH = path.join(__dirname, "../fixtures/provider/cursor-rule-expected.mdc");
+const GOLDEN_PATH = path.join(__dirname, "../fixtures/file-ops/cursor-rule-expected.mdc");
 
 const FRONT = `description: Test rule for ATP golden file
 globs:

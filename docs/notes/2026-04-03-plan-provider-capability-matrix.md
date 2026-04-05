@@ -345,7 +345,7 @@ Hierarchical progress against
 
 ## 2 Internal DTOs
 
-- [x] **2.1** `OperationIds` / `OperationId` in code: `src/provider/operation-ids.ts` (numeric **1–12**,
+- [x] **2.1** `OperationIds` / `OperationId` in code: `src/file-ops/operation-ids.ts` (numeric **1–12**,
   JSDoc per constant).
 
 - [x] **2.2** DTO contract written up: `InstallContext`, `AtpProvenance`, `ProviderPlan`, `ProviderAction`
@@ -358,19 +358,19 @@ Hierarchical progress against
 ## 3 Config merge prototype — `mcpServers` in JSON (ops **1** / **8**)
 
 - [x] **3.1** Merge engine: `mergeMcpJsonDocument` / `mergeServerRecords` with idempotency and ambiguity
-  detection (`src/provider/mcp-merge/mcp-json-merge.ts`).
+  detection (`src/file-ops/mcp-merge/mcp-json-merge.ts`).
 
 - [x] **3.2** User guidance hooks in the merge API: `forceConfig`, `skipConfig` (aligned with open
   decisions).
 
-- [x] **3.3** JSON shape helpers and cloning: `src/provider/mcp-merge/mcp-json-helpers.ts`.
+- [x] **3.3** JSON shape helpers and cloning: `src/file-ops/mcp-merge/mcp-json-helpers.ts`.
 
-- [x] **3.4** Read/write adapter: `applyMcpJsonMergeToFile` (`src/provider/mcp-merge/apply-mcp-json-merge.ts`).
+- [x] **3.4** Read/write adapter: `applyMcpJsonMergeToFile` (`src/file-ops/mcp-merge/apply-mcp-json-merge.ts`).
 
 - [x] **3.5** Typed errors: ambiguous merge, invalid document, invalid payload
-  (`src/provider/mcp-merge/errors.ts`).
+  (`src/file-ops/mcp-merge/errors.ts`).
 
-- [x] **3.6** Unit tests: `test/provider/mcp-json-merge.test.ts`.
+- [x] **3.6** Unit tests: `test/file-ops/mcp-json-merge.test.ts`.
 
 - [x] **3.7** Integration tests (temp files, create/amend/force/skip): `test/integration/mcp-json-merge-files.test.ts`.
 
@@ -385,16 +385,16 @@ Cursor **MD+YAML → `.mdc`** prototype (**4.1–4.6**) is done; **4.7–4.10** 
 artefacts and agents. Full use in installs still depends on step **5** (wire-up).
 
 - [x] **4.1** Cursor `.mdc` assembly: normalise YAML frontmatter + markdown body, emit `---` envelope
-  (`src/provider/rule-assembly/cursor-mdc.ts`).
+  (`src/file-ops/rule-assembly/cursor-mdc.ts`).
 
-- [x] **4.2** Disk writer: create parent dirs, UTF-8 write (`src/provider/rule-assembly/write-cursor-mdc.ts`).
+- [x] **4.2** Disk writer: create parent dirs, UTF-8 write (`src/file-ops/rule-assembly/write-cursor-mdc.ts`).
 
-- [x] **4.3** Input errors: `RuleAssemblyInvalidInputError` (`src/provider/rule-assembly/errors.ts`).
+- [x] **4.3** Input errors: `RuleAssemblyInvalidInputError` (`src/file-ops/rule-assembly/errors.ts`).
 
-- [x] **4.4** Barrel exports: `src/provider/rule-assembly/index.ts`.
+- [x] **4.4** Barrel exports: `src/file-ops/rule-assembly/index.ts`.
 
-- [x] **4.5** Unit tests + golden fixture: `test/provider/cursor-mdc-assembly.test.ts`,
-  `test/fixtures/provider/cursor-rule-expected.mdc`.
+- [x] **4.5** Unit tests + golden fixture: `test/file-ops/cursor-mdc-assembly.test.ts`,
+  `test/fixtures/file-ops/cursor-rule-expected.mdc`.
 
 - [x] **4.6** Integration test (real path): `test/integration/rule-assembly-cursor-file.test.ts`.
 
@@ -466,8 +466,8 @@ artefacts and agents. Full use in installs still depends on step **5** (wire-up)
 
 # Next steps (see file-operations plan)
 
-MCP JSON merge (**step 3**) is implemented under `src/provider/mcp-merge/`. Cursor **MD+YAML → `.mdc`**
-(**step 4**, items **4.1–4.6** above) is implemented under `src/provider/rule-assembly/` with tests.
+MCP JSON merge (**step 3**) is implemented under `src/file-ops/mcp-merge/`. Cursor **MD+YAML → `.mdc`**
+(**step 4**, items **4.1–4.6** above) is implemented under `src/file-ops/rule-assembly/` with tests.
 **Next:** wire providers into `atp install` (**step 5**), then remaining operations (**6**), CLI flags (**7**),
 uninstall (**8**), and non-goals note (**9**) — see **Next steps** in
 [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).

@@ -11,15 +11,15 @@ Implemented step 3 of the installer file-operations plan: a prototype merge for 
 
 # Code layout
 
-- `src/provider/operation-ids.ts` — Numeric `OperationIds` (1–12) aligned with `2026-04-03-plan-provider-internal-dtos.md`.
+- `src/file-ops/operation-ids.ts` — Numeric `OperationIds` (1–12) aligned with `2026-04-03-plan-provider-internal-dtos.md`.
 
-- `src/provider/mcp-merge/errors.ts` — `McpMergeAmbiguousError`, `McpMergeInvalidDocumentError`, `McpMergeInvalidPayloadError`.
+- `src/file-ops/mcp-merge/errors.ts` — `McpMergeAmbiguousError`, `McpMergeInvalidDocumentError`, `McpMergeInvalidPayloadError`.
 
-- `src/provider/mcp-merge/mcp-json-merge.ts` — `mergeMcpJsonDocument(existing, incoming, options)`; preserves non-`mcpServers` top-level keys; merge is by server name with `util.isDeepStrictEqual` for idempotency.
+- `src/file-ops/mcp-merge/mcp-json-merge.ts` — `mergeMcpJsonDocument(existing, incoming, options)`; preserves non-`mcpServers` top-level keys; merge is by server name with `util.isDeepStrictEqual` for idempotency.
 
-- `src/provider/mcp-merge/apply-mcp-json-merge.ts` — `readJsonObjectFile`, `applyMcpJsonMergeToFile` (create parent dirs on write; noop avoids rewriting the file).
+- `src/file-ops/mcp-merge/apply-mcp-json-merge.ts` — `readJsonObjectFile`, `applyMcpJsonMergeToFile` (create parent dirs on write; noop avoids rewriting the file).
 
-- `src/provider/mcp-merge/index.ts` — Re-exports for callers.
+- `src/file-ops/mcp-merge/index.ts` — Re-exports for callers.
 
 # Behaviour
 
@@ -45,7 +45,7 @@ Skips disk I/O in `applyMcpJsonMergeToFile`; merge helper returns a skipped outc
 
 # Tests
 
-- `test/provider/mcp-json-merge.test.ts` — Pure merge cases.
+- `test/file-ops/mcp-json-merge.test.ts` — Pure merge cases.
 
 - `test/integration/mcp-json-merge-files.test.ts` — Temp-dir filesystem: create, amend, noop/idempotency, ambiguity, `forceConfig`, `skipConfig`, invalid JSON.
 
