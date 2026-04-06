@@ -94,6 +94,8 @@ describe("installPackageAssetsForCatalogContext", () => {
     const stagedSkill = prepareCatalogInstallPartInputs(ctx);
     installPackageAssetsForCatalogContext(ctx, providerCtxSkill, stagedSkill);
 
-    expect(fs.readFileSync(path.join(agentBase, "skills", "S.md"), "utf8")).toBe("# S\n");
+    const installed = fs.readFileSync(path.join(agentBase, "skills", "S", "SKILL.md"), "utf8");
+    expect(installed).toContain("# S");
+    expect(installed).toContain("name: S");
   });
 });

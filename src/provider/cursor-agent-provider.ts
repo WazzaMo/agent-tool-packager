@@ -17,6 +17,8 @@ import {
 
 import { applyProviderPlan } from "./apply-provider-plan.js";
 import { materializeRuleLikeForCursor } from "./cursor-rule-materialize.js";
+import { buildSkillInstallProviderActions } from "./skill/plan-skill-install.js";
+import { SkillFrontmatterError } from "./skill/normalize-skill-frontmatter.js";
 import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
@@ -68,7 +70,29 @@ export class CursorAgentProvider implements AgentProvider {
     );
 
     const actions: ProviderPlan["actions"] = [];
-    for (const asset of inPart) {
+    const skillAssets = inPart.filter((a) => a.type === "skill");
+    const nonSkillAssets = inPart.filter((a) => a.type !== "skill");
+
+    if (skillAssets.length > 0) {
+      try {
+        actions.push(
+          ...buildSkillInstallProviderActions(
+            { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot },
+            { partIndex: part.partIndex, partKind: part.partKind },
+            skillAssets,
+            { name: packageName, version: packageVersion },
+            this.bundlePathMap
+          )
+        );
+      } catch (e) {
+        if (e instanceof SkillFrontmatterError) {
+          throw new Error(`CursorAgentProvider: ${e.message}`);
+        }
+        throw e;
+      }
+    }
+
+    for (const asset of nonSkillAssets) {
       const src = path.join(ctx.stagingDir, asset.path);
       if (!fs.existsSync(src)) {
         throw new Error(`CursorAgentProvider: missing staged file: ${asset.path}`);
@@ -133,7 +157,6 @@ export class CursorAgentProvider implements AgentProvider {
       }
 
       const isMarkdownLike =
-        asset.type === "skill" ||
         asset.type === "rule" ||
         asset.type === "prompt" ||
         asset.type === "sub-agent";

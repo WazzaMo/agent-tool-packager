@@ -147,7 +147,7 @@ Being able to install this, means success.
     expect(fs.existsSync(path.join(execBin, "run.sh"))).toBe(true);
     expect(fs.readFileSync(path.join(execBin, "run.sh"), "utf8")).toBe("#!/bin/sh\necho run");
 
-    const skillPath = path.join(projectDir, ".cursor", "skills", "SKILL.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "SKILL", "SKILL.md");
     const patched = fs.readFileSync(skillPath, "utf8");
     expect(patched).toContain(execBin);
     expect(patched).not.toContain("{my_tool}");
@@ -181,6 +181,7 @@ Being able to install this, means success.
     fs.writeFileSync(path.join(pkgDir, "patch_tool", "file-patch.sh"), "#!/bin/sh\necho patch\n");
     const skillContent = `---
 name: copyrighter
+description: Copyright patcher skill
 ---
 Run {patch_tool}/file-patch.sh to patch files.
 `;
@@ -202,7 +203,7 @@ Run {patch_tool}/file-patch.sh to patch files.
       env: { STATION_PATH: stationDir },
     });
 
-    const skillPath = path.join(projectDir, ".cursor", "skills", "SKILL.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "copyrighter", "SKILL.md");
     expect(fs.existsSync(skillPath)).toBe(true);
     const patched = fs.readFileSync(skillPath, "utf8");
     expect(patched).not.toContain("{patch_tool}");

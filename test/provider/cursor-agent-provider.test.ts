@@ -103,7 +103,7 @@ describe("CursorAgentProvider", () => {
     expect(plan.actions[0].content).toBe("Use /opt/tool");
   });
 
-  it("planInstall accepts Skill part and targets skills/", () => {
+  it("planInstall places Skill under skills/{name}/SKILL.md (Agent Skills layout)", () => {
     fs.writeFileSync(path.join(staging, "s.md"), "# S\n");
     const manifest = {
       name: "sk",
@@ -117,8 +117,11 @@ describe("CursorAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions[0].relativeTargetPath).toBe("skills/s.md");
-    expect(plan.actions[0].provenance.fragmentKey).toBe("skills/s.md");
+    expect(plan.actions[0].relativeTargetPath).toBe("skills/s/SKILL.md");
+    expect(plan.actions[0].provenance.fragmentKey).toBe("skills/s/SKILL.md");
+    expect(plan.actions[0].kind).toBe("plain_markdown_write");
+    expect(plan.actions[0].content).toContain("# S");
+    expect(plan.actions[0].content).toContain("name: s");
   });
 
   it("assembles .mdc with YAML frontmatter using RuleAssembly op id", () => {

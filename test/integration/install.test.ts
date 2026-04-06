@@ -55,7 +55,7 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project");
-    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill", "SKILL.md");
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project, bin:user-bin)");
-    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill", "SKILL.md");
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
