@@ -65,9 +65,26 @@ agent provider logic in one place, that all AgentProvider implementations can us
         to confirm that any directories mentioned in the `skill.md` also appears in the bundle.
 
 2. Validation strictness - name and description should be validated against Skill spec numbers:
-    -   name : up to 64 chars
 
-    -   description : up to 1024 chars
+ | Field        | Details       |
+ |--------------|---------------|
+ | name         |   64 chars    |
+ | description  | 1024 chars    |
+ | compatibility|  500 chars (a)|
+ | metadata     | object see (b)|
+ | allowed-tools| list   see (c)|
+ 
+(a) Optional, natural language list of dependencies or environment limits e.g. "Designed for Claude Code"
+
+(b) A YAML object adding some additional metadata; NOTE: ATP Packages have enough already.
+
+```yaml
+metadata:
+  author: example-org
+  version: "1.0"
+```
+
+(c) A space-delimited list of tools that are pre-approved for use
 
 
 3.  File location - because it's standardised, we should give skill it's own sub-namespace
@@ -102,6 +119,12 @@ It is not valid, for a skill part to omit any form of skill file and it is also 
 one of the partial files without the other - both the yaml and markdown partials are required.
 Omitted skills should result in an error message during package authoring and a failure with a non-zero
 exit code.
+
+The pair of partial files, `skill.yaml` and `skill.md`, are only accepted in a bundle and will be
+rejected at authoring time if added as components, with an error message instructing the user
+to employ the bundle approach.
+
+A `SKILL.md` can be provided as a component, the legacy way, or in a bundle - either is acceptable.
 
 ### Output naming
 
@@ -193,7 +216,7 @@ Execute {skill_scripts}/extract.py to extract text from the PDF.
 
 The variable will be very specific `{skill_scripts}` and will be expected to have `/` follow it.
 Meaning a string replace can be performed after the SKILL.md file is written, replacing the variable
-with an absolute path.
+with relative paths from the skill root directory.
 
 ### Skill validation
 
@@ -217,9 +240,14 @@ and recognised as a security risk because the package YAML file, `atp-package.ya
 of the `package.tar.gz` may have been tampered with or corrupted.
 
 At install time, there are other reasons for install to fail, such as installation ambiguities
-or file path collisions should lead to an error message. The installation validation logic is different from authoring validation because:
+or file path collisions should lead to an error message. Installation ambiguities was defined
+in [Feature 5 spec section: Configuration files (JSON and TOML)](../features/5-installer-providers-for-known-agents.md#configuration-files-json-and-toml)
+where an install would appear to overwrite an existing directory or file.
+
+The installation validation logic is different from authoring validation because:
 
     1.  the problems are different; and
 
     2.  the actions to correct the problems are different.
 
+That said, the installation validation is additive to the package validation.
