@@ -7,7 +7,8 @@ Contribution to this project is supported and contributors will be recognised.
 
 # Summary
 
-Here is the [SKILL.md specification](https://agentskills.io/specification) and it definitey has YAML front matter and markdown body.
+Here is the [SKILL.md specification](https://agentskills.io/specification) and it definitely has YAML
+front matter and markdown body.
 
 Skills are expected to be packed in a particular directory structure and [the specification gives this breakdown](https://agentskills.io/specification#directory-structure)
 
@@ -30,20 +31,20 @@ specifying skills.
 In a bundle directory, the bundle should have the name of the skill.
 The YAML frontmatter and the markdown body should be in different files and assembled into one
 SKILL.md file upon installation. Editors like VSCode support YAML editing when the extension is `.yml`
-or `.yaml` and syntax highlighting will be disabled for YAMl frontmatter in a markdown file.
+or `.yaml` and syntax highlighting will be disabled for YAML frontmatter in a markdown file.
 
-Similarly, markdown highlighting wil work better in a separate markdown file, with `.md` extension.
+Similarly, markdown highlighting will work better in a separate markdown file, with `.md` extension.
 
 The YAML and Markdown should be written to:
 1.  skill.yaml; and
 2.  skill.md
 
-Upon assembly during installation, this will be turned into SKILL.md with the YAML frontmatter, the `----`
+Upon assembly during installation, this will be turned into SKILL.md with the YAML frontmatter, the `---`
 divider and the Markdown body. Validation of the part can check the skill frontmatter for correct fields
 and desirable value lengths to support [Progressive disclosure](https://agentskills.io/specification#progressive-disclosure)
 to minimise unnecessary token usage.
 
-A bundle allows for sub-directories, sucy as `scripts/` and the user can give the --exec-filter scripts/*
+A bundle allows for sub-directories, such as `scripts/` and the user can give the --exec-filter scripts/*
 so the installation process can control the path and update the markdown body with the correct path.
 
 ## Standardisation means common implementation code
@@ -132,6 +133,43 @@ This will meet the spec for agents and for skills, in general.
 
 The optional `references/` and `assets/` directories should install inside the skill directory to comply
 with the skill specification.
+
+### Bundle layout and processing
+
+It **will not** rely on the bundle name or bundle structure to match the name of the skill.
+Example, assume the package developer has a working directory structure like this:
+
+```text
+├── WonderSkill
+    ├── .git
+    ├── pkg_bundle
+    │   ├── SKILL.md
+    │   ├── assets
+    │       ├── temmplate.yaml
+    ├── author-dir
+```
+
+Where WonderSkill is their probject base and their local `git` repo.
+The `author-dir` directory is where they would use ATP to build the package
+and they would use relative pathsback to `pkg_bundle` when adding the bundle.
+This directory is not special and its name will be replaced through the directory
+structure control mechanism used at install time.
+
+The bundle directory can store all the other directories and files to include in the 
+package part, such as the template asset.
+
+
+### Component SKILL.md files
+
+When a single or a few files are provided in the skill part, such as the SKILL.md,
+the directory structure control mechanism will be required to ensure the skill spec compliant
+directory layout will be created at install time.
+
+### Directory structure control
+
+To best support both bundles and components where the user has packaged a SKILL.md final file
+as a component, the install process will control the directory structure to match the above specification
+and the Skill specification.
 
 ### Script installation
 
