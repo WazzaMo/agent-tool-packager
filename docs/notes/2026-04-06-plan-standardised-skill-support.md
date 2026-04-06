@@ -51,7 +51,7 @@ so the installation process can control the path and update the markdown body wi
 Because this standard applies to most agents, we can make a set of functions that implement the Skill
 agent provider logic in one place, that all AgentProvider implementations can use when the part being installed is a skill.
 
-A few questions before implementation:
+## A few points to consider
 
 1. Scope of shared logic is to handle installation of skills for all agent types:
 
@@ -74,8 +74,114 @@ A few questions before implementation:
     for multiple files to keep the code clean.
  
 4.  Up until now, skills were intended to be pass-through but this deviates from Rule which
-    share the YAML----Markdown format, so this is an inconsistency but more importantly the
+    share the YAML---Markdown format, so this is an inconsistency but more importantly the
     bundle format supports the possibilities of skills so much better. This means we want skills
     to be authored in a bundle with the `SKILL.md` being assembled from `skill.yaml` and `skill.md`
     as component files. So it will share the normalize/reassemble logic from `.mdc` files.
+
+
+## Implications and analysis
+
+### Backward compatibility and user choice
+
+The user may choose to create their skill file in the final form, as `SKILL.md` with YAML
+frontmatter, --- divider and Markdown body. The user should be able to do this, if they wish.
+Supporting this choice will also result in supporting existing packages.
+
+If the skill is packaged as a component file on its own, this can still work.
+At installation time, the skill directory will need to be created and its name must match
+the skill name field from the YAML frontmatter, following the Skills specification.
+
+The implication of this decision is that the Skills standard validations need to allow for the possibility
+of an exact SKILL.md file being supplied either in a bundle or as a component, and the supply of partial
+skill files - `skill.yaml` and `skill.md` that require assembly. The validation should check 
+that the part has given one or the other - pre-assembled or needing assembly forms.
+
+It is not valid, for a skill part to omit any form of skill file and it is also invalid to supply
+one of the partial files without the other - both the yaml and markdown partials are required.
+Omitted skills should result in an error message during package authoring and a failure with a non-zero
+exit code.
+
+### Output naming
+
+The assembled file will be SKILL.md the name of the skill is given in the YAML frontmatter, when assembly
+is used by the user. The directory structure will be:
+
+```text
+{agent-skill-directory}/{skill-name}
+├── SKILL.md
+├── optional directories (scripts/, references/, assets/)
+```
+
+Where:
+    {agent-skill-directory} = {project-root}/{project-agent-directory}/{agent-skills-subdir}
+
+    - {project-root} is the base directory for the development project;
+    - {project-agent-directory} is the directory for agent specific files which could be `.agents` or 
+      `.cursor` depending on the agent
+    - {agent-skills-subdir} which is `skills` for codex and cursor.
+
+An example is `.cursor/skills/pdf-processing/` where:
+- the agent is cursor
+- cursor expects `skills` as the {agent-skills-subdir}; and
+- `pdf-processing` is the skill name specified in the YAML frontmatter.
+
+The AgentProvider implementation can pass the agent skill directory, as a full path to the
+skill provider standard functions to complete resolution of the complete set of installation paths.
+This will meet the spec for agents and for skills, in general.
+
+The optional `references/` and `assets/` directories should install inside the skill directory to comply
+with the skill specification.
+
+### Script installation
+
+For scripts in skills, we should meet the specification for skills because this avoids surprising the end
+user and that means that scripts are installed in with the skill, as documented by the Skills specification. The implication of this is that we cannot make this bundle a UNIX compliant structure upon
+install. It also means the scripts do not need to be in the general PATH environment variable for the user.
+
+This means these scripts are not treated as system executables and are for the agent's predominantly.
+There is nothing but inconvenience stopping a user from running them.
+
+### Script path patching in SKILL.md files
+
+Is path patching needed? Most likely this will not be needed because there is a standard
+and agents have implemented it.
+
+We can give the user the option to employ path patching by using the variable in their markdown body.
+```markdown
+## Extract content from PDF
+Execute {skill_scripts}/extract.py to extract text from the PDF.
+```
+
+The variable will be very specific `{skill_scripts}` and will be expected to have `/` follow it.
+Meaning a string replace can be performed after the SKILL.md file is written, replacing the variable
+with an absolute path.
+
+### Skill validation
+
+The validation of the skill bundle should be performed at authoring time because this is the best
+time for the author to take corrective action. They must be told what is wrong and given clues and
+suggestions for corrections.
+
+Authoring error cause cases (incomplete list):
+
+    - SKILL.md or skill.yaml + skill.md file missing
+
+    - YAML frontmatter violations - field names or lengths outside the Skill specification.
+
+    - Markdown body mentions a script file, reference or asset file and the files are missing.
+
+These are all things the author should be told at authoring time, so they can fix their package.
+The package authoring process should fail with error messages and stop until fixed.
+
+If any package validation violations are found at install time, the package must be deemed as invalid
+and recognised as a security risk because the package YAML file, `atp-package.yaml` and the contents
+of the `package.tar.gz` may have been tampered with or corrupted.
+
+At install time, there are other reasons for install to fail, such as installation ambiguities
+or file path collisions should lead to an error message. The installation validation logic is different from authoring validation because:
+
+    1.  the problems are different; and
+
+    2.  the actions to correct the problems are different.
 
