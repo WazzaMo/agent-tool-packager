@@ -10,6 +10,7 @@ import os from "node:os";
 import { OperationIds } from "../../src/file-ops/operation-ids.js";
 import { StagedPartInstallInput } from "../../src/file-ops/part-install-input.js";
 import { createCursorAgentProvider } from "../../src/provider/cursor-agent-provider.js";
+import { SKILL_DESCRIPTION_MAX_LEN } from "../../src/provider/skill/constants.js";
 
 describe("CursorAgentProvider", () => {
   let tmp: string;
@@ -122,6 +123,49 @@ describe("CursorAgentProvider", () => {
     expect(plan.actions[0].kind).toBe("plain_markdown_write");
     expect(plan.actions[0].content).toContain("# S");
     expect(plan.actions[0].content).toContain("name: s");
+  });
+
+  it("planInstall wraps invalid skill frontmatter as CursorAgentProvider error (tamper / spec guard)", () => {
+    const badDesc = "x".repeat(SKILL_DESCRIPTION_MAX_LEN + 1);
+    fs.writeFileSync(
+      path.join(staging, "BAD.md"),
+      `---\nname: bad\ndescription: ${badDesc}\n---\n\n# X\n`
+    );
+    const manifest = {
+      name: "bad-pkg",
+      assets: [{ path: "BAD.md", type: "skill" as const, name: "bad" }],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Skill",
+      stagingRelPaths: ["BAD.md"],
+      stagingDir: staging,
+    });
+    expect(() =>
+      provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false })
+    ).toThrow(/^CursorAgentProvider:/);
+  });
+
+  it("planInstall rejects skill YAML name that would escape the skills directory", () => {
+    fs.writeFileSync(
+      path.join(staging, "evil.md"),
+      "---\nname: a/b\ndescription: d\n---\n\n# X\n"
+    );
+    const manifest = {
+      name: "evil-pkg",
+      assets: [{ path: "evil.md", type: "skill" as const, name: "evil" }],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Skill",
+      stagingRelPaths: ["evil.md"],
+      stagingDir: staging,
+    });
+    expect(() =>
+      provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false })
+    ).toThrow(/CursorAgentProvider:.*path segments/s);
   });
 
   it("assembles .mdc with YAML frontmatter using RuleAssembly op id", () => {

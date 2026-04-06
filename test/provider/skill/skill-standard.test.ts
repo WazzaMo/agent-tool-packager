@@ -9,6 +9,14 @@ import path from "node:path";
 
 import { assembleSkillMdFromPartials } from "../../../src/provider/skill/assemble-skill-md.js";
 import {
+  SKILL_COMPATIBILITY_MAX_LEN,
+  SKILL_DESCRIPTION_MAX_LEN,
+} from "../../../src/provider/skill/constants.js";
+import {
+  assertSafeSkillDirectoryName,
+  finalizeSkillMdContent,
+} from "../../../src/provider/skill/finalize-skill-md.js";
+import {
   SkillFrontmatterError,
   normaliseSkillYamlDocument,
 } from "../../../src/provider/skill/normalize-skill-frontmatter.js";
@@ -18,8 +26,8 @@ import {
   resolvePrimarySkillSource,
   isAssembledSkillMdBasename,
   isPartialSkillMdBasename,
+  isSkillYamlBasename,
 } from "../../../src/provider/skill/resolve-primary-skill-source.js";
-import { finalizeSkillMdContent } from "../../../src/provider/skill/finalize-skill-md.js";
 import {
   longestCommonPathPrefix,
   resolveSkillBundleRoot,
@@ -72,6 +80,46 @@ allowed-tools: bash grep
       normaliseSkillYamlDocument(`name: a\ndescription: b\nmetadata:\n  k: 1`)
     ).toThrow(SkillFrontmatterError);
   });
+
+  it("accepts description at max length", () => {
+    const d = "x".repeat(SKILL_DESCRIPTION_MAX_LEN);
+    const o = normaliseSkillYamlDocument(`name: a\ndescription: ${d}`);
+    expect(String(o.description)).toHaveLength(SKILL_DESCRIPTION_MAX_LEN);
+  });
+
+  it("rejects description over max length", () => {
+    const d = "x".repeat(SKILL_DESCRIPTION_MAX_LEN + 1);
+    expect(() => normaliseSkillYamlDocument(`name: a\ndescription: ${d}`)).toThrow(SkillFrontmatterError);
+  });
+
+  it("accepts compatibility at max length", () => {
+    const c = "y".repeat(SKILL_COMPATIBILITY_MAX_LEN);
+    const o = normaliseSkillYamlDocument(`name: a\ndescription: b\ncompatibility: ${c}`);
+    expect(String(o.compatibility)).toHaveLength(SKILL_COMPATIBILITY_MAX_LEN);
+  });
+
+  it("rejects compatibility over max length", () => {
+    const c = "y".repeat(SKILL_COMPATIBILITY_MAX_LEN + 1);
+    expect(() =>
+      normaliseSkillYamlDocument(`name: a\ndescription: b\ncompatibility: ${c}`)
+    ).toThrow(SkillFrontmatterError);
+  });
+
+  it("rejects non-string compatibility", () => {
+    expect(() =>
+      normaliseSkillYamlDocument("name: a\ndescription: b\ncompatibility: 42")
+    ).toThrow(SkillFrontmatterError);
+  });
+
+  it("accepts valid metadata map with string values", () => {
+    const o = normaliseSkillYamlDocument(`name: a
+description: b
+metadata:
+  author: org
+  version: "1.0"
+`);
+    expect(o.metadata).toEqual({ author: "org", version: "1.0" });
+  });
 });
 
 describe("assemble-skill-md", () => {
@@ -100,6 +148,14 @@ describe("trySplitSkillFrontmatter", () => {
   });
 });
 
+describe("isSkillYamlBasename", () => {
+  it("treats skill.yml as an alias of skill.yaml", () => {
+    expect(isSkillYamlBasename("skill.yml")).toBe(true);
+    expect(isSkillYamlBasename("skill.yaml")).toBe(true);
+    expect(isSkillYamlBasename("Skill.YAML")).toBe(true);
+  });
+});
+
 describe("resolvePrimarySkillSource", () => {
   it("classifies assembled vs partial basenames", () => {
     expect(isPartialSkillMdBasename("skill.md")).toBe(true);
@@ -122,6 +178,119 @@ describe("resolvePrimarySkillSource", () => {
     expect(r.consumedRelPaths.has("skill.yaml")).toBe(true);
     fs.rmSync(tmp, { recursive: true });
   });
+
+  it("accepts skill.yml with skill.md partials", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-yml-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "skill.yml"), "name: yml-skill\ndescription: from yml\n");
+    fs.writeFileSync(path.join(tmp, "skill.md"), "# Yml body\n");
+    const r = resolvePrimarySkillSource(tmp, "", [
+      { path: "skill.yml", type: "skill", name: "y" },
+      { path: "skill.md", type: "skill", name: "y" },
+    ]);
+    expect(r.skillMdUtf8).toContain("name: yml-skill");
+    expect(r.consumedRelPaths.has("skill.yml")).toBe(true);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects skill.yaml without companion skill.md", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-yonly-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "skill.yaml"), "name: x\ndescription: d\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [{ path: "skill.yaml", type: "skill", name: "x" }])
+    ).toThrow(/skill\.md|companion/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects skill.md partial without skill.yaml or skill.yml", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-monly-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "skill.md"), "# orphan\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [{ path: "skill.md", type: "skill", name: "x" }])
+    ).toThrow(/exactly one skill\.yaml/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects mixing assembled SKILL.md with skill.yaml", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-mix-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "SKILL.md"),
+      "---\nname: a\ndescription: b\n---\n\n# OK\n"
+    );
+    fs.writeFileSync(path.join(tmp, "skill.yaml"), "name: x\ndescription: y\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [
+        { path: "SKILL.md", type: "skill", name: "a" },
+        { path: "skill.yaml", type: "skill", name: "b" },
+      ])
+    ).toThrow(/cannot mix SKILL\.md/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects two skill.yaml / skill.yml documents in one bundle", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-2y-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "skill.yaml"), "name: a\ndescription: d\n");
+    fs.writeFileSync(path.join(tmp, "skill.yml"), "name: b\ndescription: d\n");
+    fs.writeFileSync(path.join(tmp, "skill.md"), "# b\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [
+        { path: "skill.yaml", type: "skill", name: "1" },
+        { path: "skill.yml", type: "skill", name: "2" },
+        { path: "skill.md", type: "skill", name: "3" },
+      ])
+    ).toThrow(/exactly one skill\.yaml/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects multiple markdown files when disambiguation is unclear", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-2md-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "a.md"), "# A\n");
+    fs.writeFileSync(path.join(tmp, "b.md"), "# B\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [
+        { path: "a.md", type: "skill", name: "a" },
+        { path: "b.md", type: "skill", name: "b" },
+      ])
+    ).toThrow(/multiple markdown files/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects bundle with no markdown or yaml skill sources", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-py-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(path.join(tmp, "helper.py"), "print(1)\n");
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [{ path: "helper.py", type: "skill", name: "h" }])
+    ).toThrow(/need SKILL\.md|skill\.yaml/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("rejects more than one assembled SKILL.md in the same bundle", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-2SKILL-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.mkdirSync(path.join(tmp, "a"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, "b"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "a", "SKILL.md"),
+      "---\nname: a\ndescription: d\n---\n\n# A\n"
+    );
+    fs.writeFileSync(
+      path.join(tmp, "b", "SKILL.md"),
+      "---\nname: b\ndescription: d\n---\n\n# B\n"
+    );
+    expect(() =>
+      resolvePrimarySkillSource(tmp, "", [
+        { path: "a/SKILL.md", type: "skill", name: "a" },
+        { path: "b/SKILL.md", type: "skill", name: "b" },
+      ])
+    ).toThrow(/at most one SKILL\.md/i);
+    fs.rmSync(tmp, { recursive: true });
+  });
 });
 
 describe("finalizeSkillMdContent", () => {
@@ -130,6 +299,28 @@ describe("finalizeSkillMdContent", () => {
     expect(skillDirName).toBe("my-skill");
     expect(content).toContain("name: my-skill");
     expect(content).toContain("# Only body");
+  });
+
+  it("rejects skill name that contains path segments", () => {
+    const raw = "---\nname: evil/name\ndescription: bad\n---\n\n# X\n";
+    expect(() => finalizeSkillMdContent(raw, "fallback")).toThrow(SkillFrontmatterError);
+    expect(() => finalizeSkillMdContent(raw, "fallback")).toThrow(/path segments/i);
+  });
+});
+
+describe("assertSafeSkillDirectoryName", () => {
+  it("returns trimmed safe names", () => {
+    expect(assertSafeSkillDirectoryName("  pdf-kit  ")).toBe("pdf-kit");
+  });
+
+  it("rejects empty names", () => {
+    expect(() => assertSafeSkillDirectoryName("   ")).toThrow(SkillFrontmatterError);
+  });
+
+  it("rejects path-like names", () => {
+    expect(() => assertSafeSkillDirectoryName("a/b")).toThrow(SkillFrontmatterError);
+    expect(() => assertSafeSkillDirectoryName("..")).toThrow(SkillFrontmatterError);
+    expect(() => assertSafeSkillDirectoryName("x\\y")).toThrow(SkillFrontmatterError);
   });
 });
 
@@ -170,6 +361,27 @@ describe("buildSkillInstallProviderActions", () => {
       expect(actions[1].relativeTargetPath).toBe("skills/bundle-skill/scripts/tool.sh");
     }
 
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("throws when assembled SKILL.md frontmatter exceeds spec (install-time guard)", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-inv-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    const badDesc = "x".repeat(SKILL_DESCRIPTION_MAX_LEN + 1);
+    fs.writeFileSync(
+      path.join(tmp, "SKILL.md"),
+      `---\nname: bad\ndescription: ${badDesc}\n---\n\n# Nope\n`
+    );
+    const layerRoot = path.join(tmp, "layer");
+    fs.mkdirSync(layerRoot, { recursive: true });
+    expect(() =>
+      buildSkillInstallProviderActions(
+        { stagingDir: tmp, layerRoot },
+        { partIndex: 1, partKind: "Skill" },
+        [{ path: "SKILL.md", type: "skill", name: "bad" }],
+        { name: "pkg", version: "1.0.0" }
+      )
+    ).toThrow(SkillFrontmatterError);
     fs.rmSync(tmp, { recursive: true });
   });
 });

@@ -7,6 +7,7 @@ import {
   normaliseSkillYamlDocument,
   serialiseSkillFrontmatterYaml,
   skillNameFromNormalisedFrontmatter,
+  SkillFrontmatterError,
 } from "./normalize-skill-frontmatter.js";
 import { trySplitSkillFrontmatter } from "./split-skill-md.js";
 
@@ -16,10 +17,10 @@ import { trySplitSkillFrontmatter } from "./split-skill-md.js";
 export function assertSafeSkillDirectoryName(name: string): string {
   const t = name.trim();
   if (!t) {
-    throw new Error("Skill name resolved to empty string");
+    throw new SkillFrontmatterError("Skill name resolved to empty string");
   }
   if (t.includes("..") || t.includes("/") || t.includes("\\")) {
-    throw new Error(`Skill name must not contain path segments: ${name}`);
+    throw new SkillFrontmatterError(`Skill name must not contain path segments: ${name}`);
   }
   return t;
 }
