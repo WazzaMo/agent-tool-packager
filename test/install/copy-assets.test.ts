@@ -9,6 +9,7 @@ import os from "node:os";
 import {
   agentDestinationForAsset,
   copyPackageAssets,
+  patchMarkdownBundlePlaceholders,
 } from "../../src/install/copy-assets.js";
 
 function createTempDir(): string {
@@ -223,5 +224,16 @@ Use {my_util} to process files.
       const patched = fs.readFileSync(path.join(agentBase, "skills", "SKILL.md"), "utf8");
       expect(patched).toBe("Tool A: /path/a, Tool B: /path/b");
     });
+  });
+});
+
+describe("patchMarkdownBundlePlaceholders", () => {
+  it("returns input unchanged when map missing or empty", () => {
+    expect(patchMarkdownBundlePlaceholders("x {a}", undefined)).toBe("x {a}");
+    expect(patchMarkdownBundlePlaceholders("x {a}", {})).toBe("x {a}");
+  });
+
+  it("replaces placeholders like copyPackageAssets", () => {
+    expect(patchMarkdownBundlePlaceholders("p {myb}/x", { myb: "/bin" })).toBe("p /bin/x");
   });
 });

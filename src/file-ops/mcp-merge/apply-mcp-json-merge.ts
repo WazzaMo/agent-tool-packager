@@ -11,10 +11,7 @@ import {
   type McpMergeOptions,
   type McpMergeOutcomeStatus,
 } from "./mcp-json-merge.js";
-
-function formatJsonDocument(obj: unknown): string {
-  return `${JSON.stringify(obj, null, 2)}\n`;
-}
+import { formatJsonDocument } from "./mcp-json-helpers.js";
 
 function parseJsonUtf8(raw: string, absolutePath: string): unknown {
   try {

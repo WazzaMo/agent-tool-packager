@@ -27,11 +27,14 @@ type YamlBundle = string | { path: string; "exec-filter"?: string };
  * @param partType - Canonical part type string.
  * @returns Install `assets[].type` value for staged files.
  */
-function componentAssetTypeForPart(partType: string): "rule" | "skill" | "prompt" | "hook" {
+function componentAssetTypeForPart(
+  partType: string
+): "rule" | "skill" | "prompt" | "hook" | "mcp" {
   const t = partType.toLowerCase();
   if (t === "skill") return "skill";
   if (t === "prompt") return "prompt";
   if (t === "hook") return "hook";
+  if (t === "mcp") return "mcp";
   return "rule";
 }
 
@@ -133,12 +136,15 @@ function appendRootLevelBundlePrograms(
  * @param manifest - Parsed manifest (for root `type`).
  * @returns Install `assets[].type` for each listed component file.
  */
-function singleTypeComponentAssetType(manifest: DevPackageManifest): "rule" | "skill" | "prompt" | "hook" {
+function singleTypeComponentAssetType(
+  manifest: DevPackageManifest
+): "rule" | "skill" | "prompt" | "hook" | "mcp" {
   const t = (manifest.type ?? "Rule").toLowerCase();
   if (t === "rule") return "rule";
   if (t === "skill") return "skill";
   if (t === "prompt") return "prompt";
   if (t === "hook") return "hook";
+  if (t === "mcp") return "mcp";
   return "rule";
 }
 

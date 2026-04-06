@@ -81,3 +81,21 @@ export const OperationIds = {
 } as const;
 
 export type OperationId = (typeof OperationIds)[keyof typeof OperationIds];
+
+/** Literal id for {@link OperationIds.PlainMarkdownEmit} (for type-only DTO imports). */
+export type PlainMarkdownEmitOperationId = typeof OperationIds.PlainMarkdownEmit;
+
+/** Literal id for {@link OperationIds.RuleAssembly}. */
+export type RuleAssemblyOperationId = typeof OperationIds.RuleAssembly;
+
+/** Literal id for {@link OperationIds.ConfigMerge}. */
+export type ConfigMergeOperationId = typeof OperationIds.ConfigMerge;
+
+/** Literal id for {@link OperationIds.HookJsonGraph}. */
+export type HookJsonGraphOperationId = typeof OperationIds.HookJsonGraph;
+
+/** Literal id for {@link OperationIds.TreeMaterialise}. */
+export type TreeMaterialiseOperationId = typeof OperationIds.TreeMaterialise;
+
+/** Literal id for {@link OperationIds.ExperimentalDrop}. */
+export type ExperimentalDropOperationId = typeof OperationIds.ExperimentalDrop;

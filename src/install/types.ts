@@ -3,12 +3,43 @@
  * Schema from docs/features/1-package-definition-and-installation.md.
  */
 
+import type { CatalogPackage } from "../catalog/types.js";
 import type { PackagePart } from "../package/types.js";
+
+/** Whether install prompts apply to the project Safehouse or Station scope. */
+export type PromptScope = "project" | "station";
+
+/** Where program assets are installed when applicable. */
+export type BinaryScope = "user-bin" | "project-bin";
+
+/** Options for `installPackage` in `install.ts`. */
+export interface InstallOptions {
+  promptScope: PromptScope;
+  binaryScope: BinaryScope;
+  /** When true, recursively install `program_dependencies` from the catalog first. */
+  dependencies: boolean;
+  /** Replace conflicting MCP server entries on merge (Cursor `mcp.json`). */
+  forceConfig?: boolean;
+  /** Skip MCP / hooks JSON merges (no read or write of those files). */
+  skipConfig?: boolean;
+}
+
+/** Arguments shared by catalog install entry points and {@link buildProviderInstallContext}. */
+export interface CatalogInstallContext {
+  pkgDir: string;
+  manifest: PackageManifest;
+  agentBase: string;
+  bundlePathMap: Record<string, string> | undefined;
+  installBinDir: string | undefined;
+  catalogPkg: CatalogPackage;
+  opts: InstallOptions;
+  projectBase: string;
+}
 
 /** One installable asset row from the catalog / enriched manifest. */
 export interface PackageAsset {
   path: string;
-  type: "skill" | "rule" | "prompt" | "hook" | "program" | "sub-agent";
+  type: "skill" | "rule" | "prompt" | "hook" | "program" | "sub-agent" | "mcp";
   name: string;
 }
 

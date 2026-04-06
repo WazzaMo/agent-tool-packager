@@ -21,15 +21,14 @@ import {
   coercePackageParts,
 } from "../file-ops/part-install-input.js";
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
-import { copyPackageAssets } from "./copy-assets.js";
+import { installPackageAssetsForCatalogContext } from "./install-package-assets.js";
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "./resolve.js";
 
-import type { PackageManifest } from "./types.js";
-import type { CatalogPackage } from "../catalog/types.js";
+import type { CatalogInstallContext, InstallOptions, PackageManifest } from "./types.js";
 import {
   normaliseAgentId,
   type InstallContext,
@@ -41,30 +40,12 @@ import type { StagedPartInstallInput } from "../file-ops/part-install-input.js";
 const SAFEHOUSE_REQUIRED_MSG =
   "No Safehouse found. Run `atp safehouse init` first from your project directory.";
 
-/** Whether install prompts apply to the project Safehouse or Station scope. */
-export type PromptScope = "project" | "station";
-/** Where program assets are installed when applicable. */
-export type BinaryScope = "user-bin" | "project-bin";
-
-/** Options for {@link installPackage}. */
-export interface InstallOptions {
-  promptScope: PromptScope;
-  binaryScope: BinaryScope;
-  /** When true, recursively install `program_dependencies` from the catalog first. */
-  dependencies: boolean;
-}
-
-/** Arguments shared by {@link installMultiTypeCatalogPackage} and {@link installLegacyCatalogPackage}. */
-export interface CatalogInstallContext {
-  pkgDir: string;
-  manifest: PackageManifest;
-  agentBase: string;
-  bundlePathMap: Record<string, string> | undefined;
-  installBinDir: string | undefined;
-  catalogPkg: CatalogPackage;
-  opts: InstallOptions;
-  projectBase: string;
-}
+export type {
+  BinaryScope,
+  CatalogInstallContext,
+  InstallOptions,
+  PromptScope,
+} from "./types.js";
 
 /**
  * Classify catalog manifest layout for install routing (Feature 4).
@@ -185,16 +166,7 @@ async function executeCatalogInstall(
   layout: "multi" | "legacy",
   ctx: CatalogInstallContext
 ): Promise<void> {
-  const {
-    pkgDir,
-    manifest,
-    agentBase,
-    bundlePathMap,
-    installBinDir,
-    catalogPkg,
-    opts,
-    projectBase,
-  } = ctx;
+  const { pkgDir, manifest, catalogPkg, opts, projectBase } = ctx;
 
   const providerCtx = buildProviderInstallContext(ctx);
   if (!path.isAbsolute(providerCtx.stagingDir) || !path.isAbsolute(providerCtx.layerRoot)) {
@@ -216,12 +188,10 @@ async function executeCatalogInstall(
 
   const copied: string[] = [];
   try {
-    copyPackageAssets(
-      pkgDir,
-      manifest,
-      agentBase,
-      bundlePathMap,
-      installBinDir,
+    installPackageAssetsForCatalogContext(
+      ctx,
+      providerCtx,
+      stagedParts,
       (dest) => copied.push(dest)
     );
 

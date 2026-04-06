@@ -21,13 +21,20 @@ function installOptionsFromCliFlags(opts: {
   userBin?: boolean;
   projectBin?: boolean;
   dependencies?: boolean;
+  forceConfig?: boolean;
+  skipConfig?: boolean;
 }): InstallOptions {
+  if (opts.forceConfig && opts.skipConfig) {
+    throw new Error("Cannot use --force-config together with --skip-config.");
+  }
   const promptScope = opts.station ? "station" : "project";
   const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
   return {
     promptScope,
     binaryScope,
     dependencies: opts.dependencies ?? false,
+    forceConfig: opts.forceConfig ?? false,
+    skipConfig: opts.skipConfig ?? false,
   };
 }
 
@@ -61,6 +68,14 @@ export function registerInstallCommand(program: Command): void {
       "--dependencies",
       "Install package dependencies first; without it, fail with clear message if deps missing"
     )
+    .option(
+      "--force-config",
+      "When merging MCP config, replace an existing server entry if it differs from the package"
+    )
+    .option(
+      "--skip-config",
+      "Skip MCP and hooks JSON merges (no read/write of mcp.json or hooks.json)"
+    )
     .action(
       async (
         pkgName: string,
@@ -70,13 +85,19 @@ export function registerInstallCommand(program: Command): void {
           userBin?: boolean;
           projectBin?: boolean;
           dependencies?: boolean;
+          forceConfig?: boolean;
+          skipConfig?: boolean;
         }
       ) => {
-        await installPackage(
-          pkgName,
-          installOptionsFromCliFlags(opts),
-          process.cwd()
-        );
+        let installOpts: InstallOptions;
+        try {
+          installOpts = installOptionsFromCliFlags(opts);
+        } catch (e) {
+          console.error((e as Error).message);
+          process.exit(1);
+          return;
+        }
+        await installPackage(pkgName, installOpts, process.cwd());
       }
     );
 }

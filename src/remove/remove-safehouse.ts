@@ -126,6 +126,7 @@ function removeAgentCopies(
 
   for (const asset of assets) {
     if (asset.type === "program") continue;
+    if (asset.type === "mcp") continue;
 
     const { filePath: destPath } = agentDestinationForAsset(agentBase, asset);
 

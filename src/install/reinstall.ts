@@ -10,8 +10,13 @@ import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
 import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
 
 
+import {
+  buildProviderInstallContext,
+  prepareCatalogInstallPartInputs,
+} from "./install.js";
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
-import { copyPackageAssets } from "./copy-assets.js";
+import { installPackageAssetsForCatalogContext } from "./install-package-assets.js";
+import type { CatalogInstallContext } from "./types.js";
 import {
   resolvePackage,
   resolvePackagePath,
@@ -69,8 +74,23 @@ export async function reinstallSafehousePackages(
       projectBase
     );
 
-    // Only copy file assets (skills, rules). Programs are already in place.
-    copyPackageAssets(pkgDir, pkgManifest, agentBase, bundlePathMap);
+    const ctx: CatalogInstallContext = {
+      pkgDir,
+      manifest: pkgManifest,
+      agentBase,
+      bundlePathMap,
+      installBinDir: undefined,
+      catalogPkg,
+      opts: {
+        promptScope: "project",
+        binaryScope,
+        dependencies: false,
+      },
+      projectBase,
+    };
+    const providerCtx = buildProviderInstallContext(ctx);
+    const stagedParts = prepareCatalogInstallPartInputs(ctx);
+    installPackageAssetsForCatalogContext(ctx, providerCtx, stagedParts);
     console.log(`  - Re-installed ${pkgInfo.name} for ${agentName}`);
   }
 }

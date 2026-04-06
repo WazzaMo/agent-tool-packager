@@ -12,6 +12,16 @@ export function cloneJson<T>(v: T): T {
   return structuredClone(v);
 }
 
+/**
+ * Pretty-print a JSON document for config files (trailing newline).
+ *
+ * @param obj - Root object to serialise.
+ * @returns UTF-8 text with two-space indent.
+ */
+export function formatJsonDocument(obj: unknown): string {
+  return `${JSON.stringify(obj, null, 2)}\n`;
+}
+
 export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
