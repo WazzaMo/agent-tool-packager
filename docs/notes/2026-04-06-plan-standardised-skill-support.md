@@ -28,7 +28,8 @@ just `SKILL.md` in a particular directory. It is not that simple. Given that ski
 optional scripts, a bundle is the most effective mechanism for developing, staging, authoring and
 specifying skills.
 
-In a bundle directory, the bundle should have the name of the skill.
+In a bundle directory, the bundle base directory name does not need to match name of the skill
+because the file layout will be controlled during the installation process.
 The YAML frontmatter and the markdown body should be in different files and assembled into one
 SKILL.md file upon installation. Editors like VSCode support YAML editing when the extension is `.yml`
 or `.yaml` and syntax highlighting will be disabled for YAML frontmatter in a markdown file.
@@ -56,7 +57,7 @@ agent provider logic in one place, that all AgentProvider implementations can us
 
 1. Scope of shared logic is to handle installation of skills for all agent types:
 
-    -   Validate and normalize the SKILL.md content from component files `skill.yaml` and `skill.md`
+    -   Validate and normalize the SKILL.md content from bundle files `skill.yaml` and `skill.md`
 
     -   Handle the optional directories as they appear in the bundle
         (scripts/, references/, assets/) as part of the skill install.
@@ -77,6 +78,9 @@ agent provider logic in one place, that all AgentProvider implementations can us
 (a) Optional, natural language list of dependencies or environment limits e.g. "Designed for Claude Code"
 
 (b) A YAML object adding some additional metadata; NOTE: ATP Packages have enough already.
+    ATP standard skill provider functions will check that the metadata has this shape.
+    The `metadata` object has `author` and `version` keys with string values.
+
 
 ```yaml
 metadata:
@@ -84,7 +88,8 @@ metadata:
   version: "1.0"
 ```
 
-(c) A space-delimited list of tools that are pre-approved for use
+(c) A space-delimited list of tools that are pre-approved for use. This is an experimental field
+    in the spec. ATP will strip this from YAML frontmatter for now and may be supported in the future.
 
 
 3.  File location - because it's standardised, we should give skill it's own sub-namespace
@@ -122,12 +127,14 @@ exit code.
 
 The pair of partial files, `skill.yaml` and `skill.md`, are only accepted in a bundle and will be
 rejected at authoring time if added as components, with an error message instructing the user
-to employ the bundle approach.
+to employ the bundle approach. `skill.yml` is treated as an alias to `skill.yaml` and either name for the
+skill YAML content will be accepted.
 
 A `SKILL.md` can be provided as a component, the legacy way, or in a bundle - either is acceptable.
 
-### Output naming
+### Installed directory naming and layout
 
+After the package installation completes, the skill part will have a layout as described here.
 The assembled file will be SKILL.md the name of the skill is given in the YAML frontmatter, when assembly
 is used by the user. The directory structure will be:
 
@@ -163,13 +170,13 @@ It **will not** rely on the bundle name or bundle structure to match the name of
 Example, assume the package developer has a working directory structure like this:
 
 ```text
-├── WonderSkill
+├── WonderSkill/
     ├── .git
-    ├── pkg_bundle
+    ├── pkg_bundle/
     │   ├── SKILL.md
-    │   ├── assets
+    │   ├── assets/
     │       ├── temmplate.yaml
-    ├── author-dir
+    ├── author-dir/
 ```
 
 Where WonderSkill is their probject base and their local `git` repo.
@@ -193,6 +200,16 @@ directory layout will be created at install time.
 To best support both bundles and components where the user has packaged a SKILL.md final file
 as a component, the install process will control the directory structure to match the above specification
 and the Skill specification.
+
+The process is to:
+
+ 1. resolve skill-name from frontmatter
+ 
+ 2. create {agent-skills-subdir}/{skill-name}/,
+ 
+ 3. map bundle tree under it so that it replaces the bundle base directory such that the assembled 
+    SKILL.md or the component SKILL.md will appear under {skill-name}/ along with any optional
+    directories, such as `scripts/`, `assets/` or `references/`.
 
 ### Script installation
 
@@ -226,7 +243,7 @@ suggestions for corrections.
 
 Authoring error cause cases (incomplete list):
 
-    - SKILL.md or skill.yaml + skill.md file missing
+    - SKILL.md or ((skill.yaml or skill.yml) + skill.md) file missing
 
     - YAML frontmatter violations - field names or lengths outside the Skill specification.
 
