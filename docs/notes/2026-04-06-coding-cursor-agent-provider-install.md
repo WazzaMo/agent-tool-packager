@@ -9,6 +9,36 @@ Contribution to this project is supported and contributors will be recognised.
 
 Generalised **Cursor** project installs so **`CursorAgentProvider`** plans and applies **rules** (plain `.md` and assembled `.mdc`), **skills**, **prompts**, **sub-agent** markdown, **`hooks.json`** merge plus hook scripts under **`hooks/`**, and **`mcp.json`** merge via **`mergeMcpJsonDocument`**. **`program`** rows are **not** in the provider plan; **`copyProgramAssetsOnly`** runs after the provider loop. Install routing uses **`usesCursorAgentProviderProjectInstall`** (Cursor + project layer + project prompt scope + only provider-handled asset types or programs). **`InstallOptions`** and **`atp install`** gained **`--force-config`** and **`--skip-config`** for MCP merge behaviour (and hooks skip for config merges).
 
+# Part type coverage
+
+The CursorAgentProvider handles asset types derived from canonical part types.
+Programs (from bundles) are handled separately via **`copyProgramAssetsOnly`**.
+
+| Part Type    | Asset Type | Provider Action            | Status |
+|--------------|------------|----------------------------|--------|
+| Rule         | rule       | plain_markdown_write       | ✅     |
+| Prompt       | prompt     | plain_markdown_write       | ✅     |
+| Skill        | skill      | plain_markdown_write       | ✅     |
+| Hook         | hook       | hooks_json_merge + raw copy| ✅     |
+| Mcp          | mcp        | mcp_json_merge             | ✅     |
+| Command      | rule (1)   | markdown handled           | ✅     |
+| Experimental | rule (1)   | markdown handled           | ✅     |
+| Multi        | (varies)   | per-part dispatch          | ✅     |
+
+(1) Command and Experimental components map to `rule` asset type via fallback in
+**`componentAssetTypeForPart`**; their programs are handled outside the provider.
+
+## Checklist
+
+- [x] Rule — markdown write with optional `.mdc` assembly
+- [x] Prompt — markdown write to `prompts/`
+- [x] Skill — markdown write to `skills/`
+- [x] Hook — `hooks.json` merge + script copy to `hooks/`
+- [x] Mcp — `mcp.json` merge via `mergeMcpJsonDocument`
+- [x] Command — markdown components handled; programs via separate path
+- [x] Experimental — markdown components handled; programs via separate path
+- [x] Multi — delegates to above per-part types
+
 # Code layout
 
 - `src/provider/provider-dtos.ts` — **`ProviderAction`** union: **`plain_markdown_write`**, **`mcp_json_merge`**, **`hooks_json_merge`**, **`raw_file_copy`**, **`delete_managed_file`**; **`AtpProvenance.fragmentKey`** as path under **`layerRoot`**.
