@@ -28,7 +28,7 @@ just `SKILL.md` in a particular directory. It is not that simple. Given that ski
 optional scripts, a bundle is the most effective mechanism for developing, staging, authoring and
 specifying skills.
 
-In a bundle directory, the bundle base directory name does not need to match name of the skill
+In a bundle directory, the bundle base directory name does not need to match the name of the skill
 because the file layout will be controlled during the installation process.
 The YAML frontmatter and the markdown body should be in different files and assembled into one
 SKILL.md file upon installation. Editors like VSCode support YAML editing when the extension is `.yml`
@@ -63,7 +63,7 @@ agent provider logic in one place, that all AgentProvider implementations can us
         (scripts/, references/, assets/) as part of the skill install.
 
     -   the standardised provider logic should extend ATP package validation during authoring
-        to confirm that any directories mentioned in the `skill.md` also appears in the bundle.
+        to confirm that any directories mentioned in the `skill.md` also appear in the bundle.
 
 2. Validation strictness - name and description should be validated against Skill spec numbers:
 
@@ -77,9 +77,9 @@ agent provider logic in one place, that all AgentProvider implementations can us
  
 (a) Optional, natural language list of dependencies or environment limits e.g. "Designed for Claude Code"
 
-(b) A YAML object adding some additional metadata; NOTE: ATP Packages have enough already.
-    ATP standard skill provider functions will check that the metadata has this shape.
-    The `metadata` object has `author` and `version` keys with string values.
+(b) A YAML object adding additional metadata. Per the Agent Skills specification, keys are strings
+    and values are strings. ATP standard skill provider functions validate that shape when `metadata`
+    is present (arbitrary keys allowed, not a fixed set).
 
 
 ```yaml
@@ -97,10 +97,10 @@ metadata:
     for multiple files to keep the code clean.
  
 4.  Up until now, skills were intended to be pass-through but this deviates from Rule which
-    share the YAML---Markdown format, so this is an inconsistency but more importantly the
-    bundle format supports the possibilities of skills so much better. This means we want skills
-    to be authored in a bundle with the `SKILL.md` being assembled from `skill.yaml` and `skill.md`
-    as component files. So it will share the normalize/reassemble logic from `.mdc` files.
+    share the YAML front matter and Markdown body pattern, so this is an inconsistency but more
+    importantly the bundle format supports the possibilities of skills so much better. This means we
+    want skills to be authored in a bundle with `SKILL.md` assembled from `skill.yaml` and `skill.md`
+    as files inside that skill bundle. So it will share the normalize/reassemble logic from `.mdc` files.
 
 
 ## Implications and analysis
@@ -135,8 +135,8 @@ A `SKILL.md` can be provided as a component, the legacy way, or in a bundle - ei
 ### Installed directory naming and layout
 
 After the package installation completes, the skill part will have a layout as described here.
-The assembled file will be SKILL.md the name of the skill is given in the YAML frontmatter, when assembly
-is used by the user. The directory structure will be:
+The assembled file will be `SKILL.md`. When assembly is used, the install directory name comes from
+the `name` field in the YAML frontmatter. The directory structure will be:
 
 ```text
 {agent-skill-directory}/{skill-name}
@@ -170,18 +170,18 @@ It **will not** rely on the bundle name or bundle structure to match the name of
 Example, assume the package developer has a working directory structure like this:
 
 ```text
-├── WonderSkill/
-    ├── .git
-    ├── pkg_bundle/
-    │   ├── SKILL.md
-    │   ├── assets/
-    │       ├── temmplate.yaml
-    ├── author-dir/
+WonderSkill/
+├── .git/
+├── pkg_bundle/
+│   ├── SKILL.md
+│   └── assets/
+│       └── template.yaml
+└── author-dir/
 ```
 
-Where WonderSkill is their probject base and their local `git` repo.
+Where WonderSkill is their project base and their local `git` repo.
 The `author-dir` directory is where they would use ATP to build the package
-and they would use relative pathsback to `pkg_bundle` when adding the bundle.
+and they would use relative paths back to `pkg_bundle` when adding the bundle.
 This directory is not special and its name will be replaced through the directory
 structure control mechanism used at install time.
 
