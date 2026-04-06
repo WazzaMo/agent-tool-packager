@@ -7,6 +7,11 @@
  * @returns Relative project path (e.g. .cursor/).
  */
 
+import path from "node:path";
+import os from "node:os";
+
+import { DEFAULT_AGENT_PATHS } from "./station-config.js";
+
 import type { StationConfig } from "./station-config.js";
 
 /**
@@ -43,4 +48,33 @@ export function resolveAgentProjectPath(
     return entry.project_path;
   }
   return `.${agentName}/`;
+}
+
+/**
+ * Absolute agent “home” directory (e.g. `~/.cursor/`) from Station `agent-paths` defaults.
+ * Used for provider `InstallContext.layerRoot` when the active layer is `user`.
+ *
+ * @param agentName - Agent key (e.g. `cursor`).
+ * @param stationConfig - Station config; `null` uses {@link DEFAULT_AGENT_PATHS}.
+ * @returns Normalised absolute path.
+ */
+export function resolveAgentHomePath(
+  agentName: string,
+  stationConfig: StationConfig | null
+): string {
+  const entry = stationConfig?.configuration?.["agent-paths"]?.[agentName];
+  const raw =
+    entry?.home_path ??
+    DEFAULT_AGENT_PATHS[agentName]?.home_path ??
+    `~/.${agentName}/`;
+  if (raw.startsWith("~/")) {
+    const rel = raw.slice(2).replace(/[/\\]+$/, "");
+    return path.normalize(path.join(os.homedir(), rel));
+  }
+  if (raw.startsWith("~") && (raw.length === 1 || raw[1] === "/")) {
+    const rel = raw.slice(1).replace(/^\//, "").replace(/[/\\]+$/, "");
+    return path.normalize(path.join(os.homedir(), rel));
+  }
+  const abs = path.isAbsolute(raw) ? raw : path.join(os.homedir(), raw);
+  return path.normalize(abs.replace(/[/\\]+$/, ""));
 }

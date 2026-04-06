@@ -282,21 +282,52 @@ describe("Integration: agent nomination", () => {
     expect(out).toContain("Handed over to claude");
   });
 
-  it("atp agent unknown-agent fails when agent not in agent-paths (Feature 3)", () => {
+  it("atp agent unknown-agent fails when no install provider exists for that name", () => {
     const { stderr } = runAtpExpectExit(["agent", "unknown-agent"], 1, {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    expect(stderr).toContain("Agent 'unknown-agent' is not configured in the Station");
-    expect(stderr).toContain("agent-paths");
+    expect(stderr).toMatch(/Unsupported agent/);
+    expect(stderr).toMatch(/cursor, claude, gemini, codex/);
   });
 
-  it("atp agent handover to unknown-agent fails when agent not in agent-paths", () => {
+  it("atp agent handover to unknown-agent fails when no install provider exists", () => {
     runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
     const { stderr } = runAtpExpectExit(["agent", "handover", "to", "unknown-agent"], 1, {
       cwd: projectDir,
       env: { STATION_PATH: stationDir },
     });
-    expect(stderr).toContain("Agent 'unknown-agent' is not configured in the Station");
+    expect(stderr).toMatch(/Unsupported agent/);
+  });
+
+  it("atp agent gemini fails when agent not in Station agent-paths (after provider check)", () => {
+    const { stderr } = runAtpExpectExit(["agent", "gemini"], 1, {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(stderr).toContain("Agent 'gemini' is not configured in the Station");
+    expect(stderr).toContain("agent-paths");
+  });
+
+  it("atp agent kiro fails when listed in Station but has no AgentProvider", () => {
+    fs.writeFileSync(
+      path.join(stationDir, "atp-config.yaml"),
+      `configuration:
+  version: 0.1.0
+  agent-paths:
+    cursor:
+      project_path: .cursor/
+    claude:
+      project_path: .claude/
+    kiro:
+      project_path: .kiro/
+`
+    );
+    const { stderr } = runAtpExpectExit(["agent", "kiro"], 1, {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(stderr).toMatch(/Unsupported agent/);
+    expect(stderr).toMatch(/kiro/);
   });
 });

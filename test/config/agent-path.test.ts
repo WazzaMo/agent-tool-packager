@@ -3,9 +3,13 @@
  * Acceptance: Agent nomination uses project_path from config or default .{agent}/
  */
 
+import path from "node:path";
+import os from "node:os";
 import { describe, it, expect } from "vitest";
+
 import {
   isAgentInStationConfig,
+  resolveAgentHomePath,
   resolveAgentProjectPath,
 } from "../../src/config/agent-path.js";
 import type { StationConfig } from "../../src/config/station-config.js";
@@ -85,5 +89,28 @@ describe("resolveAgentProjectPath", () => {
       },
     };
     expect(resolveAgentProjectPath("unknown-agent", config)).toBe(".unknown-agent/");
+  });
+});
+
+describe("resolveAgentHomePath", () => {
+  it("expands ~/.cursor/ under the real home directory", () => {
+    expect(resolveAgentHomePath("cursor", null)).toBe(
+      path.normalize(path.join(os.homedir(), ".cursor"))
+    );
+  });
+
+  it("uses station override when home_path is set", () => {
+    const config: StationConfig = {
+      configuration: {
+        version: "0.1.0",
+        "agent-paths": {
+          cursor: { project_path: ".cursor/", home_path: "~/.atp-test-cursor/" },
+        },
+        "standard-catalog": { url: "https://example.com/" },
+      },
+    };
+    expect(resolveAgentHomePath("cursor", config)).toBe(
+      path.normalize(path.join(os.homedir(), ".atp-test-cursor"))
+    );
   });
 });

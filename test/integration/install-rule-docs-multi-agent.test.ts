@@ -15,11 +15,11 @@ import {
 const DOC_GUIDE = path.join(PROJECT_ROOT, "docs", "doc-guide.md");
 const CLEAN_CODE = path.join(PROJECT_ROOT, "docs", "clean-code.md");
 
-/** Agents whose defaults in Station `agent-paths` support project rules/ install. */
+/** Supported agents (cursor, claude, gemini, codex) with default project dirs in Station `agent-paths`. */
 const AGENT_RULE_INSTALL: { agent: string; projectSubdir: string }[] = [
   { agent: "cursor", projectSubdir: ".cursor" },
   { agent: "gemini", projectSubdir: ".gemini" },
-  { agent: "kiro", projectSubdir: ".kiro" },
+  { agent: "codex", projectSubdir: ".codex" },
   { agent: "claude", projectSubdir: ".claude" },
 ];
 

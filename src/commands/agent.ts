@@ -10,6 +10,7 @@ import {
   isAgentInStationConfig,
   resolveAgentProjectPath,
 } from "../config/agent-path.js";
+import { isProviderAgentId, normaliseAgentId, type AgentId } from "../file-ops/install-context.js";
 import {
   loadSafehouseConfig,
   loadStationConfig,
@@ -28,6 +29,36 @@ const SAFEHOUSE_REQUIRED_MSG =
 
 const agentNotConfiguredMessage = (name: string): string =>
   `Agent '${name}' is not configured in the Station. Add it to agent-paths in atp-config.yaml.`;
+
+/**
+ * Require a provider-supported agent id; exit with message when unsupported.
+ *
+ * @param raw - User-supplied agent name.
+ * @returns Canonical {@link AgentId}.
+ */
+function normaliseAgentIdForCli(raw: string): AgentId {
+  try {
+    return normaliseAgentId(raw);
+  } catch (err) {
+    console.error(String(err));
+    process.exit(1);
+  }
+}
+
+/**
+ * Canonical id for Safehouse `agent` when it is provider-supported, else `null`.
+ *
+ * @param raw - Stored agent field (may be legacy / unsupported).
+ */
+function canonicalProviderAgentOrNull(raw: string | null): AgentId | null {
+  if (raw == null || raw.trim() === "") {
+    return null;
+  }
+  if (!isProviderAgentId(raw)) {
+    return null;
+  }
+  return normaliseAgentId(raw);
+}
 
 /**
  * Resolve project base and require an initialised Safehouse.
@@ -132,33 +163,36 @@ export function registerAgentCommands(program: Command): void {
       const cwd = process.cwd();
       const projectBase = ensureSafehouse(cwd);
       const config = loadSafehouseConfigOrExit(projectBase);
+      const canonical = normaliseAgentIdForCli(name);
       const stationConfig = loadStationConfig();
-      const agentPath = resolveValidatedAgentProjectPath(name, stationConfig);
+      const agentPath = resolveValidatedAgentProjectPath(canonical, stationConfig);
 
-      persistAgentSelection(projectBase, config, name, agentPath);
+      persistAgentSelection(projectBase, config, canonical, agentPath);
       await reinstallSafehousePackages(projectBase);
 
-      console.log(`Handed over to ${name} (${agentPath})`);
+      console.log(`Handed over to ${canonical} (${agentPath})`);
     });
 
   agent
-    .argument("<name>", "Agent to assign (e.g. cursor, claude, kiro)")
+    .argument("<name>", "Agent to assign (cursor, claude, gemini, codex)")
     .description("Assign agent to this project (run from project with .atp_safehouse)")
     .action((name: string) => {
       const cwd = process.cwd();
       const projectBase = ensureSafehouse(cwd);
       const config = loadSafehouseConfigOrExit(projectBase);
+      const canonical = normaliseAgentIdForCli(name);
+      const current = canonicalProviderAgentOrNull(config.agent);
 
-      if (config.agent === name) {
-        console.log(`Q Branch already knows ${name} was assigned to this project`);
+      if (current === canonical) {
+        console.log(`Q Branch already knows ${canonical} was assigned to this project`);
         return;
       }
 
       const stationConfig = loadStationConfig();
-      const agentPath = resolveValidatedAgentProjectPath(name, stationConfig);
+      const agentPath = resolveValidatedAgentProjectPath(canonical, stationConfig);
 
-      persistAgentSelection(projectBase, config, name, agentPath);
+      persistAgentSelection(projectBase, config, canonical, agentPath);
 
-      console.log(`Assigned ${name} to this project (${agentPath})`);
+      console.log(`Assigned ${canonical} to this project (${agentPath})`);
     });
 }

@@ -10,6 +10,7 @@
   "homepage": "https://github.com/WazzaMo/agent-tool-packager",
   "scripts": {
     "build": "node scripts/sync-version.js && vite build",
+    "ci:test": "node scripts/sync-version.js && vite build && vitest run",
     "sync-version": "node scripts/sync-version.js",
     "install-home": "node scripts/install-to-home.js",
     "uninstall-home": "node scripts/uninstall-from-home.js",
