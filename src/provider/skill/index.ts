@@ -18,6 +18,7 @@ export {
 } from "./normalize-skill-frontmatter.js";
 export { patchSkillScriptsPlaceholder } from "./patch-skill-placeholders.js";
 export { buildSkillInstallProviderActions } from "./plan-skill-install.js";
+export { removeProviderSkillBundleTrees } from "./remove-skill-bundles.js";
 export {
   isAssembledSkillMdBasename,
   isPartialSkillMdBasename,

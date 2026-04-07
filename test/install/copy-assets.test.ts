@@ -8,6 +8,7 @@ import path from "node:path";
 import os from "node:os";
 import {
   agentDestinationForAsset,
+  agentProviderRemovalDestination,
   copyPackageAssets,
   patchMarkdownBundlePlaceholders,
 } from "../../src/install/copy-assets.js";
@@ -84,6 +85,19 @@ describe("copyPackageAssets", () => {
     expect(
       agentDestinationForAsset(base, { type: "hook", path: "fmt.sh" }).filePath
     ).toBe(path.join(base, "hooks", "fmt.sh"));
+  });
+
+  it("agentProviderRemovalDestination maps Gemini MCP and hooks to settings.json", () => {
+    const base = path.join(os.tmpdir(), "atp-gem-rem");
+    expect(
+      agentProviderRemovalDestination("gemini", base, { type: "mcp", path: "x.json" }).filePath
+    ).toBe(path.join(base, "settings.json"));
+    expect(
+      agentProviderRemovalDestination("gemini", base, { type: "hook", path: "hooks.json" }).filePath
+    ).toBe(path.join(base, "settings.json"));
+    expect(
+      agentProviderRemovalDestination("gemini", base, { type: "rule", path: "c.toml" }).filePath
+    ).toBe(path.join(base, "commands", "c.toml"));
   });
 
   it("copies prompt asset to agent prompts/ directory", () => {

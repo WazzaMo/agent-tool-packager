@@ -18,9 +18,9 @@ export interface InstallOptions {
   binaryScope: BinaryScope;
   /** When true, recursively install `program_dependencies` from the catalog first. */
   dependencies: boolean;
-  /** Replace conflicting MCP server entries on merge (Cursor `mcp.json`). */
+  /** Replace conflicting MCP server or hook handler entries when merging agent JSON config. */
   forceConfig?: boolean;
-  /** Skip MCP / hooks JSON merges (no read or write of those files). */
+  /** Skip MCP and hooks JSON merges (no read or write of `mcp.json` or `hooks.json`). */
   skipConfig?: boolean;
 }
 

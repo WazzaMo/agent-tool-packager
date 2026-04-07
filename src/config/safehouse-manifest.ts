@@ -7,6 +7,12 @@ import path from "node:path";
 
 import yaml from "js-yaml";
 
+import {
+  configJournalRelativePath,
+  deletePackageConfigJournalFile,
+  writePackageConfigJournalFile,
+  type ConfigMergeJournalEntryV1,
+} from "./config-merge-journal.js";
 import { getSafehousePath, pathExists } from "./paths.js";
 
 import type {
@@ -108,6 +114,7 @@ export function loadSafehouseManifest(
  * @param source - station or local.
  * @param projectBase - Project base directory. Defaults to process.cwd().
  * @param installLayout - Optional `multi` vs `legacy` hint for Feature 4 manifests.
+ * @param configJournalEntries - Optional MCP/hooks merge journal (written under `config-journal/`).
  */
 export function addPackageToSafehouseManifest(
   name: string,
@@ -115,11 +122,18 @@ export function addPackageToSafehouseManifest(
   binaryScope: BinaryScope = "user-bin",
   source: PackageSource = "station",
   projectBase: string = process.cwd(),
-  installLayout?: "multi" | "legacy"
+  installLayout?: "multi" | "legacy",
+  configJournalEntries?: ConfigMergeJournalEntryV1[]
 ): void {
   const existing = loadSafehouseManifest(projectBase);
   const packages = existing?.packages ?? [];
   const stationPath = existing?.station_path ?? null;
+  const safehousePath = getSafehousePath(projectBase);
+
+  const prev = packages.find((p) => p.name === name);
+  if (prev?.config_journal_path && (!configJournalEntries || configJournalEntries.length === 0)) {
+    deletePackageConfigJournalFile(safehousePath, prev.config_journal_path);
+  }
 
   const filtered = packages.filter((p) => p.name !== name);
   const row: SafehouseManifestPackage = {
@@ -130,6 +144,10 @@ export function addPackageToSafehouseManifest(
   };
   if (installLayout) {
     row.install_layout = installLayout;
+  }
+  if (configJournalEntries && configJournalEntries.length > 0) {
+    writePackageConfigJournalFile(safehousePath, name, configJournalEntries);
+    row.config_journal_path = configJournalRelativePath(name);
   }
   filtered.push(row);
 
@@ -151,10 +169,56 @@ export function removePackageFromSafehouseManifest(
   const existing = loadSafehouseManifest(cwd);
   if (!existing) return;
 
+  const safehousePath = getSafehousePath(cwd);
+  const victim = existing.packages.find((p) => p.name === name);
+  if (victim?.config_journal_path) {
+    deletePackageConfigJournalFile(safehousePath, victim.config_journal_path);
+  }
+
   const packages = (existing.packages ?? []).filter((p) => p.name !== name);
   const stationPath = existing.station_path ?? null;
 
   writeSafehouseManifestToProject(cwd, { packages, station_path: stationPath });
+}
+
+/**
+ * Refresh MCP/hooks config journal after re-install (e.g. agent handover).
+ *
+ * @param projectBase - Project root with Safehouse.
+ * @param packageName - Installed package name.
+ * @param entries - New journal entries (empty clears stored journal file and manifest path).
+ */
+export function syncSafehousePackageConfigJournal(
+  projectBase: string,
+  packageName: string,
+  entries: ConfigMergeJournalEntryV1[]
+): void {
+  const existing = loadSafehouseManifest(projectBase);
+  if (!existing) return;
+
+  const safehousePath = getSafehousePath(projectBase);
+  const packages = (existing.packages ?? []).map((p) => ({ ...p }));
+  const idx = packages.findIndex((p) => p.name === packageName);
+  if (idx < 0) return;
+
+  const prevPath = packages[idx].config_journal_path;
+  if (prevPath && entries.length === 0) {
+    deletePackageConfigJournalFile(safehousePath, prevPath);
+    delete packages[idx].config_journal_path;
+  }
+
+  if (entries.length > 0) {
+    writePackageConfigJournalFile(safehousePath, packageName, entries);
+    packages[idx] = {
+      ...packages[idx],
+      config_journal_path: configJournalRelativePath(packageName),
+    };
+  }
+
+  writeSafehouseManifestToProject(projectBase, {
+    packages,
+    station_path: existing.station_path ?? null,
+  });
 }
 
 /**

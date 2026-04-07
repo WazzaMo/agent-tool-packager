@@ -40,6 +40,10 @@ export interface SafehouseManifestPackage {
   binary_scope?: BinaryScope;
   /** Hint for uninstall / tooling: `multi` when the catalog package used Feature 4 `parts`. */
   install_layout?: "multi" | "legacy";
+  /**
+   * Relative path under `.atp_safehouse` to JSON journalling MCP/hooks merges (SHA + fragments).
+   */
+  config_journal_path?: string;
 }
 
 /** Safehouse manifest document: installed packages and originating Station path. */

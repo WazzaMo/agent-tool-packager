@@ -15,3 +15,4 @@ export {
   readJsonObjectFile,
   type ApplyMcpJsonMergeResult,
 } from "./apply-mcp-json-merge.js";
+export { removeMcpServersByNamesFromDocument } from "./remove-mcp-servers.js";

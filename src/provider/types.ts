@@ -5,6 +5,8 @@
 import type { InstallContext } from "../file-ops/install-context.js";
 import type { StagedPartInstallInput } from "../file-ops/part-install-input.js";
 
+import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
+
 import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
 
 /**
@@ -35,7 +37,8 @@ export interface AgentProvider {
   applyPlan(
     plan: ProviderPlan,
     merge: ProviderMergeOptions,
-    onFileWritten?: (absolutePath: string) => void
+    onFileWritten?: (absolutePath: string) => void,
+    configMergeJournal?: ConfigMergeJournalEntryV1[]
   ): void;
 
   planRemove(ctx: InstallContext, target: AtpProvenance): ProviderPlan;

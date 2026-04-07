@@ -1,5 +1,6 @@
 /**
- * Cursor {@link AgentProvider}: skills, rules, prompts, hooks, MCP under the project agent tree.
+ * Gemini CLI {@link AgentProvider}: skills, rules, prompts, hooks, MCP under `.gemini/`;
+ * MCP and hooks merge into `settings.json` per the agent matrix.
  */
 
 import fs from "node:fs";
@@ -24,27 +25,36 @@ import { SkillFrontmatterError } from "./skill/normalize-skill-frontmatter.js";
 import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
+const SETTINGS_JSON = "settings.json";
+
 function relativeToLayerRoot(layerRoot: string, absoluteFilePath: string): string {
   return path.relative(layerRoot, absoluteFilePath).replace(/\\/g, "/");
 }
 
-function readJsonPayload(
-  label: string,
-  absolutePath: string
-): unknown {
+function readJsonPayload(label: string, absolutePath: string): unknown {
   const raw = fs.readFileSync(absolutePath, "utf8");
   try {
     return JSON.parse(raw) as unknown;
   } catch (e) {
     const err = e as SyntaxError;
-    throw new Error(`CursorAgentProvider: invalid JSON in ${label}: ${err.message}`);
+    throw new Error(`GeminiAgentProvider: invalid JSON in ${label}: ${err.message}`);
   }
 }
 
+function relativeMarkdownTargetForGemini(asset: { type: string }, baseName: string): string {
+  if (asset.type === "prompt") {
+    return path.posix.join("prompts", baseName);
+  }
+  if (asset.type === "sub-agent") {
+    return path.posix.join("rules", baseName);
+  }
+  return path.posix.join("rules", baseName);
+}
+
 /**
- * Cursor install provider for payloads staged under {@link InstallContext.stagingDir}.
+ * Gemini CLI install provider for payloads staged under {@link InstallContext.stagingDir}.
  */
-export class CursorAgentProvider implements AgentProvider {
+export class GeminiAgentProvider implements AgentProvider {
   /**
    * @param manifest - Installed package manifest (name, version, assets).
    * @param bundlePathMap - Optional `{bundle}` placeholder map for markdown.
@@ -88,7 +98,7 @@ export class CursorAgentProvider implements AgentProvider {
         );
       } catch (e) {
         if (e instanceof SkillFrontmatterError) {
-          throw new Error(`CursorAgentProvider: ${e.message}`);
+          throw new Error(`GeminiAgentProvider: ${e.message}`);
         }
         throw e;
       }
@@ -97,7 +107,7 @@ export class CursorAgentProvider implements AgentProvider {
     for (const asset of nonSkillAssets) {
       const src = path.join(ctx.stagingDir, asset.path);
       if (!fs.existsSync(src)) {
-        throw new Error(`CursorAgentProvider: missing staged file: ${asset.path}`);
+        throw new Error(`GeminiAgentProvider: missing staged file: ${asset.path}`);
       }
 
       if (asset.type === "mcp") {
@@ -107,13 +117,13 @@ export class CursorAgentProvider implements AgentProvider {
           packageVersion,
           partIndex: part.partIndex,
           partKind: part.partKind,
-          fragmentKey: "mcp.json",
+          fragmentKey: SETTINGS_JSON,
         };
         actions.push({
           kind: "mcp_json_merge",
           operationId: OperationIds.ConfigMerge,
           provenance,
-          relativeTargetPath: "mcp.json",
+          relativeTargetPath: SETTINGS_JSON,
           payload,
         });
         continue;
@@ -128,13 +138,13 @@ export class CursorAgentProvider implements AgentProvider {
             packageVersion,
             partIndex: part.partIndex,
             partKind: part.partKind,
-            fragmentKey: "hooks.json",
+            fragmentKey: SETTINGS_JSON,
           };
           actions.push({
             kind: "hooks_json_merge",
             operationId: OperationIds.HookJsonGraph,
             provenance,
-            relativeTargetPath: "hooks.json",
+            relativeTargetPath: SETTINGS_JSON,
             payload,
           });
         } else {
@@ -159,21 +169,37 @@ export class CursorAgentProvider implements AgentProvider {
       }
 
       const isMarkdownLike =
-        asset.type === "rule" ||
-        asset.type === "prompt" ||
-        asset.type === "sub-agent";
+        asset.type === "rule" || asset.type === "prompt" || asset.type === "sub-agent";
 
       if (!isMarkdownLike) {
-        throw new Error(`CursorAgentProvider: unsupported asset type "${asset.type}" for ${asset.path}`);
+        throw new Error(`GeminiAgentProvider: unsupported asset type "${asset.type}" for ${asset.path}`);
+      }
+
+      const baseName = path.basename(asset.path);
+
+      if (asset.type === "rule" && baseName.toLowerCase().endsWith(".toml")) {
+        const relativeTargetPath = path.posix.join("commands", baseName);
+        const provenance: AtpProvenance = {
+          packageName,
+          packageVersion,
+          partIndex: part.partIndex,
+          partKind: part.partKind,
+          fragmentKey: relativeTargetPath,
+        };
+        actions.push({
+          kind: "raw_file_copy",
+          operationId: OperationIds.TreeMaterialise,
+          provenance,
+          relativeTargetPath,
+          sourceAbsolutePath: src,
+        });
+        continue;
       }
 
       let content = fs.readFileSync(src, "utf8");
       content = patchMarkdownBundlePlaceholders(content, this.bundlePathMap);
 
-      const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
-      const relativeTargetPath = relativeToLayerRoot(ctx.layerRoot, filePath);
-      const baseName = path.basename(asset.path);
-
+      const relativeTargetPath = relativeMarkdownTargetForGemini(asset, baseName);
       const { content: outContent, operationId } = materializeRuleLikeForCursor(baseName, content);
 
       const provenance: AtpProvenance = {
@@ -217,10 +243,8 @@ export class CursorAgentProvider implements AgentProvider {
   }
 
   /**
-   * Build a remove plan for a single managed file. Merged config files (`mcp.json`, `hooks.json`)
-   * are rolled back during `atp remove safehouse` using package payloads, not via this plan.
-   *
-   * @param target - `fragmentKey` must be a safe path relative to `layerRoot` (e.g. `rules/x.md`).
+   * Build a remove plan for a single managed file. Merged `settings.json` is rolled back during
+   * `atp remove safehouse` using package payloads / the config journal, not via this plan.
    */
   planRemove(ctx: InstallContext, target: AtpProvenance): ProviderPlan {
     const rel = target.fragmentKey.replace(/\\/g, "/").trim();
@@ -228,8 +252,7 @@ export class CursorAgentProvider implements AgentProvider {
       !rel ||
       rel.includes("..") ||
       path.posix.isAbsolute(rel) ||
-      rel === "mcp.json" ||
-      rel === "hooks.json";
+      rel === SETTINGS_JSON;
 
     const actions: ProviderPlan["actions"] = [];
     if (!unsafe) {
@@ -255,11 +278,11 @@ export class CursorAgentProvider implements AgentProvider {
 }
 
 /**
- * Factory for {@link CursorAgentProvider}.
+ * Factory for {@link GeminiAgentProvider}.
  */
-export function createCursorAgentProvider(
+export function createGeminiAgentProvider(
   manifest: PackageManifest,
   bundlePathMap?: Record<string, string>
-): CursorAgentProvider {
-  return new CursorAgentProvider(manifest, bundlePathMap);
+): GeminiAgentProvider {
+  return new GeminiAgentProvider(manifest, bundlePathMap);
 }

@@ -13,6 +13,7 @@ import {
   safehouseExists,
 } from "../config/load.js";
 import { expandHome, findProjectBase } from "../config/paths.js";
+import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 import { addPackageToSafehouseManifest } from "../config/safehouse-manifest.js";
 import { writeStationPackageManifest } from "../config/station-package-manifest.js";
 
@@ -187,12 +188,14 @@ async function executeCatalogInstall(
   }
 
   const copied: string[] = [];
+  const configJournal: ConfigMergeJournalEntryV1[] = [];
   try {
     installPackageAssetsForCatalogContext(
       ctx,
       providerCtx,
       stagedParts,
-      (dest) => copied.push(dest)
+      (dest) => copied.push(dest),
+      configJournal
     );
 
     const version = manifest.version ?? catalogPkg.version ?? "0.0.0";
@@ -205,7 +208,8 @@ async function executeCatalogInstall(
         opts.binaryScope,
         source,
         projectBase,
-        layout
+        layout,
+        configJournal
       );
     } else {
       writeStationPackageManifest(manifest.name, {

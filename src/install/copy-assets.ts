@@ -49,6 +49,52 @@ export function agentDestinationForAsset(
 }
 
 /**
+ * Uninstall path for files written by Cursor / Gemini {@link AgentProvider} (project layer).
+ * Does not remove merged JSON wholesale (handled via journal / fragment strip) or provider skill trees.
+ *
+ * @param agentName - Safehouse agent key (e.g. `cursor`, `gemini`).
+ * @param agentBase - Absolute agent project directory.
+ * @param asset - Manifest row (not `program`).
+ */
+export function agentProviderRemovalDestination(
+  agentName: string,
+  agentBase: string,
+  asset: Pick<PackageAsset, "type" | "path">
+): { filePath: string } {
+  const baseName = path.basename(asset.path);
+  const agent = agentName.trim().toLowerCase();
+
+  if (asset.type === "mcp") {
+    const file = agent === "gemini" ? "settings.json" : "mcp.json";
+    return { filePath: path.join(agentBase, file) };
+  }
+  if (asset.type === "hook") {
+    if (baseName === "hooks.json") {
+      const file = agent === "gemini" ? "settings.json" : "hooks.json";
+      return { filePath: path.join(agentBase, file) };
+    }
+    return { filePath: path.join(agentBase, "hooks", baseName) };
+  }
+
+  if (agent === "gemini") {
+    if (asset.type === "prompt") {
+      return { filePath: path.join(agentBase, "prompts", baseName) };
+    }
+    if (asset.type === "sub-agent") {
+      return { filePath: path.join(agentBase, "rules", baseName) };
+    }
+    if (asset.type === "rule") {
+      if (baseName.toLowerCase().endsWith(".toml")) {
+        return { filePath: path.join(agentBase, "commands", baseName) };
+      }
+      return { filePath: path.join(agentBase, "rules", baseName) };
+    }
+  }
+
+  return agentDestinationForAsset(agentBase, asset);
+}
+
+/**
  * Patch {bundle_name} placeholders in markdown content.
  * Feature 3: replaces {bundle_name} with absolute install path for executables.
  *

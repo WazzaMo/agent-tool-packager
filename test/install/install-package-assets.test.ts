@@ -98,4 +98,41 @@ describe("installPackageAssetsForCatalogContext", () => {
     expect(installed).toContain("# S");
     expect(installed).toContain("name: S");
   });
+
+  it("installs rule via GeminiAgentProvider under .gemini/rules/", () => {
+    const projectBase = path.join(base, "gproj");
+    const pkgDir = path.join(base, "gpkg");
+    fs.mkdirSync(pkgDir, { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "rule.md"), "# G\n");
+    const agentBase = path.join(projectBase, ".gemini");
+    const manifest = {
+      name: "g-rules",
+      version: "0.1.0",
+      type: "Rule",
+      assets: [{ path: "rule.md", type: "rule" as const, name: "rule" }],
+    };
+    const ctx: CatalogInstallContext = {
+      pkgDir,
+      manifest,
+      agentBase,
+      bundlePathMap: undefined,
+      installBinDir: undefined,
+      catalogPkg: { name: "g-rules", version: "0.1.0", location: `file://${pkgDir}` },
+      opts: { promptScope: "project", binaryScope: "user-bin", dependencies: false },
+      projectBase,
+    };
+    const providerCtx = {
+      agent: "gemini" as const,
+      layer: "project" as const,
+      projectRoot: projectBase,
+      layerRoot: agentBase,
+      stagingDir: pkgDir,
+    };
+    const staged = prepareCatalogInstallPartInputs(ctx);
+    installPackageAssetsForCatalogContext(ctx, providerCtx, staged);
+
+    const dest = path.join(agentBase, "rules", "rule.md");
+    expect(fs.existsSync(dest)).toBe(true);
+    expect(fs.readFileSync(dest, "utf8")).toBe("# G\n");
+  });
 });

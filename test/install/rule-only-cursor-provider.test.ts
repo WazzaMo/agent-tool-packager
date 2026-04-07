@@ -4,15 +4,20 @@
 
 import { describe, it, expect } from "vitest";
 
-import { usesCursorAgentProviderProjectInstall } from "../../src/install/rule-only-cursor-provider.js";
+import {
+  usesCursorAgentProviderProjectInstall,
+  usesGeminiAgentProviderProjectInstall,
+} from "../../src/install/rule-only-cursor-provider.js";
 import type { PackageManifest } from "../../src/install/types.js";
 
-function ctx(agent: "cursor" | "claude", layer: "project" | "user") {
+function ctx(agent: "cursor" | "claude" | "gemini", layer: "project" | "user") {
+  const layerRoot =
+    agent === "gemini" ? "/p/.gemini" : agent === "cursor" ? "/p/.cursor" : "/p/.claude";
   return {
     agent,
     layer,
     projectRoot: "/p",
-    layerRoot: "/p/.cursor",
+    layerRoot,
     stagingDir: "/s",
   };
 }
@@ -95,5 +100,49 @@ describe("usesCursorAgentProviderProjectInstall", () => {
     expect(
       usesCursorAgentProviderProjectInstall(ctx("cursor", "project"), { name: "e" }, baseOpts)
     ).toBe(false);
+  });
+});
+
+describe("usesGeminiAgentProviderProjectInstall", () => {
+  const ruleManifest: PackageManifest = {
+    name: "r",
+    assets: [{ path: "a.md", type: "rule", name: "a" }],
+  };
+
+  const baseOpts = {
+    promptScope: "project" as const,
+    binaryScope: "user-bin" as const,
+    dependencies: false,
+  };
+
+  it("is true for gemini + project layer + project scope + supported assets", () => {
+    expect(usesGeminiAgentProviderProjectInstall(ctx("gemini", "project"), ruleManifest, baseOpts)).toBe(
+      true
+    );
+  });
+
+  it("is false when agent is cursor", () => {
+    expect(usesGeminiAgentProviderProjectInstall(ctx("cursor", "project"), ruleManifest, baseOpts)).toBe(
+      false
+    );
+  });
+
+  it("is false when layer is user", () => {
+    expect(usesGeminiAgentProviderProjectInstall(ctx("gemini", "user"), ruleManifest, baseOpts)).toBe(
+      false
+    );
+  });
+
+  it("is true for mcp + hook manifest rows", () => {
+    const manifest: PackageManifest = {
+      name: "x",
+      assets: [
+        { path: "m.json", type: "mcp", name: "m" },
+        { path: "hooks.json", type: "hook", name: "h" },
+      ],
+    };
+    expect(usesGeminiAgentProviderProjectInstall(ctx("gemini", "project"), manifest, baseOpts)).toBe(
+      true
+    );
   });
 });

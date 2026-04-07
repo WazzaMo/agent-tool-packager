@@ -70,7 +70,7 @@ export function registerInstallCommand(program: Command): void {
     )
     .option(
       "--force-config",
-      "When merging MCP config, replace an existing server entry if it differs from the package"
+      "When merging agent JSON config, replace an existing MCP server or hook handler if it conflicts with the package"
     )
     .option(
       "--skip-config",

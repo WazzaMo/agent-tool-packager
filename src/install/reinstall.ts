@@ -7,7 +7,8 @@ import path from "node:path";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import { loadStationConfig, loadSafehouseConfig } from "../config/load.js";
-import { loadSafehouseManifest } from "../config/safehouse-manifest.js";
+import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
+import { loadSafehouseManifest, syncSafehousePackageConfigJournal } from "../config/safehouse-manifest.js";
 
 
 import {
@@ -90,7 +91,9 @@ export async function reinstallSafehousePackages(
     };
     const providerCtx = buildProviderInstallContext(ctx);
     const stagedParts = prepareCatalogInstallPartInputs(ctx);
-    installPackageAssetsForCatalogContext(ctx, providerCtx, stagedParts);
+    const journal: ConfigMergeJournalEntryV1[] = [];
+    installPackageAssetsForCatalogContext(ctx, providerCtx, stagedParts, undefined, journal);
+    syncSafehousePackageConfigJournal(projectBase, pkgInfo.name, journal);
     console.log(`  - Re-installed ${pkgInfo.name} for ${agentName}`);
   }
 }
