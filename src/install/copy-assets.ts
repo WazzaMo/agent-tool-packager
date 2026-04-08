@@ -4,292 +4,23 @@
  * Patches {bundle_name} placeholders in markdown per Feature 3.
  */
 
-import fs from "node:fs";
-import path from "node:path";
+import type { PackageManifest } from "./types.js";
 
-import { mergeHooksJsonDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
-import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
-import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
-import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
+import {
+  agentDestinationForAsset,
+  agentProviderRemovalDestination,
+  patchMarkdownBundlePlaceholders,
+  type LegacyClaudeMergeContext,
+} from "./copy-asset-support.js";
 
-import type { PackageAsset, PackageManifest } from "./types.js";
+import { copyPackageAsset } from "./copy-package-asset.js";
 
-/**
- * When legacy `copyPackageAssets` runs for Claude (project layer), MCP targets repo `.mcp.json` and
- * packaged `hooks.json` merges into `.claude/settings.json`.
- */
-export interface LegacyClaudeMergeContext {
-  projectRoot: string;
-  claudeAgentDir: string;
-}
-
-const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
-  skill: "skills",
-  rule: "rules",
-  prompt: "prompts",
-  "sub-agent": "rules",
-  program: "bin",
+export {
+  agentDestinationForAsset,
+  agentProviderRemovalDestination,
+  patchMarkdownBundlePlaceholders,
+  type LegacyClaudeMergeContext,
 };
-
-/**
- * Resolve destination directory and file path for a non-program asset under the agent tree.
- * Hook packages follow Cursor layout: `hooks.json` at the agent root, other files under `hooks/`.
- *
- * @param agentBase - Agent project directory (e.g. `.cursor/`).
- * @param asset - Asset row (must not be `program`).
- * @returns Parent directory to create and final file path.
- */
-export function agentDestinationForAsset(
-  agentBase: string,
-  asset: Pick<PackageAsset, "type" | "path">
-): { dir: string; filePath: string } {
-  const baseName = path.basename(asset.path);
-  if (asset.type === "mcp") {
-    return { dir: agentBase, filePath: path.join(agentBase, "mcp.json") };
-  }
-  if (asset.type === "hook") {
-    if (baseName === "hooks.json") {
-      return { dir: agentBase, filePath: path.join(agentBase, "hooks.json") };
-    }
-    const dir = path.join(agentBase, "hooks");
-    return { dir, filePath: path.join(dir, baseName) };
-  }
-  const subdir = ASSET_TYPES_TO_AGENT_SUBDIR[asset.type] ?? "skills";
-  const dir = path.join(agentBase, subdir);
-  return { dir, filePath: path.join(dir, baseName) };
-}
-
-/**
- * Uninstall path for files written by Cursor / Gemini {@link AgentProvider} (project layer).
- * Does not remove merged JSON wholesale (handled via journal / fragment strip) or provider skill trees.
- *
- * @param agentName - Safehouse agent key (e.g. `cursor`, `gemini`).
- * @param agentBase - Absolute agent project directory.
- * @param asset - Manifest row (not `program`).
- */
-export function agentProviderRemovalDestination(
-  agentName: string,
-  agentBase: string,
-  asset: Pick<PackageAsset, "type" | "path">
-): { filePath: string } {
-  const baseName = path.basename(asset.path);
-  const agent = agentName.trim().toLowerCase();
-
-  if (asset.type === "mcp") {
-    if (agent === "gemini") {
-      return { filePath: path.join(agentBase, "settings.json") };
-    }
-    if (agent === "claude") {
-      return { filePath: path.normalize(path.join(agentBase, "..", ".mcp.json")) };
-    }
-    return { filePath: path.join(agentBase, "mcp.json") };
-  }
-  if (asset.type === "hook") {
-    if (baseName === "hooks.json") {
-      if (agent === "gemini" || agent === "claude") {
-        return { filePath: path.join(agentBase, "settings.json") };
-      }
-      return { filePath: path.join(agentBase, "hooks.json") };
-    }
-    return { filePath: path.join(agentBase, "hooks", baseName) };
-  }
-
-  if (agent === "gemini") {
-    if (asset.type === "prompt") {
-      return { filePath: path.join(agentBase, "prompts", baseName) };
-    }
-    if (asset.type === "sub-agent") {
-      return { filePath: path.join(agentBase, "rules", baseName) };
-    }
-    if (asset.type === "rule") {
-      if (baseName.toLowerCase().endsWith(".toml")) {
-        return { filePath: path.join(agentBase, "commands", baseName) };
-      }
-      return { filePath: path.join(agentBase, "rules", baseName) };
-    }
-  }
-
-  return agentDestinationForAsset(agentBase, asset);
-}
-
-/**
- * Patch {bundle_name} placeholders in markdown content.
- * Feature 3: replaces {bundle_name} with absolute install path for executables.
- *
- * @param content - Markdown or text content.
- * @param bundlePathMap - Map of bundle name to install path.
- * @returns Content with placeholders replaced (unchanged when map empty).
- */
-export function patchMarkdownBundlePlaceholders(
-  content: string,
-  bundlePathMap?: Record<string, string>
-): string {
-  if (!bundlePathMap || Object.keys(bundlePathMap).length === 0) {
-    return content;
-  }
-  let result = content;
-  for (const [name, installPath] of Object.entries(bundlePathMap)) {
-    result = result.replace(new RegExp(`\\{${escapeRegExp(name)}\\}`, "g"), installPath);
-  }
-  return result;
-}
-
-/**
- * Escape special regex characters for safe use in `RegExp` construction.
- *
- * @param s - Raw placeholder fragment or string.
- * @returns Escaped string safe to embed in a character class or pattern.
- */
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function copyMcpAssetToAgent(
-  pkgDir: string,
-  agentBase: string,
-  asset: PackageAsset,
-  mcpMerge: { forceConfig: boolean; skipConfig: boolean } | undefined,
-  onFileCopied?: (destAbsolute: string) => void,
-  legacyClaude?: LegacyClaudeMergeContext
-): void {
-  const srcPath = path.join(pkgDir, asset.path);
-  if (!fs.existsSync(srcPath)) return;
-  const raw = fs.readFileSync(srcPath, "utf8");
-  let incoming: unknown;
-  try {
-    incoming = JSON.parse(raw) as unknown;
-  } catch (e) {
-    const err = e as SyntaxError;
-    throw new Error(`Invalid JSON in MCP asset ${asset.path}: ${err.message}`);
-  }
-  const destPath = legacyClaude
-    ? path.join(legacyClaude.projectRoot, ".mcp.json")
-    : path.join(agentBase, "mcp.json");
-  const destDir = path.dirname(destPath);
-  const existing = fs.existsSync(destPath)
-    ? (JSON.parse(fs.readFileSync(destPath, "utf8")) as unknown)
-    : null;
-  const mergeLabel = legacyClaude
-    ? ".mcp.json"
-    : mergeConfigTargetLabel(agentBase, "mcp.json");
-  const outcome = mergeMcpJsonDocument(existing, incoming, {
-    forceConfig: mcpMerge?.forceConfig ?? false,
-    skipConfig: mcpMerge?.skipConfig ?? false,
-    mergeTargetLabel: mergeLabel,
-  });
-  if (outcome.status === "applied") {
-    fs.mkdirSync(destDir, { recursive: true });
-    fs.writeFileSync(destPath, formatJsonDocument(outcome.document), "utf8");
-    onFileCopied?.(destPath);
-  }
-}
-
-function mergeClaudeHooksAssetFromPackage(
-  pkgDir: string,
-  asset: PackageAsset,
-  claudeAgentDir: string,
-  mcpMerge: { forceConfig: boolean; skipConfig: boolean } | undefined,
-  onFileCopied?: (destAbsolute: string) => void
-): void {
-  const srcPath = path.join(pkgDir, asset.path);
-  if (!fs.existsSync(srcPath)) return;
-  let incoming: unknown;
-  try {
-    incoming = JSON.parse(fs.readFileSync(srcPath, "utf8")) as unknown;
-  } catch (e) {
-    const err = e as SyntaxError;
-    throw new Error(`Invalid JSON in hook asset ${asset.path}: ${err.message}`);
-  }
-  const settingsPath = path.join(claudeAgentDir, "settings.json");
-  const existing = fs.existsSync(settingsPath)
-    ? (JSON.parse(fs.readFileSync(settingsPath, "utf8")) as unknown)
-    : null;
-  const mergeLabel = mergeConfigTargetLabel(claudeAgentDir, "settings.json");
-  const { document, changed } = mergeHooksJsonDocument(existing, incoming, {
-    forceConfig: mcpMerge?.forceConfig ?? false,
-    skipConfig: mcpMerge?.skipConfig ?? false,
-    mergeTargetLabel: mergeLabel,
-  });
-  if (changed) {
-    fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-    fs.writeFileSync(settingsPath, formatJsonDocument(document), "utf8");
-    onFileCopied?.(settingsPath);
-  }
-}
-
-/**
- * Copy a single asset from package dir to agent dir or bin dir.
- * Patches placeholders in markdown skills/rules. Creates target dirs as needed.
- * @param pkgDir - Package directory.
- * @param agentBase - Agent base path (e.g. .cursor/).
- * @param asset - Asset definition from manifest.
- * @param bundlePathMap - Optional map for {bundle_name} patching.
- * @param installBinDir - Optional bin directory for program assets.
- */
-function copyAsset(
-  pkgDir: string,
-  agentBase: string,
-  asset: PackageAsset,
-  bundlePathMap?: Record<string, string>,
-  installBinDir?: string,
-  onFileCopied?: (destAbsolute: string) => void,
-  mcpMerge?: { forceConfig: boolean; skipConfig: boolean },
-  legacyClaude?: LegacyClaudeMergeContext
-): void {
-  if (asset.type === "program") {
-    if (!installBinDir) return;
-    const srcPath = path.join(pkgDir, asset.path);
-    if (!fs.existsSync(srcPath)) return;
-    fs.mkdirSync(installBinDir, { recursive: true });
-    const baseName = path.basename(asset.path);
-    const destPath = path.join(installBinDir, baseName);
-    fs.copyFileSync(srcPath, destPath);
-    onFileCopied?.(destPath);
-    return;
-  }
-
-  if (asset.type === "mcp") {
-    copyMcpAssetToAgent(pkgDir, agentBase, asset, mcpMerge, onFileCopied, legacyClaude);
-    return;
-  }
-
-  if (
-    legacyClaude &&
-    asset.type === "hook" &&
-    path.basename(asset.path) === "hooks.json"
-  ) {
-    mergeClaudeHooksAssetFromPackage(
-      pkgDir,
-      asset,
-      legacyClaude.claudeAgentDir,
-      mcpMerge ?? { forceConfig: false, skipConfig: false },
-      onFileCopied
-    );
-    return;
-  }
-
-  const { dir: targetDir, filePath: destPath } = agentDestinationForAsset(agentBase, asset);
-
-  const srcPath = path.join(pkgDir, asset.path);
-  if (!fs.existsSync(srcPath)) return;
-
-  fs.mkdirSync(targetDir, { recursive: true });
-
-  const isMarkdown =
-    asset.type === "skill" ||
-    asset.type === "rule" ||
-    asset.type === "prompt" ||
-    asset.type === "sub-agent";
-  if (isMarkdown && bundlePathMap && Object.keys(bundlePathMap).length > 0) {
-    const content = fs.readFileSync(srcPath, "utf8");
-    const patched = patchMarkdownBundlePlaceholders(content, bundlePathMap);
-    fs.writeFileSync(destPath, patched, "utf8");
-    onFileCopied?.(destPath);
-  } else {
-    fs.copyFileSync(srcPath, destPath);
-    onFileCopied?.(destPath);
-  }
-}
 
 /**
  * Copy all assets from manifest to agent directory (skills, rules) and optionally to bin.
@@ -313,7 +44,7 @@ export function copyPackageAssets(
 ): void {
   const assets = manifest.assets ?? [];
   for (const asset of assets) {
-    copyAsset(
+    copyPackageAsset(
       pkgDir,
       agentBase,
       asset,
@@ -343,7 +74,7 @@ export function copyProgramAssetsOnly(
   const assets = manifest.assets ?? [];
   for (const asset of assets) {
     if (asset.type === "program") {
-      copyAsset(pkgDir, "", asset, undefined, installBinDir, onFileCopied);
+      copyPackageAsset(pkgDir, "", asset, undefined, installBinDir, onFileCopied);
     }
   }
 }
