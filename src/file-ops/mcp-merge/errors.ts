@@ -11,6 +11,9 @@ export class McpMergeAmbiguousError extends Error {
 
   readonly serverName: string;
 
+  /** Human-readable target (e.g. `.cursor/mcp.json`); used in {@link McpMergeAmbiguousError.message} and CLI `--verbose`. */
+  readonly mergeTargetLabel: string;
+
   readonly existingEntry: unknown;
 
   readonly incomingEntry: unknown;
@@ -21,12 +24,14 @@ export class McpMergeAmbiguousError extends Error {
     incomingEntry: unknown,
     mergeTargetLabel = "the merged configuration file"
   ) {
+    const label = mergeTargetLabel;
     super(
-      `MCP server "${serverName}" already exists with different configuration; ` +
-        `use --force-config to overwrite or --skip-config to leave ${mergeTargetLabel} unchanged.`
+      `MCP server "${serverName}" conflicts with existing entry in ${label}; ` +
+        `use --force-config to replace it or --skip-config to skip this merge.`
     );
     this.name = "McpMergeAmbiguousError";
     this.serverName = serverName;
+    this.mergeTargetLabel = label;
     this.existingEntry = existingEntry;
     this.incomingEntry = incomingEntry;
   }

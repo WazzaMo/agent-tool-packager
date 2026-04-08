@@ -29,6 +29,13 @@ import {
   loadPackageManifest,
 } from "./resolve.js";
 
+import {
+  formatInstallUserFailureLines,
+  mergeAmbiguityVerboseRequested,
+} from "./format-install-user-failure.js";
+import { HooksMergeAmbiguousError } from "../file-ops/hooks-merge/errors.js";
+import { McpMergeAmbiguousError } from "../file-ops/mcp-merge/errors.js";
+
 import type { CatalogInstallContext, InstallOptions, PackageManifest } from "./types.js";
 import {
   normaliseAgentId,
@@ -221,6 +228,9 @@ async function executeCatalogInstall(
     }
   } catch (e) {
     rollbackCopiedFiles(copied);
+    if (e instanceof McpMergeAmbiguousError || e instanceof HooksMergeAmbiguousError) {
+      throw e;
+    }
     const cause = e instanceof Error ? e.message : String(e);
     throw new Error(`Install copy or manifest update failed: ${cause}`);
   }
@@ -345,7 +355,11 @@ export async function installPackage(
       await installLegacyCatalogPackage(ctx);
     }
   } catch (err) {
-    console.error(String(err));
+    const verboseMerge = mergeAmbiguityVerboseRequested(Boolean(opts.verbose));
+    const lines = formatInstallUserFailureLines(err, verboseMerge);
+    for (const line of lines) {
+      console.error(line);
+    }
     process.exit(1);
   }
 }

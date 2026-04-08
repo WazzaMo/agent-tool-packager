@@ -16,5 +16,6 @@ describe("Integration: install --help", () => {
     expect(text).toMatch(/\.cursor\/hooks\.json/i);
     expect(text).toMatch(/--force-config/);
     expect(text).toMatch(/--skip-config/);
+    expect(text).toMatch(/--verbose/);
   });
 });

@@ -55,7 +55,12 @@ describe("mergeHooksJsonDocument", () => {
     try {
       mergeHooksJsonDocument(existing, incoming, { mergeTargetLabel: ".gemini/settings.json" });
     } catch (e) {
-      expect((e as Error).message).toMatch(/leave \.gemini\/settings\.json unchanged/);
+      const h = e as HooksMergeAmbiguousError;
+      expect(h.mergeTargetLabel).toBe(".gemini/settings.json");
+      expect(h.message).toBe(
+        'Hook handler for event "e" (id:a) conflicts with existing entry in .gemini/settings.json; ' +
+          "use --force-config to replace it or --skip-config to skip this merge."
+      );
     }
   });
 

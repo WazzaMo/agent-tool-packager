@@ -23,6 +23,7 @@ function installOptionsFromCliFlags(opts: {
   dependencies?: boolean;
   forceConfig?: boolean;
   skipConfig?: boolean;
+  verbose?: boolean;
 }): InstallOptions {
   if (opts.forceConfig && opts.skipConfig) {
     throw new Error("Cannot use --force-config together with --skip-config.");
@@ -35,6 +36,7 @@ function installOptionsFromCliFlags(opts: {
     dependencies: opts.dependencies ?? false,
     forceConfig: opts.forceConfig ?? false,
     skipConfig: opts.skipConfig ?? false,
+    verbose: opts.verbose ?? false,
   };
 }
 
@@ -76,6 +78,10 @@ export function registerInstallCommand(program: Command): void {
       "--skip-config",
       "Skip MCP and hooks JSON merges: no read/write of merged config files (e.g. .cursor/mcp.json, .cursor/hooks.json, or Gemini .gemini/settings.json)"
     )
+    .option(
+      "--verbose",
+      "On MCP/hooks merge ambiguity, print an extra JSON line with error code and target (also when DEBUG includes atp)"
+    )
     .action(
       async (
         pkgName: string,
@@ -87,6 +93,7 @@ export function registerInstallCommand(program: Command): void {
           dependencies?: boolean;
           forceConfig?: boolean;
           skipConfig?: boolean;
+          verbose?: boolean;
         }
       ) => {
         let installOpts: InstallOptions;

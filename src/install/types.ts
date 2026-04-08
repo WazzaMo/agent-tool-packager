@@ -25,6 +25,8 @@ export interface InstallOptions {
    * `.cursor/mcp.json` / `.cursor/hooks.json` or Gemini `.gemini/settings.json`.
    */
   skipConfig?: boolean;
+  /** Log a JSON debug line for MCP / hooks merge ambiguity errors; same when `DEBUG` includes `atp`. */
+  verbose?: boolean;
 }
 
 /** Arguments shared by catalog install entry points and {@link buildProviderInstallContext}. */

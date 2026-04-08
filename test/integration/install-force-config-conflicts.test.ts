@@ -8,7 +8,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-import { runAtp, runAtpExpectExit } from "./test-helpers.js";
+import { MERGE_CONFIG_AMBIGUITY_HINT } from "../../src/install/format-install-user-failure.js";
+import { runAtp, runAtpSpawn } from "./test-helpers.js";
 import {
   atpCwd,
   initPackage,
@@ -171,11 +172,17 @@ describe("Integration: install --force-config MCP conflict (Cursor)", () => {
   it("without --force-config: install fails and mcp.json matches the pre-install snapshot", () => {
     const snapshot = cloneJson(readJsonFile(mcpPath)) as Record<string, unknown>;
 
-    runAtpExpectExit(
-      ["install", "force-mcp-pkg", "--project"],
-      1,
-      { cwd: projectDir, env: { STATION_PATH: stationDir } }
+    const r = runAtpSpawn(["install", "force-mcp-pkg", "--project"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(r.status).not.toBe(0);
+    const errText = r.stderr + r.stdout;
+    expect(errText).toContain(
+      'MCP server "atp-force-mcp" conflicts with existing entry in .cursor/mcp.json; ' +
+        "use --force-config to replace it or --skip-config to skip this merge."
     );
+    expect(errText).toContain(MERGE_CONFIG_AMBIGUITY_HINT);
 
     const afterFail = readJsonFile(mcpPath) as Record<string, unknown>;
     expect(afterFail).toEqual(snapshot);
@@ -287,11 +294,17 @@ describe("Integration: install --force-config hooks conflict (Cursor)", () => {
   it("without --force-config: install fails and hooks.json matches the pre-install snapshot", () => {
     const snapshot = cloneJson(readJsonFile(hooksPath)) as Record<string, unknown>;
 
-    runAtpExpectExit(
-      ["install", "force-hooks-pkg", "--project"],
-      1,
-      { cwd: projectDir, env: { STATION_PATH: stationDir } }
+    const r = runAtpSpawn(["install", "force-hooks-pkg", "--project"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(r.status).not.toBe(0);
+    const errText = r.stderr + r.stdout;
+    expect(errText).toContain(
+      'Hook handler for event "beforeSubmit" (id:atp-force-hook) conflicts with existing entry in .cursor/hooks.json; ' +
+        "use --force-config to replace it or --skip-config to skip this merge."
     );
+    expect(errText).toContain(MERGE_CONFIG_AMBIGUITY_HINT);
 
     const afterFail = readJsonFile(hooksPath) as Record<string, unknown>;
     expect(afterFail).toEqual(snapshot);

@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
+import { MERGE_CONFIG_AMBIGUITY_HINT } from "../../src/install/format-install-user-failure.js";
 import { runAtp, runAtpSpawn } from "./test-helpers.js";
 import {
   atpCwd,
@@ -109,9 +110,26 @@ describe("Integration: install --force-config MCP conflict (Gemini)", () => {
       env: { STATION_PATH: stationDir },
     });
     expect(r.status).not.toBe(0);
-    expect(r.stderr + r.stdout).toMatch(/\.gemini\/settings\.json/);
+    const errText = r.stderr + r.stdout;
+    expect(errText).toContain(
+      'MCP server "atp-force-mcp" conflicts with existing entry in .gemini/settings.json; ' +
+        "use --force-config to replace it or --skip-config to skip this merge."
+    );
+    expect(errText).toContain(MERGE_CONFIG_AMBIGUITY_HINT);
 
     expect(readJsonFile(settingsPath)).toEqual(snapshot);
+  });
+
+  it("with --verbose: stderr includes JSON debug line for MCP ambiguity", () => {
+    const r = runAtpSpawn(
+      ["install", "gem-force-mcp-pkg", "--project", "--verbose"],
+      { cwd: projectDir, env: { STATION_PATH: stationDir } }
+    );
+    expect(r.status).not.toBe(0);
+    const errText = r.stderr + r.stdout;
+    expect(errText).toContain('"code":"MCP_MERGE_AMBIGUOUS"');
+    expect(errText).toContain('"serverName":"atp-force-mcp"');
+    expect(errText).toContain('"mergeTargetLabel":".gemini/settings.json"');
   });
 
   it("with --force-config: overwrites conflicting server in settings.json", () => {
@@ -216,7 +234,12 @@ describe("Integration: install --force-config hooks conflict (Gemini)", () => {
       env: { STATION_PATH: stationDir },
     });
     expect(r.status).not.toBe(0);
-    expect(r.stderr + r.stdout).toMatch(/\.gemini\/settings\.json/);
+    const errText = r.stderr + r.stdout;
+    expect(errText).toContain(
+      'Hook handler for event "beforeSubmit" (id:atp-force-hook) conflicts with existing entry in .gemini/settings.json; ' +
+        "use --force-config to replace it or --skip-config to skip this merge."
+    );
+    expect(errText).toContain(MERGE_CONFIG_AMBIGUITY_HINT);
 
     expect(readJsonFile(settingsPath)).toEqual(snapshot);
   });

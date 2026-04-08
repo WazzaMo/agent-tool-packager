@@ -113,7 +113,10 @@ describe("GeminiAgentProvider", () => {
     try {
       provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     } catch (e) {
-      expect((e as Error).message).toMatch(/\.gemini\/settings\.json/);
+      expect((e as Error).message).toBe(
+        'MCP server "dup" conflicts with existing entry in .gemini/settings.json; ' +
+          "use --force-config to replace it or --skip-config to skip this merge."
+      );
     }
   });
 
@@ -146,7 +149,10 @@ describe("GeminiAgentProvider", () => {
     try {
       provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     } catch (e) {
-      expect((e as Error).message).toMatch(/\.gemini\/settings\.json/);
+      expect((e as Error).message).toBe(
+        'Hook handler for event "Ev" (id:h) conflicts with existing entry in .gemini/settings.json; ' +
+          "use --force-config to replace it or --skip-config to skip this merge."
+      );
     }
   });
 

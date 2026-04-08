@@ -68,7 +68,11 @@ describe("mergeMcpJsonDocument", () => {
       const a = e as McpMergeAmbiguousError;
       expect(a.serverName).toBe("my-pkg");
       expect(a.code).toBe("MCP_MERGE_AMBIGUOUS");
-      expect(a.message).toMatch(/the merged configuration file/);
+      expect(a.mergeTargetLabel).toBe("the merged configuration file");
+      expect(a.message).toBe(
+        'MCP server "my-pkg" conflicts with existing entry in the merged configuration file; ' +
+          "use --force-config to replace it or --skip-config to skip this merge."
+      );
     }
   });
 
@@ -81,7 +85,12 @@ describe("mergeMcpJsonDocument", () => {
     try {
       mergeMcpJsonDocument(existing, sample, { mergeTargetLabel: ".gemini/settings.json" });
     } catch (e) {
-      expect((e as Error).message).toMatch(/leave \.gemini\/settings\.json unchanged/);
+      const a = e as McpMergeAmbiguousError;
+      expect(a.mergeTargetLabel).toBe(".gemini/settings.json");
+      expect(a.message).toBe(
+        'MCP server "my-pkg" conflicts with existing entry in .gemini/settings.json; ' +
+          "use --force-config to replace it or --skip-config to skip this merge."
+      );
     }
   });
 
