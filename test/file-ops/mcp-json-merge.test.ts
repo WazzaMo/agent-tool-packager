@@ -68,6 +68,20 @@ describe("mergeMcpJsonDocument", () => {
       const a = e as McpMergeAmbiguousError;
       expect(a.serverName).toBe("my-pkg");
       expect(a.code).toBe("MCP_MERGE_AMBIGUOUS");
+      expect(a.message).toMatch(/the merged configuration file/);
+    }
+  });
+
+  it("includes mergeTargetLabel in ambiguity error message", () => {
+    const existing = {
+      mcpServers: {
+        "my-pkg": { command: "npx", args: ["-y", "other"] },
+      },
+    };
+    try {
+      mergeMcpJsonDocument(existing, sample, { mergeTargetLabel: ".gemini/settings.json" });
+    } catch (e) {
+      expect((e as Error).message).toMatch(/leave \.gemini\/settings\.json unchanged/);
     }
   });
 

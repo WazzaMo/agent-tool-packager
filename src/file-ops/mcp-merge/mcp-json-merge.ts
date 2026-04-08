@@ -20,6 +20,8 @@ export interface McpMergeOptions {
   forceConfig?: boolean;
   /** Do not read or write the file; return the existing document unchanged (or {}). */
   skipConfig?: boolean;
+  /** Shown in {@link McpMergeAmbiguousError} (e.g. `.gemini/settings.json`). */
+  mergeTargetLabel?: string;
 }
 
 export type McpMergeOutcomeStatus = "applied" | "noop" | "skipped";
@@ -61,7 +63,12 @@ function mergeServerRecords(
       continue;
     }
 
-    throw new McpMergeAmbiguousError(name, existingEntry, incomingEntry);
+    throw new McpMergeAmbiguousError(
+      name,
+      existingEntry,
+      incomingEntry,
+      options.mergeTargetLabel ?? "the merged configuration file"
+    );
   }
 
   return { mergedServers: out, changed };

@@ -11,6 +11,7 @@ import {
   extractHooksDeltaFromPayload,
   mergeHooksJsonDocument,
 } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
+import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { formatJsonDocument, normalizeMcpServersPayload } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { mergeMcpJsonDocument, type McpMergeOptions } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
@@ -30,10 +31,14 @@ function readJsonIfExists(absolutePath: string): unknown | null {
   }
 }
 
-function mcpMergeOptionsFromProvider(merge: ProviderMergeOptions): McpMergeOptions {
+function mcpMergeOptionsFromProvider(
+  merge: ProviderMergeOptions,
+  mergeTargetLabel: string
+): McpMergeOptions {
   return {
     forceConfig: merge.forceConfig,
     skipConfig: merge.skipConfig,
+    mergeTargetLabel,
   };
 }
 
@@ -67,8 +72,7 @@ export function applyProviderPlan(
   configMergeJournal?: ConfigMergeJournalEntryV1[]
 ): void {
   const root = plan.context.layerRoot;
-  const mcpOpts = mcpMergeOptionsFromProvider(merge);
-  const hooksOpts = { forceConfig: merge.forceConfig, skipConfig: merge.skipConfig };
+  const baseMerge = { forceConfig: merge.forceConfig, skipConfig: merge.skipConfig };
 
   for (const action of plan.actions) {
     if (action.kind === "plain_markdown_write") {
@@ -93,7 +97,12 @@ export function applyProviderPlan(
       const beforeCanonical = canonicalJsonStringify(beforeObj);
       const beforeSha = sha256HexCanonicalJson(beforeObj);
 
-      const outcome = mergeMcpJsonDocument(existing, action.payload, mcpOpts);
+      const mergeLabel = mergeConfigTargetLabel(root, action.relativeTargetPath);
+      const outcome = mergeMcpJsonDocument(
+        existing,
+        action.payload,
+        mcpMergeOptionsFromProvider(merge, mergeLabel)
+      );
       if (outcome.status === "applied") {
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, formatJsonDocument(outcome.document), "utf8");
@@ -126,7 +135,11 @@ export function applyProviderPlan(
       const beforeCanonical = canonicalJsonStringify(beforeObj);
       const beforeSha = sha256HexCanonicalJson(beforeObj);
 
-      const { document, changed } = mergeHooksJsonDocument(existing, action.payload, hooksOpts);
+      const mergeLabel = mergeConfigTargetLabel(root, action.relativeTargetPath);
+      const { document, changed } = mergeHooksJsonDocument(existing, action.payload, {
+        ...baseMerge,
+        mergeTargetLabel: mergeLabel,
+      });
       if (changed) {
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, formatJsonDocument(document), "utf8");

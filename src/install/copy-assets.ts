@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
+import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
 import type { PackageAsset, PackageManifest } from "./types.js";
@@ -150,6 +151,7 @@ function copyMcpAssetToAgent(
   const outcome = mergeMcpJsonDocument(existing, incoming, {
     forceConfig: mcpMerge?.forceConfig ?? false,
     skipConfig: mcpMerge?.skipConfig ?? false,
+    mergeTargetLabel: mergeConfigTargetLabel(agentBase, "mcp.json"),
   });
   if (outcome.status === "applied") {
     fs.mkdirSync(agentBase, { recursive: true });

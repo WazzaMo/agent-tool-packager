@@ -16,7 +16,7 @@ export const CONFIG_JOURNAL_DIR = "config-journal";
 
 export const CONFIG_JOURNAL_FILE_VERSION = 1;
 
-/** One merge applied during install (Cursor provider: `mcp.json` / `hooks.json`). */
+/** One merge applied during install (e.g. `.cursor/mcp.json`, `.cursor/hooks.json`, or `.gemini/settings.json`). */
 export interface ConfigMergeJournalEntryV1 {
   agent_relative_path: string;
   kind: "mcp" | "hooks";

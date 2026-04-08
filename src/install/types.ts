@@ -20,7 +20,10 @@ export interface InstallOptions {
   dependencies: boolean;
   /** Replace conflicting MCP server or hook handler entries when merging agent JSON config. */
   forceConfig?: boolean;
-  /** Skip MCP and hooks JSON merges (no read or write of `mcp.json` or `hooks.json`). */
+  /**
+   * Skip MCP and hooks JSON merges (no read or write of merged agent JSON), e.g. Cursor
+   * `.cursor/mcp.json` / `.cursor/hooks.json` or Gemini `.gemini/settings.json`.
+   */
   skipConfig?: boolean;
 }
 

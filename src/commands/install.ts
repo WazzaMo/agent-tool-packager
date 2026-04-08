@@ -70,11 +70,11 @@ export function registerInstallCommand(program: Command): void {
     )
     .option(
       "--force-config",
-      "When merging agent JSON config, replace an existing MCP server or hook handler if it conflicts with the package"
+      "When merging agent JSON config, replace an existing MCP server or hook handler if it conflicts with the package (targets e.g. .cursor/mcp.json, .cursor/hooks.json, or Gemini .gemini/settings.json for mcpServers/hooks slices)"
     )
     .option(
       "--skip-config",
-      "Skip MCP and hooks JSON merges (no read/write of mcp.json or hooks.json)"
+      "Skip MCP and hooks JSON merges: no read/write of merged config files (e.g. .cursor/mcp.json, .cursor/hooks.json, or Gemini .gemini/settings.json)"
     )
     .action(
       async (

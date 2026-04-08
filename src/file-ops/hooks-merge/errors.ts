@@ -22,11 +22,12 @@ export class HooksMergeAmbiguousError extends Error {
     eventName: string,
     dedupeKey: string,
     existingHandler: unknown,
-    incomingHandler: unknown
+    incomingHandler: unknown,
+    mergeTargetLabel = "the merged configuration file"
   ) {
     super(
       `Hook handler for event "${eventName}" (${dedupeKey}) already exists with different configuration; ` +
-        `use --force-config to overwrite or --skip-config to leave hooks.json unchanged.`
+        `use --force-config to overwrite or --skip-config to leave ${mergeTargetLabel} unchanged.`
     );
     this.name = "HooksMergeAmbiguousError";
     this.eventName = eventName;

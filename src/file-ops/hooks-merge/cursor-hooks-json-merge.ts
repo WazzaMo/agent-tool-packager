@@ -16,6 +16,8 @@ export interface HooksMergeOptions {
   forceConfig?: boolean;
   /** Do not change the existing document; return it unchanged (or `{}` when missing). */
   skipConfig?: boolean;
+  /** Shown in {@link HooksMergeAmbiguousError} (e.g. `.gemini/settings.json`). */
+  mergeTargetLabel?: string;
 }
 
 function assertPlainObject(label: string, v: unknown): Record<string, unknown> {
@@ -99,7 +101,13 @@ function mergeEventMaps(
         changed = true;
         continue;
       }
-      throw new HooksMergeAmbiguousError(event, key, existingHandler, h);
+      throw new HooksMergeAmbiguousError(
+        event,
+        key,
+        existingHandler,
+        h,
+        options.mergeTargetLabel ?? "the merged configuration file"
+      );
     }
     merged[event] = base;
   }

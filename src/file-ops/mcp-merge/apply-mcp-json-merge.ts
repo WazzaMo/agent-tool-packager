@@ -5,6 +5,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { mergeConfigTargetLabel } from "../merge-config-target-label.js";
 import { McpMergeInvalidDocumentError } from "./errors.js";
 import {
   mergeMcpJsonDocument,
@@ -65,13 +66,19 @@ export async function applyMcpJsonMergeToFile(
   }
 
   const existing = await readJsonObjectFile(absolutePath);
-  const outcome = mergeMcpJsonDocument(existing, incoming, options);
+  const dir = path.dirname(absolutePath);
+  const mergeOpts: McpMergeOptions = {
+    ...options,
+    mergeTargetLabel:
+      options.mergeTargetLabel ??
+      mergeConfigTargetLabel(dir, path.basename(absolutePath)),
+  };
+  const outcome = mergeMcpJsonDocument(existing, incoming, mergeOpts);
 
   if (outcome.status === "noop" || outcome.status === "skipped") {
     return { status: outcome.status, wrote: false };
   }
 
-  const dir = path.dirname(absolutePath);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(absolutePath, formatJsonDocument(outcome.document), "utf8");
   return { status: "applied", wrote: true };

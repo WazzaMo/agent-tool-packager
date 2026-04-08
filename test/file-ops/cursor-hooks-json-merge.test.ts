@@ -49,6 +49,16 @@ describe("mergeHooksJsonDocument", () => {
     expect(() => mergeHooksJsonDocument(existing, incoming, {})).toThrow(HooksMergeAmbiguousError);
   });
 
+  it("includes mergeTargetLabel in ambiguity error message", () => {
+    const existing = { hooks: { e: [{ id: "a", command: "old" }] } };
+    const incoming = { hooks: { e: [{ id: "a", command: "new" }] } };
+    try {
+      mergeHooksJsonDocument(existing, incoming, { mergeTargetLabel: ".gemini/settings.json" });
+    } catch (e) {
+      expect((e as Error).message).toMatch(/leave \.gemini\/settings\.json unchanged/);
+    }
+  });
+
   it("replaces handler when forceConfig is true", () => {
     const existing = { hooks: { e: [{ id: "a", command: "old" }] } };
     const incoming = { hooks: { e: [{ id: "a", command: "new" }] } };

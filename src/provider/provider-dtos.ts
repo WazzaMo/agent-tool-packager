@@ -41,25 +41,28 @@ export interface PlainMarkdownWriteAction {
 }
 
 /**
- * Merge MCP server definitions into `mcp.json` (op **1** ConfigMerge).
+ * Merge MCP server definitions into agent JSON (op **1** ConfigMerge), e.g. `mcp.json` or
+ * Gemini `settings.json`.
  */
 export interface McpJsonMergeAction {
   kind: "mcp_json_merge";
   operationId: ConfigMergeOperationId;
   provenance: AtpProvenance;
-  /** Typically `mcp.json` under the Cursor agent root. */
+  /** Relative to {@link InstallContext.layerRoot} (e.g. `mcp.json` or `settings.json`). */
   relativeTargetPath: string;
   /** Parsed JSON root; must contain an `mcpServers` object (`mergeMcpJsonDocument`). */
   payload: unknown;
 }
 
 /**
- * Merge hook handlers into `hooks.json` (op **7** HookJsonGraph).
+ * Merge hook handlers into agent JSON (op **7** HookJsonGraph), e.g. `hooks.json` or Gemini
+ * `settings.json`.
  */
 export interface HooksJsonMergeAction {
   kind: "hooks_json_merge";
   operationId: HookJsonGraphOperationId;
   provenance: AtpProvenance;
+  /** Relative to {@link InstallContext.layerRoot} (e.g. `hooks.json` or `settings.json`). */
   relativeTargetPath: string;
   payload: unknown;
 }

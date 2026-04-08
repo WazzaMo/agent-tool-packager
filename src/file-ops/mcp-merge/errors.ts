@@ -15,10 +15,15 @@ export class McpMergeAmbiguousError extends Error {
 
   readonly incomingEntry: unknown;
 
-  constructor(serverName: string, existingEntry: unknown, incomingEntry: unknown) {
+  constructor(
+    serverName: string,
+    existingEntry: unknown,
+    incomingEntry: unknown,
+    mergeTargetLabel = "the merged configuration file"
+  ) {
     super(
       `MCP server "${serverName}" already exists with different configuration; ` +
-        `use --force-config to overwrite or --skip-config to leave the file unchanged.`
+        `use --force-config to overwrite or --skip-config to leave ${mergeTargetLabel} unchanged.`
     );
     this.name = "McpMergeAmbiguousError";
     this.serverName = serverName;

@@ -7,6 +7,8 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+import { HooksMergeAmbiguousError } from "../../src/file-ops/hooks-merge/errors.js";
+import { McpMergeAmbiguousError } from "../../src/file-ops/mcp-merge/errors.js";
 import { StagedPartInstallInput } from "../../src/file-ops/part-install-input.js";
 import { createGeminiAgentProvider } from "../../src/provider/gemini-agent-provider.js";
 
@@ -80,6 +82,72 @@ describe("GeminiAgentProvider", () => {
     expect(plan.actions[0].relativeTargetPath).toBe("commands/do.toml");
     provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     expect(fs.readFileSync(path.join(layerRoot, "commands", "do.toml"), "utf8")).toBe('prompt = "hi"\n');
+  });
+
+  it("applyPlan MCP conflict cites .gemini/settings.json in error", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({ mcpServers: { dup: { command: "from-pkg" } } })
+    );
+    fs.mkdirSync(layerRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(layerRoot, "settings.json"),
+      JSON.stringify({ mcpServers: { dup: { command: "existing" } } }),
+      "utf8"
+    );
+    const manifest = {
+      name: "m",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createGeminiAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(() => provider.applyPlan(plan, { forceConfig: false, skipConfig: false })).toThrow(
+      McpMergeAmbiguousError
+    );
+    try {
+      provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    } catch (e) {
+      expect((e as Error).message).toMatch(/\.gemini\/settings\.json/);
+    }
+  });
+
+  it("applyPlan hooks conflict cites .gemini/settings.json in error", () => {
+    fs.writeFileSync(
+      path.join(staging, "hooks.json"),
+      JSON.stringify({ hooks: { Ev: [{ id: "h", command: "./pkg.sh" }] } })
+    );
+    fs.mkdirSync(layerRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(layerRoot, "settings.json"),
+      JSON.stringify({ hooks: { Ev: [{ id: "h", command: "./user.sh" }] } }),
+      "utf8"
+    );
+    const manifest = {
+      name: "h",
+      assets: [{ path: "hooks.json", type: "hook" as const, name: "h" }],
+    };
+    const provider = createGeminiAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Hook",
+      stagingRelPaths: ["hooks.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(() => provider.applyPlan(plan, { forceConfig: false, skipConfig: false })).toThrow(
+      HooksMergeAmbiguousError
+    );
+    try {
+      provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    } catch (e) {
+      expect((e as Error).message).toMatch(/\.gemini\/settings\.json/);
+    }
   });
 
   it("merges MCP payload into settings.json", () => {
