@@ -118,9 +118,9 @@ When **MCP** and **hooks** both target **`settings.json`**, failures are **per a
 # Implementation checklist (suggested order)
 
 1. [x] Unify **MCP** and **hooks** ambiguity strings to the **sentence shape** in §1 (tweak wording for consistency).
-2. [ ] In **Feature 5** (or provider contributor notes), state that new **`AgentProvider`** implementations must use **`applyProviderPlan`** or equivalent **`mergeTargetLabel`** wiring (see **AgentProvider implementations** above).
+2. [x] **AgentProvider** contributor guide: [contributor-guide-agent-providers.md](../contributor-guide-agent-providers.md) (w **`applyProviderPlan`** / **`mergeTargetLabel`**); Feature 5 links to it from the merge-policy section.
 3. [x] Add **`formatInstallUserFailureLines`** + **hint** line via **`install.ts`** for merge ambiguity errors (§2); helper lives in **`format-install-user-failure.ts`**.
-4. [ ] Document the **sentence shape** in **Feature 5** or **configuration** doc under “Merge policy / troubleshooting”.
+4. [x] Document merge policy in **Feature 5**, **`docs/configuration.md`**, and **README** (see **Merge policy and troubleshooting for atp install**; **Catalog install and merged agent JSON**).
 5. [x] Add **`--verbose`** logging for structured merge errors (§3); **`DEBUG`** with **`atp`** supported.
 6. [ ] Revisit **§6** only after UX feedback on Gemini multi-merge.
 

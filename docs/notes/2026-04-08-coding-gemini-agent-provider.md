@@ -87,8 +87,6 @@ Provider skill removal targets **`skills/{dir}/`** trees. Flat **`skills/<file>`
 
 - **Install root:** ATP standardises Gemini project installs on **`.gemini/`** only (including **`skills/`**); **`.agents/`** is not used for **`GeminiAgentProvider`**. See [Feature 5 — Installer providers](../features/5-installer-providers-for-known-agents.md) (Gemini CLI → Skill; path conventions).
 
-- **Docs:** Feature 5 / configuration “merge policy / troubleshooting” prose for the canonical ambiguity sentence + **`--verbose`** (see checklist in [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md)).
-
 # Done since this note was first written
 
 - **Integration:** **`gemini-agent-provider-rule-install.test.ts`**, **`gemini-agent-provider-skill-install.test.ts`**, **`config-merge-journal-install-gemini.test.ts`**, and **`install-force-config-conflicts-gemini.test.ts`** cover **`dist/atp.js`**, **`atp agent gemini`**, **`.gemini/`**, **`settings.json`** merges, journal rollback, and conflict stderr.
@@ -96,6 +94,8 @@ Provider skill removal targets **`skills/{dir}/`** trees. Flat **`skills/<file>`
 - **CLI help:** **`--force-config`** / **`--skip-config`** / **`--verbose`** mention Cursor and Gemini paths where relevant (**`commands/install.ts`**).
 
 - **Ambiguity plan:** Implemented per [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md) (errors, hint, **`--verbose`**, install rethrow).
+
+- **User docs:** Merge policy and troubleshooting in [Feature 5](../features/5-installer-providers-for-known-agents.md#merge-policy-and-troubleshooting-for-atp-install), [configuration](../configuration.md#catalog-install-and-merged-agent-json), and [README](../../README.md).
 
 # References
 
