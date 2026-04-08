@@ -9,12 +9,9 @@ Contribution to this project is supported and contributors will be recognised.
 
 `atp install` merges packaged MCP and hook payloads into on-disk agent JSON. When an existing server or handler **matches by name / dedupe key** but **differs in configuration**, the merge layer throws unless **`--force-config`** is set (or **`--skip-config`** skips the merge entirely).
 
-Recent work improved user-facing text by:
+Earlier work labelled the **exact target file** in ambiguity errors via **`mergeTargetLabel`** / **`mergeConfigTargetLabel`**, and expanded **`atp install --help`** for **`--force-config`** / **`--skip-config`** (Cursor + Gemini paths).
 
-- Labelling the **exact target file** in ambiguity errors (e.g. **`.gemini/settings.json`**, **`.cursor/mcp.json`**, **`.cursor/hooks.json`**) via **`mergeTargetLabel`** / **`mergeConfigTargetLabel`**.
-- Expanding **`atp install --help`** for **`--force-config`** and **`--skip-config`** to mention Cursor and Gemini paths.
-
-This note recommends **next steps** if we want ambiguity errors to be even clearer for operators and tooling.
+This note records the **plan**, **implementation status** (below), and **deferred** items. Remaining doc tasks (Feature 5 / troubleshooting prose) are checklist items still open.
 
 # Goals
 
@@ -22,20 +19,51 @@ This note recommends **next steps** if we want ambiguity errors to be even clear
 - Messages stay **accurate per agent** (Cursor vs Gemini vs future Claude/Codex).
 - Optional: support **automation** (stable error codes, parseable fields) without breaking the human-readable line.
 
-# Current behaviour (baseline)
+# Current behaviour (after implementation)
 
-| Piece                                                 | Role                                            |
-|-------------------------------------------------------|-------------------------------------------------|
-| **`McpMergeAmbiguousError`**                          | Same MCP server name, different config.         |
-| **`HooksMergeAmbiguousError`**                        | Same hook dedupe key - see (1)                  |
-| **`mergeConfigTargetLabel(layerRoot, relativePath)`** | Builds labels like **`.gemini/settings.json`**. |
-| **CLI**                                               | Error message on install failure; see (2)       |
+| Piece                                                 | Role                                                                 |
+|-------------------------------------------------------|----------------------------------------------------------------------|
+| **`McpMergeAmbiguousError`**                          | Canonical one-line message + readonly **`mergeTargetLabel`**.        |
+| **`HooksMergeAmbiguousError`**                        | Same pattern; hook event + dedupe key in the message — see (1).      |
+| **`mergeConfigTargetLabel(layerRoot, relativePath)`** | Builds labels like **`.gemini/settings.json`**.                      |
+| **`formatInstallUserFailureLines`**                   | Install stderr: ambiguity message, optional JSON, then hint — (2).   |
+| **`mergeAmbiguityVerboseRequested`**                  | True when **`--verbose`** or **`DEBUG`** contains **`atp`** — (3).   |
+| **`executeCatalogInstall`**                           | Rethrows merge ambiguity errors so they are not wrapped — (4).      |
+| **CLI**                                               | **`atp install --verbose`**; **`--help`** also lists **`--verbose`**. |
 
  1. Same hook dedupe key (e.g. `id:…`), different handler body.
 
- 2. **`console.error(String(err))`** on install failure; Commander **`--help`** documents flags.
+ 2. Hint text: **`Hint: Packages only add or replace entries they own; other keys in the file are preserved.`** (constant **`MERGE_CONFIG_AMBIGUITY_HINT`**).
 
-Structured fields already exist on errors (**`code`**, **`serverName`**, **`eventName`**, **`dedupeKey`**, etc.) but are **not** printed as JSON to the user today.
+ 3. **`DEBUG`** tokens are split on commas and whitespace (e.g. **`DEBUG=foo,atp`**).
+
+ 4. Other install failures still surface as **`Install copy or manifest update failed: …`** with the underlying message.
+
+**Canonical MCP line (example):**
+
+```text
+MCP server "name" conflicts with existing entry in .cursor/mcp.json; use --force-config to replace it or --skip-config to skip this merge.
+```
+
+**Canonical hooks line (example):**
+
+```text
+Hook handler for event "beforeSubmit" (id:atp-force-hook) conflicts with existing entry in .cursor/hooks.json; use --force-config to replace it or --skip-config to skip this merge.
+```
+
+**Verbose JSON (one line on stderr between message and hint):** **`{ code, serverName, mergeTargetLabel }`** (MCP) or **`{ code, eventName, dedupeKey, mergeTargetLabel }`** (hooks).
+
+# Implementation status (shipped)
+
+- **§1** — **`McpMergeAmbiguousError`** and **`HooksMergeAmbiguousError`** messages follow the **what / where / action** sentence shape; both classes expose **`mergeTargetLabel`** for tests and verbose output.
+- **§2** — **`src/install/format-install-user-failure.ts`**: **`formatInstallUserFailureLines`**, **`MERGE_CONFIG_AMBIGUITY_HINT`**; **`installPackage`** prints returned lines on failure.
+- **§3** — **`atp install --verbose`**; equivalent when **`mergeAmbiguityVerboseRequested`** is true via **`DEBUG`** and **`atp`** token.
+- **Install path** — **`executeCatalogInstall`** rethrows ambiguity errors so the hint and verbose lines apply; generic wrap only for other failures.
+- **Tests** — Unit expectations on exact messages in **`test/file-ops/mcp-json-merge.test.ts`**, **`cursor-hooks-json-merge.test.ts`**, **`test/install/format-install-user-failure.test.ts`**, **`test/provider/gemini-agent-provider.test.ts`**; integration coverage in **`install-force-config-conflicts.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`** (including **`--verbose`** JSON), **`install-cli-config-flags-help.test.ts`**.
+
+# AgentProvider implementations
+
+This plan applies uniformly to every **`AgentProvider`** only when structured MCP / hooks merges go through the shared path: **`applyPlan`** should delegate to **`applyProviderPlan`**, which always passes **`mergeConfigTargetLabel(layerRoot, action.relativeTargetPath)`** into the merge helpers. If a future provider implements **`applyPlan`** without that (or omits **`mergeTargetLabel`** when calling **`mergeMcpJsonDocument`** / **`mergeHooksJsonDocument`** directly), users see the generic fallback *“the merged configuration file”* and the improvements above do not fully apply. **Requirement for new providers:** use **`applyProviderPlan`** for **`mcp_json_merge`** and **`hooks_json_merge`**, or pass an equivalent **`mergeTargetLabel`** built from the same **`layerRoot`** and **`relativeTargetPath`** contract.
 
 # Recommendations (best path)
 
@@ -89,11 +117,12 @@ When **MCP** and **hooks** both target **`settings.json`**, failures are **per a
 
 # Implementation checklist (suggested order)
 
-1. [ ] Unify **MCP** and **hooks** ambiguity strings to the **sentence shape** in §1 (tweak wording for consistency).
-2. [ ] Add **`formatInstallUserError`** + optional **hint** line in **`install.ts`** for known merge error types (§2).
-3. [ ] Document the **sentence shape** in **Feature 5** or **configuration** doc under “Merge policy / troubleshooting”.
-4. [ ] Add **`--verbose`** logging for structured merge errors (§3).
-5. [ ] Revisit **§6** only after UX feedback on Gemini multi-merge.
+1. [x] Unify **MCP** and **hooks** ambiguity strings to the **sentence shape** in §1 (tweak wording for consistency).
+2. [ ] In **Feature 5** (or provider contributor notes), state that new **`AgentProvider`** implementations must use **`applyProviderPlan`** or equivalent **`mergeTargetLabel`** wiring (see **AgentProvider implementations** above).
+3. [x] Add **`formatInstallUserFailureLines`** + **hint** line via **`install.ts`** for merge ambiguity errors (§2); helper lives in **`format-install-user-failure.ts`**.
+4. [ ] Document the **sentence shape** in **Feature 5** or **configuration** doc under “Merge policy / troubleshooting”.
+5. [x] Add **`--verbose`** logging for structured merge errors (§3); **`DEBUG`** with **`atp`** supported.
+6. [ ] Revisit **§6** only after UX feedback on Gemini multi-merge.
 
 # References
 
@@ -103,6 +132,7 @@ When **MCP** and **hooks** both target **`settings.json`**, failures are **per a
 | MCP ambiguity | `src/file-ops/mcp-merge/errors.ts`, `mcp-json-merge.ts` |
 | Hooks ambiguity | `src/file-ops/hooks-merge/errors.ts`, `cursor-hooks-json-merge.ts` |
 | Provider apply + labels | `src/provider/apply-provider-plan.ts` |
-| Install error surface | `src/install/install.ts` |
+| Install stderr formatting + hint + verbose | `src/install/format-install-user-failure.ts` |
+| Install orchestration (rethrow ambiguity) | `src/install/install.ts` |
 | Install flags | `src/commands/install.ts` |
 | Agent matrix | [Feature 5 — Installer providers](../features/5-installer-providers-for-known-agents.md) |

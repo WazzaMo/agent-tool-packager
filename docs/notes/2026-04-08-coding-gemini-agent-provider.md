@@ -13,6 +13,8 @@ No change to **`ProviderAction`** DTOs: **`mcp_json_merge`** / **`hooks_json_mer
 
 Test coverage is summarised in [2026-04-08-test-gemini-agent-provider-coverage](./2026-04-08-test-gemini-agent-provider-coverage.md).
 
+Merge ambiguity messaging and install stderr behaviour (canonical **`McpMergeAmbiguousError`** / **`HooksMergeAmbiguousError`** lines, hint line, **`atp install --verbose`**, **`DEBUG=atp`**) are documented in [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md) and apply to **Cursor and Gemini** (and any future provider using **`applyProviderPlan`**).
+
 # Part type coverage (Gemini)
 
 | Area | On disk | Status |
@@ -45,6 +47,22 @@ Enrichment still maps **Command** / **Experimental** parts to **`rule`** assets 
 
 - `src/provider/skill/index.ts` — Re-exports **`removeProviderSkillBundleTrees`**.
 
+# Merge config ambiguity and install stderr (same day)
+
+Cross-cutting install UX, not Gemini-specific but exercised heavily against **`.gemini/settings.json`** in tests.
+
+- `src/file-ops/mcp-merge/errors.ts` / `src/file-ops/hooks-merge/errors.ts` — **`McpMergeAmbiguousError`** and **`HooksMergeAmbiguousError`** use one canonical sentence each (**what** / **where** / **`--force-config`** / **`--skip-config`**); both expose readonly **`mergeTargetLabel`** (default **`the merged configuration file`** when callers omit it).
+
+- `src/install/format-install-user-failure.ts` — **`formatInstallUserFailureLines`**, **`MERGE_CONFIG_AMBIGUITY_HINT`**, **`mergeAmbiguityVerboseRequested`** (**`--verbose`** or **`DEBUG`** token **`atp`**).
+
+- `src/install/install.ts` — **`executeCatalogInstall`** rethrows the two merge ambiguity types so they are not wrapped in **`Install copy or manifest update failed`**; **`installPackage`** prints **`formatInstallUserFailureLines`** on failure (message, optional JSON line, hint).
+
+- `src/commands/install.ts` — **`atp install --verbose`** option.
+
+- `src/install/types.ts` — **`InstallOptions.verbose`**.
+
+**`applyProviderPlan`** (`src/provider/apply-provider-plan.ts`) already passes **`mergeConfigTargetLabel(layerRoot, relativeTargetPath)`** into merges; no provider-only code change was required for path-accurate messages.
+
 # Behaviour notes
 
 ### `settings.json` and journal
@@ -61,10 +79,6 @@ Provider skill removal targets **`skills/{dir}/`** trees. Flat **`skills/<file>`
 
 # Next steps
 
-- **Integration:** Add a **`dist/atp.js`** test mirroring **`cursor-agent-provider-rule-install.test.ts`** (Station + Safehouse + **`atp agent gemini`**, assert **`.gemini/`** and **`settings.json`** merges + journal rollback).
-
-- **Journal E2E:** Extend **`config-merge-journal`** integration to a Gemini fixture so **`settings.json`** exact and fragment rollback are asserted under **`.gemini/`**.
-
 - **`ClaudeAgentProvider`:** Matrix uses **`.mcp.json`** / **`settings.json`** split for hooks; implement with the same plan primitives and removal map (not the Gemini **`settings.json`**-only shortcut).
 
 - **User / station layer:** **`usesGeminiAgentProviderProjectInstall`** is **false** when **`layer`** is **user**; **`buildProviderInstallContext`** already resolves **`layerRoot`** to agent home. Wire Gemini provider for user-layer installs when product wants parity.
@@ -73,12 +87,22 @@ Provider skill removal targets **`skills/{dir}/`** trees. Flat **`skills/<file>`
 
 - **Install root:** ATP standardises Gemini project installs on **`.gemini/`** only (including **`skills/`**); **`.agents/`** is not used for **`GeminiAgentProvider`**. See [Feature 5 — Installer providers](../features/5-installer-providers-for-known-agents.md) (Gemini CLI → Skill; path conventions).
 
-- **CLI copy:** Consider mentioning **`settings.json`** in **`--skip-config`** / **`--force-config`** help text next to **`mcp.json`** / **`hooks.json`** for Gemini users.
+- **Docs:** Feature 5 / configuration “merge policy / troubleshooting” prose for the canonical ambiguity sentence + **`--verbose`** (see checklist in [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md)).
+
+# Done since this note was first written
+
+- **Integration:** **`gemini-agent-provider-rule-install.test.ts`**, **`gemini-agent-provider-skill-install.test.ts`**, **`config-merge-journal-install-gemini.test.ts`**, and **`install-force-config-conflicts-gemini.test.ts`** cover **`dist/atp.js`**, **`atp agent gemini`**, **`.gemini/`**, **`settings.json`** merges, journal rollback, and conflict stderr.
+
+- **CLI help:** **`--force-config`** / **`--skip-config`** / **`--verbose`** mention Cursor and Gemini paths where relevant (**`commands/install.ts`**).
+
+- **Ambiguity plan:** Implemented per [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md) (errors, hint, **`--verbose`**, install rethrow).
 
 # References
 
 | Topic | Location |
 |-------|----------|
+| Install stderr formatting | `src/install/format-install-user-failure.ts` |
+| Ambiguity errors plan + status | [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md) |
 | Test note | [2026-04-08-test-gemini-agent-provider-coverage](./2026-04-08-test-gemini-agent-provider-coverage.md) |
 | Cursor provider coding | [2026-04-06-coding-cursor-agent-provider-install](./2026-04-06-coding-cursor-agent-provider-install.md) |
 | Provider capability matrix | [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md) |
