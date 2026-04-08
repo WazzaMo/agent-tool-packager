@@ -2,7 +2,7 @@
  * Unit tests: config merge journal rollback (exact vs fragment).
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -230,8 +230,7 @@ describe("rollbackMergedConfigJournal", () => {
 
   it("exact-restore user_home .claude.json when configRoot is user_home", () => {
     const fakeHome = path.join(tmp, "home-claude");
-    const prevHome = process.env.HOME;
-    process.env.HOME = fakeHome;
+    const homedirSpy = vi.spyOn(os, "homedir").mockReturnValue(fakeHome);
     try {
       fs.mkdirSync(fakeHome, { recursive: true });
       const beforeObj = { mcpServers: { keep: { url: "http://x" } } };
@@ -260,7 +259,7 @@ describe("rollbackMergedConfigJournal", () => {
       expect(warnings).toEqual([]);
       expect(JSON.parse(fs.readFileSync(claudeJson, "utf8"))).toEqual(beforeObj);
     } finally {
-      process.env.HOME = prevHome;
+      homedirSpy.mockRestore();
     }
   });
 

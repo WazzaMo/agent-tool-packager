@@ -1,9 +1,8 @@
 /**
  * Vitest configuration for ATP tests.
  *
- * Three projects run in parallel (Vitest default):
- * - **unit** — `pool: threads` for fast startup; excludes integration and files that mutate `HOME` / heavy env.
- * - **unit-env** — `pool: forks` for `claude-agent-provider` + `config-merge-journal` (reliable `process.env.HOME` + `os.homedir()`).
+ * Two projects run in parallel:
+ * - **unit** — `pool: threads`, all unit test files under `test/` except `test/integration` (user-home cases mock `os.homedir`).
  * - **integration** — `pool: forks` for subprocess CLI isolation (`node dist/atp.js`).
  *
  * Tune: `VITEST_MAX_WORKERS`, `vitest run --max-workers=N`, or `vitest run --shard=i/n` in CI.
@@ -17,7 +16,6 @@ import { defineConfig } from "vitest/config";
 const cpus = os.availableParallelism();
 /**
  * Vitest requires the same `maxWorkers` for projects that share a `sequence.groupOrder` (default 0).
- * Using one value keeps all three projects in one parallel wave.
  */
 const maxWorkers = Math.min(32, Math.max(4, cpus));
 
@@ -39,24 +37,7 @@ export default defineConfig({
           maxWorkers,
           fileParallelism: true,
           include: ["test/**/*.test.ts"],
-          exclude: [
-            "test/integration/**",
-            "test/provider/claude-agent-provider.test.ts",
-            "test/config/config-merge-journal.test.ts",
-          ],
-        },
-      },
-      {
-        extends: true,
-        test: {
-          name: "unit-env",
-          pool: "forks",
-          maxWorkers,
-          fileParallelism: true,
-          include: [
-            "test/provider/claude-agent-provider.test.ts",
-            "test/config/config-merge-journal.test.ts",
-          ],
+          exclude: ["test/integration/**"],
         },
       },
       {

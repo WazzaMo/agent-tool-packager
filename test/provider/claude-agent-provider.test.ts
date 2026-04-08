@@ -2,7 +2,7 @@
  * Unit tests: {@link ClaudeAgentProvider} plan + apply.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -215,10 +215,9 @@ describe("ClaudeAgentProvider", () => {
     ).toHaveLength(0);
   });
 
-  it("user layer merges MCP into ~/.claude.json (HOME override)", () => {
+  it("user layer merges MCP into ~/.claude.json (os.homedir override)", () => {
     const fakeHome = path.join(tmp, "fake-home");
-    const prevHome = process.env.HOME;
-    process.env.HOME = fakeHome;
+    const homedirSpy = vi.spyOn(os, "homedir").mockReturnValue(fakeHome);
     try {
       fs.writeFileSync(
         path.join(staging, "mcp.json"),
@@ -255,14 +254,13 @@ describe("ClaudeAgentProvider", () => {
       const doc = JSON.parse(fs.readFileSync(dest, "utf8")) as { mcpServers: Record<string, unknown> };
       expect(doc.mcpServers.u).toEqual({ command: "c" });
     } finally {
-      process.env.HOME = prevHome;
+      homedirSpy.mockRestore();
     }
   });
 
   it("user layer MCP conflict cites ~/.claude.json in error", () => {
     const fakeHome = path.join(tmp, "fake-home2");
-    const prevHome = process.env.HOME;
-    process.env.HOME = fakeHome;
+    const homedirSpy = vi.spyOn(os, "homedir").mockReturnValue(fakeHome);
     try {
       fs.mkdirSync(fakeHome, { recursive: true });
       fs.writeFileSync(
@@ -303,7 +301,7 @@ describe("ClaudeAgentProvider", () => {
         expect((e as Error).message).toContain("~/.claude.json");
       }
     } finally {
-      process.env.HOME = prevHome;
+      homedirSpy.mockRestore();
     }
   });
 });
