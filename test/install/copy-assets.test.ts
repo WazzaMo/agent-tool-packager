@@ -100,6 +100,16 @@ describe("copyPackageAssets", () => {
     ).toBe(path.join(base, "commands", "c.toml"));
   });
 
+  it("agentProviderRemovalDestination maps Claude MCP to repo-root .mcp.json and hooks to settings.json", () => {
+    const claudeDir = path.join(os.tmpdir(), "atp-claude-rem", "proj", ".claude");
+    expect(
+      path.normalize(agentProviderRemovalDestination("claude", claudeDir, { type: "mcp", path: "x.json" }).filePath)
+    ).toBe(path.normalize(path.join(claudeDir, "..", ".mcp.json")));
+    expect(
+      agentProviderRemovalDestination("claude", claudeDir, { type: "hook", path: "hooks.json" }).filePath
+    ).toBe(path.join(claudeDir, "settings.json"));
+  });
+
   it("copies prompt asset to agent prompts/ directory", () => {
     fs.writeFileSync(path.join(pkgDir, "review.md"), "# Review prompt");
     copyPackageAssets(pkgDir, {
@@ -174,6 +184,56 @@ describe("copyPackageAssets", () => {
   it("handles empty assets array", () => {
     copyPackageAssets(pkgDir, { name: "test", assets: [] }, agentBase);
     expect(fs.existsSync(agentBase)).toBe(false);
+  });
+
+  it("legacy Claude MCP merges into projectRoot/.mcp.json", () => {
+    const projRoot = path.join(path.dirname(pkgDir), "claude-proj");
+    const claudeDir = path.join(projRoot, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pkgDir, "mcp.json"),
+      JSON.stringify({ mcpServers: { pkgSrv: { command: "tool" } } })
+    );
+    copyPackageAssets(
+      pkgDir,
+      { name: "lm", assets: [{ path: "mcp.json", type: "mcp", name: "m" }] },
+      claudeDir,
+      undefined,
+      undefined,
+      undefined,
+      { forceConfig: false, skipConfig: false },
+      { projectRoot: projRoot, claudeAgentDir: claudeDir }
+    );
+    const dest = path.join(projRoot, ".mcp.json");
+    expect(fs.existsSync(dest)).toBe(true);
+    const doc = JSON.parse(fs.readFileSync(dest, "utf8")) as { mcpServers: Record<string, unknown> };
+    expect(doc.mcpServers.pkgSrv).toEqual({ command: "tool" });
+  });
+
+  it("legacy Claude hooks.json merges into .claude/settings.json", () => {
+    const projRoot = path.join(path.dirname(pkgDir), "claude-proj2");
+    const claudeDir = path.join(projRoot, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pkgDir, "hooks.json"),
+      JSON.stringify({ hooks: { SessionStart: [{ id: "p", command: "echo" }] } })
+    );
+    copyPackageAssets(
+      pkgDir,
+      { name: "lh", assets: [{ path: "hooks.json", type: "hook", name: "h" }] },
+      claudeDir,
+      undefined,
+      undefined,
+      undefined,
+      { forceConfig: false, skipConfig: false },
+      { projectRoot: projRoot, claudeAgentDir: claudeDir }
+    );
+    const settingsPath = path.join(claudeDir, "settings.json");
+    expect(fs.existsSync(settingsPath)).toBe(true);
+    const doc = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as {
+      hooks: Record<string, unknown[]>;
+    };
+    expect(doc.hooks.SessionStart).toEqual([{ id: "p", command: "echo" }]);
   });
 
   describe("text patching (Feature 3: {bundle_name} placeholder)", () => {

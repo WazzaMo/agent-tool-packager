@@ -1,5 +1,5 @@
 /**
- * Install catalog package file assets via Cursor / Gemini provider or legacy copy.
+ * Install catalog package file assets via Cursor, Gemini, or Claude provider or legacy copy.
  */
 
 import {
@@ -8,11 +8,13 @@ import {
 } from "./copy-assets.js";
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 
+import { createClaudeAgentProvider } from "../provider/claude-agent-provider.js";
 import { createCursorAgentProvider } from "../provider/cursor-agent-provider.js";
 import { createGeminiAgentProvider } from "../provider/gemini-agent-provider.js";
 import type { ProviderMergeOptions } from "../provider/types.js";
 
 import {
+  usesClaudeAgentProviderCatalogInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
 } from "./rule-only-cursor-provider.js";
@@ -61,6 +63,16 @@ export function installPackageAssetsForCatalogContext(
     return;
   }
 
+  if (usesClaudeAgentProviderCatalogInstall(providerCtx, ctx.manifest, ctx.opts)) {
+    const provider = createClaudeAgentProvider(ctx.manifest, ctx.bundlePathMap);
+    for (const part of stagedParts) {
+      const plan = provider.planInstall(providerCtx, part, mergeOpts);
+      provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);
+    }
+    copyProgramAssetsOnly(ctx.pkgDir, ctx.manifest, ctx.installBinDir, onFileCopied);
+    return;
+  }
+
   if (usesCursorAgentProviderProjectInstall(providerCtx, ctx.manifest, ctx.opts)) {
     const provider = createCursorAgentProvider(ctx.manifest, ctx.bundlePathMap);
     for (const part of stagedParts) {
@@ -76,6 +88,11 @@ export function installPackageAssetsForCatalogContext(
     return;
   }
 
+  const legacyClaudeMerge =
+    providerCtx.agent === "claude" && providerCtx.layer === "project"
+      ? { projectRoot: ctx.projectBase, claudeAgentDir: ctx.agentBase }
+      : undefined;
+
   copyPackageAssets(
     ctx.pkgDir,
     ctx.manifest,
@@ -83,6 +100,7 @@ export function installPackageAssetsForCatalogContext(
     ctx.bundlePathMap,
     ctx.installBinDir,
     onFileCopied,
-    mcpCopyOpts
+    mcpCopyOpts,
+    legacyClaudeMerge
   );
 }

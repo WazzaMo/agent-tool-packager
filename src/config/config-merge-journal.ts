@@ -3,6 +3,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
@@ -19,6 +20,11 @@ export const CONFIG_JOURNAL_FILE_VERSION = 1;
 /** One merge applied during install (e.g. `.cursor/mcp.json`, `.cursor/hooks.json`, or `.gemini/settings.json`). */
 export interface ConfigMergeJournalEntryV1 {
   agent_relative_path: string;
+  /**
+   * When `project`, {@link ConfigMergeJournalEntryV1.agent_relative_path} is under the repo root
+   * (e.g. `.mcp.json`). When `user_home`, under the user home directory (e.g. `.claude.json`). Default: agent layer.
+   */
+  configRoot?: "layer" | "project" | "user_home";
   kind: "mcp" | "hooks";
   /** True when the target file did not exist before this merge. */
   before_absent: boolean;
@@ -142,19 +148,32 @@ function readJsonRoot(absolutePath: string): Record<string, unknown> {
  * When the on-disk file still hashes to `after_sha256`, restores `before_canonical` or unlinks
  * when `before_absent`. Otherwise warns and removes only ATP fragments (server names / hook handlers).
  *
- * @param agentBase - Project agent directory (e.g. `.cursor/`).
+ * @param agentLayerRoot - Agent layer directory (e.g. project `.cursor/` or `.claude/`).
+ * @param projectRoot - Repository root (for entries with `configRoot: "project"`).
  * @param entries - Journal entries in forward install order.
  * @returns Human-readable warnings (e.g. drift detected).
  */
 export function rollbackMergedConfigJournal(
-  agentBase: string,
+  agentLayerRoot: string,
+  projectRoot: string,
   entries: ConfigMergeJournalEntryV1[]
 ): string[] {
   const warnings: string[] = [];
   const reversed = [...entries].reverse();
 
   for (const entry of reversed) {
-    const dest = path.join(agentBase, entry.agent_relative_path.replace(/\\/g, "/"));
+    const rel = entry.agent_relative_path.replace(/\\/g, "/");
+    if (rel.includes("..") || path.posix.isAbsolute(rel)) {
+      warnings.push(`ATP: refusing journal rollback path "${rel}" (must be relative with no ..).`);
+      continue;
+    }
+    const base =
+      entry.configRoot === "project"
+        ? projectRoot
+        : entry.configRoot === "user_home"
+          ? os.homedir()
+          : agentLayerRoot;
+    const dest = path.join(base, rel);
     let currentValue: unknown = {};
     let currentSha: string;
     if (!fs.existsSync(dest)) {

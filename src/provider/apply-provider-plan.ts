@@ -3,6 +3,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
@@ -87,7 +88,17 @@ export function applyProviderPlan(
     }
 
     if (action.kind === "mcp_json_merge") {
-      const dest = path.join(root, action.relativeTargetPath);
+      const rel = action.relativeTargetPath.replace(/\\/g, "/");
+      if (rel.includes("..") || path.posix.isAbsolute(rel)) {
+        throw new Error(`Invalid mcp_json_merge path "${action.relativeTargetPath}" (no .. or absolute segments).`);
+      }
+      const baseRoot =
+        action.mergeBase === "project"
+          ? plan.context.projectRoot
+          : action.mergeBase === "user_home"
+            ? os.homedir()
+            : root;
+      const dest = path.join(baseRoot, rel);
       const beforeAbsent = !fs.existsSync(dest);
       const existing = readJsonIfExists(dest);
       const beforeObj =
@@ -97,7 +108,12 @@ export function applyProviderPlan(
       const beforeCanonical = canonicalJsonStringify(beforeObj);
       const beforeSha = sha256HexCanonicalJson(beforeObj);
 
-      const mergeLabel = mergeConfigTargetLabel(root, action.relativeTargetPath);
+      const mergeLabel =
+        action.mergeBase === "project"
+          ? ".mcp.json"
+          : action.mergeBase === "user_home"
+            ? "~/.claude.json"
+            : mergeConfigTargetLabel(root, action.relativeTargetPath);
       const outcome = mergeMcpJsonDocument(
         existing,
         action.payload,
@@ -109,7 +125,12 @@ export function applyProviderPlan(
         onFileWritten?.(dest);
         const afterSha = sha256HexCanonicalJson(outcome.document);
         pushJournal(configMergeJournal, {
-          agent_relative_path: action.relativeTargetPath.replace(/\\/g, "/"),
+          agent_relative_path: rel,
+          ...(action.mergeBase === "project"
+            ? { configRoot: "project" as const }
+            : action.mergeBase === "user_home"
+              ? { configRoot: "user_home" as const }
+              : {}),
           kind: "mcp",
           before_absent: beforeAbsent,
           before_sha256: beforeSha,

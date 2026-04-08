@@ -1,5 +1,5 @@
 /**
- * Unit tests: {@link installPackageAssetsForCatalogContext} routes rule-only Cursor to provider.
+ * Unit tests: {@link installPackageAssetsForCatalogContext} routes Cursor / Gemini / Claude provider installs.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -134,5 +134,42 @@ describe("installPackageAssetsForCatalogContext", () => {
     const dest = path.join(agentBase, "rules", "rule.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe("# G\n");
+  });
+
+  it("installs rule via ClaudeAgentProvider under .claude/rules/", () => {
+    const projectBase = path.join(base, "cproj");
+    const pkgDir = path.join(base, "cpkg");
+    fs.mkdirSync(pkgDir, { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "rule.md"), "# Claude rule\n");
+    const agentBase = path.join(projectBase, ".claude");
+    const manifest = {
+      name: "c-rules",
+      version: "0.1.0",
+      type: "Rule",
+      assets: [{ path: "rule.md", type: "rule" as const, name: "rule" }],
+    };
+    const ctx: CatalogInstallContext = {
+      pkgDir,
+      manifest,
+      agentBase,
+      bundlePathMap: undefined,
+      installBinDir: undefined,
+      catalogPkg: { name: "c-rules", version: "0.1.0", location: `file://${pkgDir}` },
+      opts: { promptScope: "project", binaryScope: "user-bin", dependencies: false },
+      projectBase,
+    };
+    const providerCtx = {
+      agent: "claude" as const,
+      layer: "project" as const,
+      projectRoot: projectBase,
+      layerRoot: agentBase,
+      stagingDir: pkgDir,
+    };
+    const staged = prepareCatalogInstallPartInputs(ctx);
+    installPackageAssetsForCatalogContext(ctx, providerCtx, staged);
+
+    const dest = path.join(agentBase, "rules", "rule.md");
+    expect(fs.existsSync(dest)).toBe(true);
+    expect(fs.readFileSync(dest, "utf8")).toBe("# Claude rule\n");
   });
 });

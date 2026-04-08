@@ -4,6 +4,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
@@ -141,14 +142,20 @@ function mergedMcpConfigRelativePath(agentName: string): string {
  * Relative path under the agent project directory for merged hooks JSON (varies by agent).
  */
 function mergedHooksConfigRelativePath(agentName: string): string {
-  return agentName.trim().toLowerCase() === "gemini" ? "settings.json" : "hooks.json";
+  const k = agentName.trim().toLowerCase();
+  if (k === "gemini" || k === "claude") {
+    return "settings.json";
+  }
+  return "hooks.json";
 }
 
 /**
  * Remove MCP server keys that this package added (merge rollback), without deleting the config file.
+ *
+ * @param mergeRoot - Directory containing the merged JSON (agent layer or project root for Claude `.mcp.json`).
  */
 function stripMcpServersFromAgentForPackage(
-  agentBase: string,
+  mergeRoot: string,
   pkgDir: string,
   assetPath: string,
   destConfigRelative: string = "mcp.json"
@@ -178,7 +185,7 @@ function stripMcpServersFromAgentForPackage(
     return;
   }
 
-  const destPath = path.join(agentBase, destConfigRelative);
+  const destPath = path.join(mergeRoot, destConfigRelative);
   const existing = readJsonConfigFile(destPath);
   if (existing === null) {
     return;
@@ -254,7 +261,7 @@ function removeAgentCopies(
   const hooksRollbackFile = mergedHooksConfigRelativePath(agentName);
   const agentKey = agentName.trim().toLowerCase();
 
-  if ((agentKey === "cursor" || agentKey === "gemini") && pkgDir) {
+  if ((agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude") && pkgDir) {
     removeProviderSkillBundleTrees(agentBase, pkgDir, assets);
   }
 
@@ -263,7 +270,7 @@ function removeAgentCopies(
   for (const asset of assets) {
     if (asset.type === "program") continue;
 
-    if (asset.type === "skill" && (agentKey === "cursor" || agentKey === "gemini")) {
+    if (asset.type === "skill" && (agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude")) {
       continue;
     }
 
@@ -272,7 +279,12 @@ function removeAgentCopies(
         continue;
       }
       if (pkgDir) {
-        stripMcpServersFromAgentForPackage(agentBase, pkgDir, asset.path, mcpRollbackFile);
+        const mcpMergeRoot = agentKey === "claude" ? projectBase : agentBase;
+        const mcpRelative = agentKey === "claude" ? ".mcp.json" : mcpRollbackFile;
+        stripMcpServersFromAgentForPackage(mcpMergeRoot, pkgDir, asset.path, mcpRelative);
+        if (agentKey === "claude") {
+          stripMcpServersFromAgentForPackage(os.homedir(), pkgDir, asset.path, ".claude.json");
+        }
       } else if (!warnedMissingPkgDir) {
         warnedMissingPkgDir = true;
         console.warn(
@@ -374,7 +386,11 @@ export function removeSafehousePackage(
       found.config_journal_path
     );
     if (journalEntries.length > 0) {
-      const warnings = rollbackMergedConfigJournal(agentBaseForJournal, journalEntries);
+      const warnings = rollbackMergedConfigJournal(
+        agentBaseForJournal,
+        path.resolve(cwd),
+        journalEntries
+      );
       for (const w of warnings) {
         console.warn(w);
       }

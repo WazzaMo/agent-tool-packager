@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  usesClaudeAgentProviderCatalogInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
 } from "../../src/install/rule-only-cursor-provider.js";
@@ -142,6 +143,68 @@ describe("usesGeminiAgentProviderProjectInstall", () => {
       ],
     };
     expect(usesGeminiAgentProviderProjectInstall(ctx("gemini", "project"), manifest, baseOpts)).toBe(
+      true
+    );
+  });
+});
+
+describe("usesClaudeAgentProviderCatalogInstall", () => {
+  const ruleManifest: PackageManifest = {
+    name: "r",
+    assets: [{ path: "a.md", type: "rule", name: "a" }],
+  };
+
+  const baseOpts = {
+    promptScope: "project" as const,
+    binaryScope: "user-bin" as const,
+    dependencies: false,
+  };
+
+  const stationOpts = {
+    promptScope: "station" as const,
+    binaryScope: "user-bin" as const,
+    dependencies: false,
+  };
+
+  it("is true for claude + project layer + project scope + supported assets", () => {
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("claude", "project"), ruleManifest, baseOpts)).toBe(
+      true
+    );
+  });
+
+  it("is true for claude + user layer + station scope", () => {
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("claude", "user"), ruleManifest, stationOpts)).toBe(
+      true
+    );
+  });
+
+  it("is false when agent is not claude", () => {
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("cursor", "project"), ruleManifest, baseOpts)).toBe(
+      false
+    );
+  });
+
+  it("is false when layer is user but scope is project", () => {
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("claude", "user"), ruleManifest, baseOpts)).toBe(
+      false
+    );
+  });
+
+  it("is false when layer is project but scope is station", () => {
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("claude", "project"), ruleManifest, stationOpts)).toBe(
+      false
+    );
+  });
+
+  it("is true for mcp + hook manifest rows (project)", () => {
+    const manifest: PackageManifest = {
+      name: "x",
+      assets: [
+        { path: "m.json", type: "mcp", name: "m" },
+        { path: "hooks.json", type: "hook", name: "h" },
+      ],
+    };
+    expect(usesClaudeAgentProviderCatalogInstall(ctx("claude", "project"), manifest, baseOpts)).toBe(
       true
     );
   });

@@ -7,11 +7,21 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { mergeHooksJsonDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
 import type { PackageAsset, PackageManifest } from "./types.js";
+
+/**
+ * When legacy `copyPackageAssets` runs for Claude (project layer), MCP targets repo `.mcp.json` and
+ * packaged `hooks.json` merges into `.claude/settings.json`.
+ */
+export interface LegacyClaudeMergeContext {
+  projectRoot: string;
+  claudeAgentDir: string;
+}
 
 const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
   skill: "skills",
@@ -66,13 +76,20 @@ export function agentProviderRemovalDestination(
   const agent = agentName.trim().toLowerCase();
 
   if (asset.type === "mcp") {
-    const file = agent === "gemini" ? "settings.json" : "mcp.json";
-    return { filePath: path.join(agentBase, file) };
+    if (agent === "gemini") {
+      return { filePath: path.join(agentBase, "settings.json") };
+    }
+    if (agent === "claude") {
+      return { filePath: path.normalize(path.join(agentBase, "..", ".mcp.json")) };
+    }
+    return { filePath: path.join(agentBase, "mcp.json") };
   }
   if (asset.type === "hook") {
     if (baseName === "hooks.json") {
-      const file = agent === "gemini" ? "settings.json" : "hooks.json";
-      return { filePath: path.join(agentBase, file) };
+      if (agent === "gemini" || agent === "claude") {
+        return { filePath: path.join(agentBase, "settings.json") };
+      }
+      return { filePath: path.join(agentBase, "hooks.json") };
     }
     return { filePath: path.join(agentBase, "hooks", baseName) };
   }
@@ -132,7 +149,8 @@ function copyMcpAssetToAgent(
   agentBase: string,
   asset: PackageAsset,
   mcpMerge: { forceConfig: boolean; skipConfig: boolean } | undefined,
-  onFileCopied?: (destAbsolute: string) => void
+  onFileCopied?: (destAbsolute: string) => void,
+  legacyClaude?: LegacyClaudeMergeContext
 ): void {
   const srcPath = path.join(pkgDir, asset.path);
   if (!fs.existsSync(srcPath)) return;
@@ -144,19 +162,58 @@ function copyMcpAssetToAgent(
     const err = e as SyntaxError;
     throw new Error(`Invalid JSON in MCP asset ${asset.path}: ${err.message}`);
   }
-  const destPath = path.join(agentBase, "mcp.json");
+  const destPath = legacyClaude
+    ? path.join(legacyClaude.projectRoot, ".mcp.json")
+    : path.join(agentBase, "mcp.json");
+  const destDir = path.dirname(destPath);
   const existing = fs.existsSync(destPath)
     ? (JSON.parse(fs.readFileSync(destPath, "utf8")) as unknown)
     : null;
+  const mergeLabel = legacyClaude
+    ? ".mcp.json"
+    : mergeConfigTargetLabel(agentBase, "mcp.json");
   const outcome = mergeMcpJsonDocument(existing, incoming, {
     forceConfig: mcpMerge?.forceConfig ?? false,
     skipConfig: mcpMerge?.skipConfig ?? false,
-    mergeTargetLabel: mergeConfigTargetLabel(agentBase, "mcp.json"),
+    mergeTargetLabel: mergeLabel,
   });
   if (outcome.status === "applied") {
-    fs.mkdirSync(agentBase, { recursive: true });
+    fs.mkdirSync(destDir, { recursive: true });
     fs.writeFileSync(destPath, formatJsonDocument(outcome.document), "utf8");
     onFileCopied?.(destPath);
+  }
+}
+
+function mergeClaudeHooksAssetFromPackage(
+  pkgDir: string,
+  asset: PackageAsset,
+  claudeAgentDir: string,
+  mcpMerge: { forceConfig: boolean; skipConfig: boolean } | undefined,
+  onFileCopied?: (destAbsolute: string) => void
+): void {
+  const srcPath = path.join(pkgDir, asset.path);
+  if (!fs.existsSync(srcPath)) return;
+  let incoming: unknown;
+  try {
+    incoming = JSON.parse(fs.readFileSync(srcPath, "utf8")) as unknown;
+  } catch (e) {
+    const err = e as SyntaxError;
+    throw new Error(`Invalid JSON in hook asset ${asset.path}: ${err.message}`);
+  }
+  const settingsPath = path.join(claudeAgentDir, "settings.json");
+  const existing = fs.existsSync(settingsPath)
+    ? (JSON.parse(fs.readFileSync(settingsPath, "utf8")) as unknown)
+    : null;
+  const mergeLabel = mergeConfigTargetLabel(claudeAgentDir, "settings.json");
+  const { document, changed } = mergeHooksJsonDocument(existing, incoming, {
+    forceConfig: mcpMerge?.forceConfig ?? false,
+    skipConfig: mcpMerge?.skipConfig ?? false,
+    mergeTargetLabel: mergeLabel,
+  });
+  if (changed) {
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+    fs.writeFileSync(settingsPath, formatJsonDocument(document), "utf8");
+    onFileCopied?.(settingsPath);
   }
 }
 
@@ -176,7 +233,8 @@ function copyAsset(
   bundlePathMap?: Record<string, string>,
   installBinDir?: string,
   onFileCopied?: (destAbsolute: string) => void,
-  mcpMerge?: { forceConfig: boolean; skipConfig: boolean }
+  mcpMerge?: { forceConfig: boolean; skipConfig: boolean },
+  legacyClaude?: LegacyClaudeMergeContext
 ): void {
   if (asset.type === "program") {
     if (!installBinDir) return;
@@ -191,7 +249,22 @@ function copyAsset(
   }
 
   if (asset.type === "mcp") {
-    copyMcpAssetToAgent(pkgDir, agentBase, asset, mcpMerge, onFileCopied);
+    copyMcpAssetToAgent(pkgDir, agentBase, asset, mcpMerge, onFileCopied, legacyClaude);
+    return;
+  }
+
+  if (
+    legacyClaude &&
+    asset.type === "hook" &&
+    path.basename(asset.path) === "hooks.json"
+  ) {
+    mergeClaudeHooksAssetFromPackage(
+      pkgDir,
+      asset,
+      legacyClaude.claudeAgentDir,
+      mcpMerge ?? { forceConfig: false, skipConfig: false },
+      onFileCopied
+    );
     return;
   }
 
@@ -235,11 +308,21 @@ export function copyPackageAssets(
   bundlePathMap?: Record<string, string>,
   installBinDir?: string,
   onFileCopied?: (destAbsolute: string) => void,
-  mcpMerge?: { forceConfig: boolean; skipConfig: boolean }
+  mcpMerge?: { forceConfig: boolean; skipConfig: boolean },
+  legacyClaude?: LegacyClaudeMergeContext
 ): void {
   const assets = manifest.assets ?? [];
   for (const asset of assets) {
-    copyAsset(pkgDir, agentBase, asset, bundlePathMap, installBinDir, onFileCopied, mcpMerge);
+    copyAsset(
+      pkgDir,
+      agentBase,
+      asset,
+      bundlePathMap,
+      installBinDir,
+      onFileCopied,
+      mcpMerge,
+      legacyClaude
+    );
   }
 }
 

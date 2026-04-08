@@ -1,5 +1,5 @@
 /**
- * Detect when catalog install should use CursorAgentProvider or GeminiAgentProvider for project assets.
+ * Detect when catalog install should use Cursor, Gemini, or Claude {@link AgentProvider}.
  */
 
 import type { InstallContext } from "../file-ops/install-context.js";
@@ -19,7 +19,7 @@ function usesAgentProviderProjectInstallForAgent(
   providerCtx: InstallContext,
   manifest: PackageManifest,
   opts: InstallOptions,
-  agent: "cursor" | "gemini"
+  agent: "cursor" | "gemini" | "claude"
 ): boolean {
   if (providerCtx.agent !== agent) {
     return false;
@@ -65,4 +65,31 @@ export function usesGeminiAgentProviderProjectInstall(
   opts: InstallOptions
 ): boolean {
   return usesAgentProviderProjectInstallForAgent(providerCtx, manifest, opts, "gemini");
+}
+
+/**
+ * True when Claude should use {@link AgentProvider} for this install: project scope + project layer
+ * (repo `.claude/` and `.mcp.json`), or station scope + user layer (`~/.claude/` and `~/.claude.json`).
+ */
+export function usesClaudeAgentProviderCatalogInstall(
+  providerCtx: InstallContext,
+  manifest: PackageManifest,
+  opts: InstallOptions
+): boolean {
+  if (providerCtx.agent !== "claude") {
+    return false;
+  }
+  const layerMatches =
+    (providerCtx.layer === "project" && opts.promptScope === "project") ||
+    (providerCtx.layer === "user" && opts.promptScope === "station");
+  if (!layerMatches) {
+    return false;
+  }
+  const assets = manifest.assets ?? [];
+  if (assets.length === 0) {
+    return false;
+  }
+  return assets.every(
+    (a) => a.type === "program" || PROVIDER_PROJECT_ASSET_TYPES.has(a.type)
+  );
 }

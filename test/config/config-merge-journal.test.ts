@@ -17,10 +17,12 @@ import { formatJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-helper
 describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
   let tmp: string;
   let agentBase: string;
+  let projectRoot: string;
 
   beforeEach(() => {
     tmp = path.join(os.tmpdir(), `atp-jrnl-gem-${Date.now()}`);
-    agentBase = path.join(tmp, "proj", ".gemini");
+    projectRoot = path.join(tmp, "proj");
+    agentBase = path.join(projectRoot, ".gemini");
     fs.mkdirSync(agentBase, { recursive: true });
   });
 
@@ -50,7 +52,7 @@ describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
       before_canonical: canonicalJsonStringify(beforeObj),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
 
     const restored = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as Record<string, unknown>;
@@ -88,7 +90,7 @@ describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
       before_canonical: canonicalJsonStringify(afterMcpOnly),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [mcpEntry, hooksEntry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [mcpEntry, hooksEntry]);
     expect(warnings).toEqual([]);
 
     const restored = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as Record<string, unknown>;
@@ -99,9 +101,11 @@ describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
 describe("rollbackMergedConfigJournal", () => {
   let tmp: string;
   let agentBase: string;
+  let projectRoot: string;
 
   beforeEach(() => {
     tmp = path.join(os.tmpdir(), `atp-jrnl-${Date.now()}`);
+    projectRoot = tmp;
     agentBase = path.join(tmp, ".cursor");
     fs.mkdirSync(agentBase, { recursive: true });
   });
@@ -131,7 +135,7 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify(beforeObj),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
 
     const restored = JSON.parse(fs.readFileSync(mcpPath, "utf8")) as Record<string, unknown>;
@@ -153,7 +157,7 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify({}),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
     expect(fs.existsSync(mcpPath)).toBe(false);
   });
@@ -185,13 +189,79 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify({ mcpServers: { user: { url: "http://u" } } }),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings.length).toBe(1);
     expect(warnings[0]).toMatch(/changed since install|fragment rollback/i);
 
     const out = JSON.parse(fs.readFileSync(mcpPath, "utf8")) as Record<string, unknown>;
     expect(out.user_edit).toBe(true);
     expect(out.mcpServers).toEqual({ user: { url: "http://u" } });
+  });
+
+  it("exact-restore project-root .mcp.json when configRoot is project", () => {
+    const proj = path.join(tmp, "repo");
+    const claudeDir = path.join(proj, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+    const beforeObj = { mcpServers: { keep: { url: "http://x" } } };
+    const afterObj = {
+      mcpServers: {
+        keep: { url: "http://x" },
+        pkg: { command: "c" },
+      },
+    };
+    const mcpPath = path.join(proj, ".mcp.json");
+    fs.writeFileSync(mcpPath, formatJsonDocument(afterObj), "utf8");
+
+    const entry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: ".mcp.json",
+      configRoot: "project",
+      kind: "mcp",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(beforeObj),
+      after_sha256: sha256HexCanonicalJson(afterObj),
+      fragments: { type: "mcp", server_names: ["pkg"] },
+      before_canonical: canonicalJsonStringify(beforeObj),
+    };
+
+    const warnings = rollbackMergedConfigJournal(claudeDir, proj, [entry]);
+    expect(warnings).toEqual([]);
+    expect(JSON.parse(fs.readFileSync(mcpPath, "utf8"))).toEqual(beforeObj);
+  });
+
+  it("exact-restore user_home .claude.json when configRoot is user_home", () => {
+    const fakeHome = path.join(tmp, "home-claude");
+    const prevHome = process.env.HOME;
+    process.env.HOME = fakeHome;
+    try {
+      fs.mkdirSync(fakeHome, { recursive: true });
+      const beforeObj = { mcpServers: { keep: { url: "http://x" } } };
+      const afterObj = {
+        mcpServers: {
+          keep: { url: "http://x" },
+          pkg: { command: "c" },
+        },
+      };
+      const claudeJson = path.join(fakeHome, ".claude.json");
+      fs.writeFileSync(claudeJson, formatJsonDocument(afterObj), "utf8");
+
+      const entry: ConfigMergeJournalEntryV1 = {
+        agent_relative_path: ".claude.json",
+        configRoot: "user_home",
+        kind: "mcp",
+        before_absent: false,
+        before_sha256: sha256HexCanonicalJson(beforeObj),
+        after_sha256: sha256HexCanonicalJson(afterObj),
+        fragments: { type: "mcp", server_names: ["pkg"] },
+        before_canonical: canonicalJsonStringify(beforeObj),
+      };
+
+      const agentLayer = path.join(tmp, "dummy-claude-dir");
+      const warnings = rollbackMergedConfigJournal(agentLayer, path.join(tmp, "dummy-proj"), [entry]);
+      expect(warnings).toEqual([]);
+      expect(JSON.parse(fs.readFileSync(claudeJson, "utf8"))).toEqual(beforeObj);
+    } finally {
+      process.env.HOME = prevHome;
+    }
   });
 
   it("exact-restore hooks when current matches after_sha256", () => {
@@ -221,7 +291,7 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify(beforeObj),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
     expect(JSON.parse(fs.readFileSync(hooksPath, "utf8"))).toEqual(beforeObj);
   });
@@ -241,7 +311,7 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify({}),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
     expect(fs.existsSync(hooksPath)).toBe(false);
   });
@@ -275,7 +345,7 @@ describe("rollbackMergedConfigJournal", () => {
       before_canonical: canonicalJsonStringify(beforeOnlyUser),
     };
 
-    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings.length).toBe(1);
     expect(warnings[0]).toMatch(/changed since install|fragment rollback/i);
 

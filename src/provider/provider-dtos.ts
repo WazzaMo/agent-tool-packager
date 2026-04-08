@@ -48,7 +48,13 @@ export interface McpJsonMergeAction {
   kind: "mcp_json_merge";
   operationId: ConfigMergeOperationId;
   provenance: AtpProvenance;
-  /** Relative to {@link InstallContext.layerRoot} (e.g. `mcp.json` or `settings.json`). */
+  /**
+   * When `layer` (default), path is under {@link InstallContext.layerRoot}.
+   * When `project`, path is under {@link InstallContext.projectRoot} (Claude project `.mcp.json`).
+   * When `user_home`, path is under the process home directory (Claude user `~/.claude.json`).
+   */
+  mergeBase?: "layer" | "project" | "user_home";
+  /** Relative to merge base per {@link McpJsonMergeAction.mergeBase}. */
   relativeTargetPath: string;
   /** Parsed JSON root; must contain an `mcpServers` object (`mergeMcpJsonDocument`). */
   payload: unknown;
