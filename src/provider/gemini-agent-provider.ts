@@ -1,6 +1,9 @@
 /**
- * Gemini CLI {@link AgentProvider}: skills, rules, prompts, hooks, MCP under `.gemini/`;
- * MCP and hooks merge into `settings.json` per the agent matrix.
+ * Gemini CLI {@link AgentProvider} for **project** installs: all materialised paths are relative to
+ * {@link InstallContext.layerRoot}, which resolves to the project **`.gemini/`** directory (Station
+ * `agent-paths.gemini.project_path`). ATP does **not** install under **`.agents/`** for Gemini—skills
+ * live under **`skills/{name}/`**, rules under **`rules/`**, and so on, inside **`.gemini/`** only.
+ * MCP and hooks merge into **`settings.json`** in that same directory per the agent matrix.
  */
 
 import fs from "node:fs";

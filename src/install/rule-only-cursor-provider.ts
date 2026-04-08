@@ -56,8 +56,8 @@ export function usesCursorAgentProviderProjectInstall(
 }
 
 /**
- * True when every **non-program** asset is a type the Gemini provider materialises under
- * `.gemini/` (including `settings.json` merges for MCP and hooks).
+ * True when every **non-program** asset is a type the Gemini provider materialises under the project
+ * **`.gemini/`** tree only—not **`.agents/`**—including **`settings.json`** merges for MCP and hooks.
  */
 export function usesGeminiAgentProviderProjectInstall(
   providerCtx: InstallContext,

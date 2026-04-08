@@ -1,5 +1,6 @@
 /**
  * Integration: Safehouse config merge journal (SHA + fragments), exact rollback, drift fallback.
+ * Gemini + `.gemini/settings.json` scenarios: `config-merge-journal-install-gemini.test.ts`.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";

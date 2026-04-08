@@ -50,6 +50,7 @@ export function installPackageAssetsForCatalogContext(
     skipConfig: mergeOpts.skipConfig,
   };
 
+  // Gemini: layerRoot is project `.gemini/` only (not `.agents/`); provider paths are relative to it.
   if (usesGeminiAgentProviderProjectInstall(providerCtx, ctx.manifest, ctx.opts)) {
     const provider = createGeminiAgentProvider(ctx.manifest, ctx.bundlePathMap);
     for (const part of stagedParts) {

@@ -14,6 +14,88 @@ import {
 } from "../../src/config/config-merge-journal.js";
 import { formatJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-helpers.js";
 
+describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
+  let tmp: string;
+  let agentBase: string;
+
+  beforeEach(() => {
+    tmp = path.join(os.tmpdir(), `atp-jrnl-gem-${Date.now()}`);
+    agentBase = path.join(tmp, "proj", ".gemini");
+    fs.mkdirSync(agentBase, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("exact-restore MCP entry when agent_relative_path is settings.json under .gemini/", () => {
+    const beforeObj = { mcpServers: { keep: { url: "http://x" } }, other: true };
+    const afterObj = {
+      mcpServers: {
+        keep: { url: "http://x" },
+        pkg: { command: "c" },
+      },
+      other: true,
+    };
+    const settingsPath = path.join(agentBase, "settings.json");
+    fs.writeFileSync(settingsPath, formatJsonDocument(afterObj), "utf8");
+
+    const entry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "settings.json",
+      kind: "mcp",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(beforeObj),
+      after_sha256: sha256HexCanonicalJson(afterObj),
+      fragments: { type: "mcp", server_names: ["pkg"] },
+      before_canonical: canonicalJsonStringify(beforeObj),
+    };
+
+    const warnings = rollbackMergedConfigJournal(agentBase, [entry]);
+    expect(warnings).toEqual([]);
+
+    const restored = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as Record<string, unknown>;
+    expect(restored).toEqual(beforeObj);
+  });
+
+  it("reverse order: hooks then MCP entries both targeting settings.json restore fully", () => {
+    const afterBoth = {
+      mcpServers: { srv: { command: "m" } },
+      hooks: { evt: [{ id: "h", command: "c" }] },
+    };
+    const afterMcpOnly = { mcpServers: { srv: { command: "m" } } };
+    const beforeAll = { note: "user" };
+
+    const settingsPath = path.join(agentBase, "settings.json");
+    fs.writeFileSync(settingsPath, formatJsonDocument(afterBoth), "utf8");
+
+    const mcpEntry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "settings.json",
+      kind: "mcp",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(beforeAll),
+      after_sha256: sha256HexCanonicalJson(afterMcpOnly),
+      fragments: { type: "mcp", server_names: ["srv"] },
+      before_canonical: canonicalJsonStringify(beforeAll),
+    };
+
+    const hooksEntry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "settings.json",
+      kind: "hooks",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(afterMcpOnly),
+      after_sha256: sha256HexCanonicalJson(afterBoth),
+      fragments: { type: "hooks", hooks_delta: { evt: [{ id: "h", command: "c" }] } },
+      before_canonical: canonicalJsonStringify(afterMcpOnly),
+    };
+
+    const warnings = rollbackMergedConfigJournal(agentBase, [mcpEntry, hooksEntry]);
+    expect(warnings).toEqual([]);
+
+    const restored = JSON.parse(fs.readFileSync(settingsPath, "utf8")) as Record<string, unknown>;
+    expect(restored).toEqual(beforeAll);
+  });
+});
+
 describe("rollbackMergedConfigJournal", () => {
   let tmp: string;
   let agentBase: string;

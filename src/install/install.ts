@@ -219,9 +219,10 @@ async function executeCatalogInstall(
         source: catalogPkg.location,
       });
     }
-  } catch {
+  } catch (e) {
     rollbackCopiedFiles(copied);
-    throw new Error("Install copy or manifest update failed.");
+    const cause = e instanceof Error ? e.message : String(e);
+    throw new Error(`Install copy or manifest update failed: ${cause}`);
   }
 
   const finalLabel = `prompts:${opts.promptScope}, bin:${opts.binaryScope}`;
