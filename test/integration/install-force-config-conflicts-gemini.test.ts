@@ -28,7 +28,6 @@ describe("Integration: install --force-config MCP conflict (Gemini)", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
 
   const pkgMcpPayload = {
@@ -58,7 +57,6 @@ describe("Integration: install --force-config MCP conflict (Gemini)", () => {
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj-gem-mcp");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -99,7 +97,7 @@ describe("Integration: install --force-config MCP conflict (Gemini)", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("without --force-config: stderr mentions .gemini/settings.json; file unchanged", () => {
@@ -151,7 +149,6 @@ describe("Integration: install --force-config hooks conflict (Gemini)", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
   const eventName = "beforeSubmit";
 
@@ -182,7 +179,6 @@ describe("Integration: install --force-config hooks conflict (Gemini)", () => {
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj-gem-hooks");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -223,7 +219,7 @@ describe("Integration: install --force-config hooks conflict (Gemini)", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("without --force-config: stderr mentions .gemini/settings.json; file unchanged", () => {

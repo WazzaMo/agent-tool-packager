@@ -20,18 +20,16 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-f2");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("catalog add package fails with exit 1 when package is incomplete", () => {

@@ -27,18 +27,16 @@ describe("Integration: Rule package from docs/ — station catalog + Safehouse i
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-rule-docs-agents");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("builds Rule package from doc-guide + clean-code, catalogs, installs to each agent project rules/", () => {

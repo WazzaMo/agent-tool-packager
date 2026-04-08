@@ -23,18 +23,16 @@ describe("Integration: package developer workflow (Rule type)", () => {
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-pkgdev");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("builds a Rule package and adds it to the station catalog", () => {
@@ -60,18 +58,16 @@ describe("Integration: package developer - validate fails when incomplete", () =
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-pkgval");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("atp validate package exits non-zero when only type is set", () => {
@@ -190,7 +186,6 @@ describe("Integration: package developer workflow - bundle with executable", () 
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
   const EXPECTED_MESSAGE = "ATP bundle test success";
 
   beforeEach(() => {
@@ -198,11 +193,10 @@ describe("Integration: package developer workflow - bundle with executable", () 
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("builds a Command package with a bundle containing an executable shell script and script outputs expected message", () => {

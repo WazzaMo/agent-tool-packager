@@ -93,7 +93,6 @@ describe("Integration: install --force-config MCP conflict (Cursor)", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let agentBase: string;
   let mcpPath: string;
 
@@ -124,7 +123,6 @@ describe("Integration: install --force-config MCP conflict (Cursor)", () => {
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -166,7 +164,7 @@ describe("Integration: install --force-config MCP conflict (Cursor)", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("without --force-config: install fails and mcp.json matches the pre-install snapshot", () => {
@@ -213,7 +211,6 @@ describe("Integration: install --force-config hooks conflict (Cursor)", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let agentBase: string;
   let hooksPath: string;
 
@@ -246,7 +243,6 @@ describe("Integration: install --force-config hooks conflict (Cursor)", () => {
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj-h");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -288,7 +284,7 @@ describe("Integration: install --force-config hooks conflict (Cursor)", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("without --force-config: install fails and hooks.json matches the pre-install snapshot", () => {

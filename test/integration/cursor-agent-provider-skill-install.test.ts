@@ -19,14 +19,12 @@ describe("Integration: CursorAgentProvider skill layout", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-cap-skill");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "cursor_skill_proj");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -45,7 +43,7 @@ describe("Integration: CursorAgentProvider skill layout", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("installs skill.yaml + skill.md bundle under .cursor/skills/{name}/", () => {

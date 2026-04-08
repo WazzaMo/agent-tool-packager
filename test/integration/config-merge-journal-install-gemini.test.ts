@@ -43,7 +43,6 @@ describe("Integration: Gemini config journal — MCP exact rollback after --forc
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
 
   const initialSettingsDoc = {
@@ -65,7 +64,6 @@ describe("Integration: Gemini config journal — MCP exact rollback after --forc
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gem-proj");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -106,7 +104,7 @@ describe("Integration: Gemini config journal — MCP exact rollback after --forc
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("writes journal targeting settings.json; remove restores exact pre-install file", () => {
@@ -182,7 +180,6 @@ describe("Integration: Gemini config journal — MCP before_absent unlink on rem
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
 
   beforeEach(() => {
@@ -190,7 +187,6 @@ describe("Integration: Gemini config journal — MCP before_absent unlink on rem
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gem-proj2");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -232,7 +228,7 @@ describe("Integration: Gemini config journal — MCP before_absent unlink on rem
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("records before_absent; remove deletes settings.json entirely", () => {
@@ -269,7 +265,6 @@ describe("Integration: Gemini config journal — hooks exact rollback after --fo
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
   const eventName = "beforeSubmit";
 
@@ -295,7 +290,6 @@ describe("Integration: Gemini config journal — hooks exact rollback after --fo
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gem-proj-hooks");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -336,7 +330,7 @@ describe("Integration: Gemini config journal — hooks exact rollback after --fo
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("journal records hooks merge into settings.json; remove restores pre-install file", () => {
@@ -402,7 +396,6 @@ describe("Integration: Gemini config journal — hooks before_absent unlink on r
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
 
   beforeEach(() => {
@@ -410,7 +403,6 @@ describe("Integration: Gemini config journal — hooks before_absent unlink on r
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gem-proj-hooks-fresh");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -459,7 +451,7 @@ describe("Integration: Gemini config journal — hooks before_absent unlink on r
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("records before_absent; remove deletes settings.json entirely", () => {
@@ -496,7 +488,6 @@ describe("Integration: Gemini config journal — multi-part MCP then hooks into 
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let settingsPath: string;
   const eventName = "beforeSubmit";
 
@@ -518,7 +509,6 @@ describe("Integration: Gemini config journal — multi-part MCP then hooks into 
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gem-proj-dual");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -578,7 +568,7 @@ describe("Integration: Gemini config journal — multi-part MCP then hooks into 
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("journal has two entries for settings.json; remove restores combined pre-install state", () => {

@@ -44,7 +44,6 @@ describe("Integration: config journal — MCP exact rollback after --force-confi
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let agentBase: string;
   let mcpPath: string;
 
@@ -67,7 +66,6 @@ describe("Integration: config journal — MCP exact rollback after --force-confi
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -109,7 +107,7 @@ describe("Integration: config journal — MCP exact rollback after --force-confi
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("writes journal with hashes; remove restores exact pre-install mcp.json", () => {
@@ -184,7 +182,6 @@ describe("Integration: config journal — MCP before_absent unlink on remove", (
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let mcpPath: string;
 
   beforeEach(() => {
@@ -192,7 +189,6 @@ describe("Integration: config journal — MCP before_absent unlink on remove", (
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj2");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -234,7 +230,7 @@ describe("Integration: config journal — MCP before_absent unlink on remove", (
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("records before_absent; remove deletes mcp.json entirely", () => {
@@ -269,7 +265,6 @@ describe("Integration: config journal — hooks exact rollback after --force-con
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let hooksPath: string;
   const eventName = "beforeSubmit";
 
@@ -295,7 +290,6 @@ describe("Integration: config journal — hooks exact rollback after --force-con
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj-hooks");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -336,7 +330,7 @@ describe("Integration: config journal — hooks exact rollback after --force-con
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("journal records hooks merge; remove restores pre-install hooks.json", () => {
@@ -401,7 +395,6 @@ describe("Integration: config journal — hooks before_absent unlink on remove",
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
   let hooksPath: string;
 
   beforeEach(() => {
@@ -409,7 +402,6 @@ describe("Integration: config journal — hooks before_absent unlink on remove",
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "proj-hooks-fresh");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -458,7 +450,7 @@ describe("Integration: config journal — hooks before_absent unlink on remove",
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("records before_absent; remove deletes hooks.json entirely", () => {

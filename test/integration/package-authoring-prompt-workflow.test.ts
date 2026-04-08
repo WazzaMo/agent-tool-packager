@@ -17,7 +17,6 @@ describe("Integration: package authoring — Prompt part with doc-guide and clea
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     base = path.join(os.tmpdir(), `atp-authoring-${Date.now()}`);
@@ -30,13 +29,9 @@ describe("Integration: package authoring — Prompt part with doc-guide and clea
     fs.mkdirSync(docsDir, { recursive: true });
     fs.copyFileSync(DOC_GUIDE_SRC, path.join(docsDir, "doc-guide.md"));
     fs.copyFileSync(CLEAN_CODE_SRC, path.join(docsDir, "clean-code.md"));
-
-    origStationPath = process.env.STATION_PATH;
-    process.env.STATION_PATH = stationDir;
   });
 
   afterEach(() => {
-    process.env.STATION_PATH = origStationPath;
     try {
       fs.rmSync(base, { recursive: true, force: true });
     } catch {

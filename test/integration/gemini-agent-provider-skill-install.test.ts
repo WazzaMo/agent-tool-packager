@@ -19,14 +19,12 @@ describe("Integration: GeminiAgentProvider skill layout", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-gem-skill");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "gemini_skill_proj");
     fs.mkdirSync(path.join(projectDir, ".git"), { recursive: true });
@@ -45,7 +43,7 @@ describe("Integration: GeminiAgentProvider skill layout", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("installs skill.yaml + skill.md bundle under .gemini/skills/{name}/", () => {

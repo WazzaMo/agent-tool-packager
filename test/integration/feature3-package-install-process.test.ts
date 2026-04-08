@@ -22,14 +22,12 @@ describe("Integration: Feature 3 - Package Install Process", () => {
   let stationDir: string;
   let pkgDir: string;
   let projectDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-f3");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
 
     projectDir = path.join(base, "sdl_c++_game");
     fs.mkdirSync(projectDir, { recursive: true });
@@ -70,7 +68,7 @@ describe("Integration: Feature 3 - Package Install Process", () => {
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("Feature 3 Test Approach: rule-only package installs and rule appears in .cursor", () => {
