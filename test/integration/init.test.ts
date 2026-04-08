@@ -11,16 +11,12 @@ import {
 
 describe("Integration: station init", () => {
   let stationDir: string;
-  let originalStationPath: string | undefined;
 
   beforeEach(() => {
     stationDir = path.join(os.tmpdir(), `atp-int-${Date.now()}`);
-    originalStationPath = process.env.STATION_PATH;
-    process.env.STATION_PATH = stationDir;
   });
 
   afterEach(() => {
-    process.env.STATION_PATH = originalStationPath;
     try {
       fs.rmSync(stationDir, { recursive: true });
     } catch {

@@ -3,7 +3,7 @@
  *
  * Two projects run in parallel:
  * - **unit** — `pool: threads`, all unit test files under `test/` except `test/integration` (user-home cases mock `os.homedir`).
- * - **integration** — `pool: forks` for subprocess CLI isolation (`node dist/atp.js`).
+ * - **integration** — `pool: threads` like unit; CLI runs in `execSync`/`spawnSync` with explicit `env` (no reliance on mutating `process.env` in the Vitest worker).
  *
  * Tune: `VITEST_MAX_WORKERS`, `vitest run --max-workers=N`, or `vitest run --shard=i/n` in CI.
  */
@@ -44,7 +44,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "integration",
-          pool: "forks",
+          pool: "threads",
           maxWorkers,
           fileParallelism: true,
           include: ["test/integration/**/*.test.ts"],
