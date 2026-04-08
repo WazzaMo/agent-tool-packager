@@ -160,6 +160,70 @@ repeatable workflows.
 **Support column:** **Y** means supported for provider work; **Partial** means
 limited or indirect; **TBD** means not yet defined for ATP.
 
+# Merge policy and troubleshooting for atp install
+
+This section describes how ATP merges **Mcp** and **Hook** payloads for **Cursor**
+and **Gemini** project installs today, what happens when the on-disk config
+already differs, and which CLI flags apply. Deeper design notes:
+[2026-04-08-plan-ambiguity-errors-clarity](../notes/2026-04-08-plan-ambiguity-errors-clarity.md).
+
+## What gets merged
+
+For **`CursorAgentProvider`** and **`GeminiAgentProvider`**, MCP and hook parts
+merge into JSON under the project agent directory:
+
+| Agent  | MCP payload target        | Hooks payload target      |
+|--------|---------------------------|---------------------------|
+| cursor | `.cursor/mcp.json`        | `.cursor/hooks.json`      |
+| gemini | `.gemini/settings.json` (`mcpServers`) | same file (`hooks`) |
+
+The merge **adds or updates** entries associated with the package. Other
+top-level keys in the file are left unchanged.
+
+## Ambiguity (conflict) errors
+
+A conflict occurs when an MCP **server name** or a hook handler’s **dedupe
+identity** (for example `id:my-hook`) **already exists** but its JSON **does
+not** exactly match the package payload. ATP then throws unless you choose a
+policy (below).
+
+The error line follows one shape:
+
+- **MCP:** what (server name) + where (label such as `.gemini/settings.json`) +
+  action (`--force-config` / `--skip-config`).
+- **Hooks:** what (event + dedupe key) + where + same action wording.
+
+On **`atp install`**, a **hint** may follow: packages only add or replace entries
+they own; other keys in the file stay preserved.
+
+## CLI flags
+
+| Flag | Effect |
+|------|--------|
+| **`--force-config`** | Replace the conflicting MCP server or hook handler with the package version. |
+| **`--skip-config`** | Skip MCP and hooks JSON merges for this run (no read/write of those targets); other install steps still apply where relevant. |
+| **`--verbose`** | On merge ambiguity only, print an extra **JSON line** after the message (`code`, `serverName` or `eventName` / `dedupeKey`, `mergeTargetLabel`) before the hint. |
+
+**`--force-config`** and **`--skip-config`** cannot be used together. Run
+**`atp install --help`** for the full option list (paths mentioned for Cursor
+and Gemini).
+
+## Environment
+
+If **`DEBUG`** includes the token **`atp`** (comma- or whitespace-separated),
+merge ambiguity handling adds the same JSON line as **`--verbose`**.
+
+## Contributor note: new AgentProvider types
+
+Step-by-step wiring, testing expectations, and file map:
+[Contributor guide: AgentProvider implementations](../contributor-guide-agent-providers.md).
+
+New providers that merge MCP or hooks JSON must route those actions through
+**`applyProviderPlan`** or call the same merge helpers with
+**`mergeTargetLabel`** built by **`mergeConfigTargetLabel(layerRoot,
+relativeTargetPath)`**. Otherwise ambiguity errors show a generic fallback label
+(**`the merged configuration file`**) instead of the real path.
+
 # Software Design Strategy
 
 Strategy is a response to challenges and the challenges here are that there
@@ -192,7 +256,9 @@ paths and merge targets.
     cannot prove is ATP’s, surface ambiguity and honour CLI policy: for example
     **`--force-config`** to apply the change and **`--skip-config`** to skip
     structured config mutation while still allowing file-tree installs where
-    policy allows (see capability-matrix decisions).
+    policy allows. User-facing detail, flags, and examples are in
+    [Merge policy and troubleshooting for atp install](#merge-policy-and-troubleshooting-for-atp-install)
+    above.
 
 #### Markdown with YAML frontmatter
 

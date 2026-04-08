@@ -50,6 +50,7 @@ This file summarises the project’s markdown documentation so agents can work e
 | Package definition & install | [docs/features/1-package-definition-and-installation.md](docs/features/1-package-definition-and-installation.md) |
 | Package developer support    | [docs/features/2-package-developer-support.md](docs/features/2-package-developer-support.md) |
 | Contributing & schema    | [CONTRIBUTING.md](CONTRIBUTING.md)                   |
+| AgentProvider contributor guide | [docs/contributor-guide-agent-providers.md](docs/contributor-guide-agent-providers.md) |
 | Doc formatting           | [docs/doc-guide.md](docs/doc-guide.md)               |
 | Code style               | [docs/clean-code.md](docs/clean-code.md)             |
 | Package & catalog        | [docs/notes/2026-02-25-plan-package-metadata-and-catalog.md](docs/notes/2026-02-25-plan-package-metadata-and-catalog.md) |
