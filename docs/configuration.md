@@ -285,3 +285,20 @@ parts:
     exec-filter: mcp-exec/bin/*
 ```
 
+## Catalog install and merged agent JSON
+
+When you run **`atp install`** with **`--project`** (default) or **`--station`**,
+packages that include **Mcp** or **Hook** parts may **merge** into the active
+agent’s JSON files. Paths depend on the Safehouse agent and Station
+**`agent-paths`** (for example **`.cursor/mcp.json`**, **`.cursor/hooks.json`**,
+or **Gemini** **`.gemini/settings.json`** for both MCP and hooks).
+
+If an existing MCP server or hook handler **matches by name or dedupe key** but
+**differs** from the package, install **fails** until you pass either
+**`--force-config`** (accept the package version) or **`--skip-config`** (skip
+those JSON merges for this run). Optional **`--verbose`**, or **`DEBUG`**
+containing **`atp`**, adds a one-line JSON payload on stderr for that failure.
+
+Full tables, message shape, contributor rules for new agents, and links to design
+notes are in [Feature 5 — Installer providers for known agents](./features/5-installer-providers-for-known-agents.md#merge-policy-and-troubleshooting-for-atp-install).
+

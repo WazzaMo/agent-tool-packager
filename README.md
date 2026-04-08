@@ -230,6 +230,17 @@ $ ls -la .cursor/rules
 
 The Station configuration has the agent-relative paths for installing files for different agents.
 
+#### MCP and hooks merges (conflicts)
+
+Packages with **Mcp** or **Hook** parts merge into agent JSON (for **Cursor**:
+`.cursor/mcp.json` and `.cursor/hooks.json`; for **Gemini**: `.gemini/settings.json`).
+If your file already defines the same server name or hook id with different
+content, **`atp install`** fails until you add **`--force-config`** (overwrite the
+conflicting entry) or **`--skip-config`** (skip those merges). Use **`--verbose`**
+(or set **`DEBUG`** to include **`atp`**) to print an extra JSON line for that
+error. See [Feature 5 — merge policy](docs/features/5-installer-providers-for-known-agents.md#merge-policy-and-troubleshooting-for-atp-install)
+and [Configuration — merged JSON](docs/configuration.md#catalog-install-and-merged-agent-json).
+
 -------------------------------------------------------------------------------------------------
 
 
@@ -247,7 +258,7 @@ atp station init
 atp safehouse init
 atp agent cursor
 atp catalog list
-atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
+atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies] [--force-config|--skip-config] [--verbose]
 atp station list
 atp safehouse list
 atp remove station <pkg> [--exfiltrate]
@@ -299,7 +310,7 @@ npx atp station init
 npx atp safehouse init
 npx atp agent cursor
 npx atp catalog list
-npx atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
+npx atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies] [--force-config|--skip-config] [--verbose]
 npx atp station list
 npx atp safehouse list
 npx atp remove station <pkg> [--exfiltrate]
