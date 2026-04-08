@@ -148,9 +148,10 @@ Where:
     {agent-skill-directory} = {project-root}/{project-agent-directory}/{agent-skills-subdir}
 
     - {project-root} is the base directory for the development project;
-    - {project-agent-directory} is the directory for agent specific files which could be `.agents` or 
-      `.cursor` depending on the agent
-    - {agent-skills-subdir} which is `skills` for codex and cursor.
+    - {project-agent-directory} is the directory for agent-specific files (e.g. `.cursor`, `.gemini`,
+      `.claude`; Codex skills use `.agents` as in upstream layout)
+    - {agent-skills-subdir} is `skills` relative to that directory (ATP **`GeminiAgentProvider`** uses
+      project **`.gemini/`** only—not **`.agents/`**—for Gemini CLI installs).
 
 An example is `.cursor/skills/pdf-processing/` where:
 - the agent is cursor

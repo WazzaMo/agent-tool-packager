@@ -71,7 +71,7 @@ Provider skill removal targets **`skills/{dir}/`** trees. Flat **`skills/<file>`
 
 - **First-class `command` asset type:** If **`PackageAsset`** / enrichment gain **`command`**, route **`.toml`** without overloading **`rule`**.
 
-- **`.agents/skills/`:** Gemini docs mention tier precedence vs **`.gemini/skills/`**; no install target choice yet.
+- **Install root:** ATP standardises Gemini project installs on **`.gemini/`** only (including **`skills/`**); **`.agents/`** is not used for **`GeminiAgentProvider`**. See [Feature 5 — Installer providers](../features/5-installer-providers-for-known-agents.md) (Gemini CLI → Skill; path conventions).
 
 - **CLI copy:** Consider mentioning **`settings.json`** in **`--skip-config`** / **`--force-config`** help text next to **`mcp.json`** / **`hooks.json`** for Gemini users.
 

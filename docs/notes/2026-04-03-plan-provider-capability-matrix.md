@@ -149,7 +149,7 @@ are **Opt** and depend on `atp install` / config policy.
 
 - **Prompt:** On-disk prompts via custom commands (**6**); chat/MCP otherwise.
 
-- **Skill:** `.gemini/skills/` or `.agents/skills/`.
+- **Skill:** `.gemini/skills/` only for ATP **`GeminiAgentProvider`** project installs (not `.agents/skills/`).
 
 - **Hook:** `hooks` in merged `settings.json`.
 

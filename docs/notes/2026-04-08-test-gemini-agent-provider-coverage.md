@@ -9,7 +9,7 @@ Contribution to this project is supported and contributors will be recognised.
 
 kind: test
 
-This note summarises automated tests added for **`GeminiAgentProvider`**, **`usesGeminiAgentProviderProjectInstall`**, **`agentProviderRemovalDestination`**, and catalog install routing when the Safehouse agent is **gemini**. It sits alongside [2026-04-06-test-cursor-agent-provider-and-hooks-merge](./2026-04-06-test-cursor-agent-provider-and-hooks-merge.md) and [2026-04-07-test-standardised-skill-coverage](./2026-04-07-test-standardised-skill-coverage.md).
+This note summarises automated tests added for **`GeminiAgentProvider`**, **`usesGeminiAgentProviderProjectInstall`**, **`agentProviderRemovalDestination`**, and catalog install routing when the Safehouse agent is **gemini**. Install targets are under **`.gemini/`** only (not **`.agents/`**), matching [Feature 5](../features/5-installer-providers-for-known-agents.md). It sits alongside [2026-04-06-test-cursor-agent-provider-and-hooks-merge](./2026-04-06-test-cursor-agent-provider-and-hooks-merge.md) and [2026-04-07-test-standardised-skill-coverage](./2026-04-07-test-standardised-skill-coverage.md).
 
 # New or updated test files
 
@@ -46,12 +46,8 @@ Targets **`installPackageAssetsForCatalogContext`** (`src/install/install-packag
 # Pass rate and scope
 
 - These specs run under **`npm run test:run`** with the full suite (all tests must pass in CI).
-- The new coverage is **unit** only; no dedicated **`atp install`** integration spec for Gemini was added in this round.
-
-#### Follow-up integration ideas
-
-- Mirror **`cursor-agent-provider-rule-install.test.ts`**: temp Station + Safehouse + **`atp agent gemini`**, then assert files under **`.gemini/`** and **`settings.json`** merges.
-- **`config-merge-journal`** integration today exercises **`.cursor/mcp.json`** / **`hooks.json`**; Gemini uses the same journal types with **`settings.json`** paths (behaviour shared with **`applyProviderPlan`**, not separately asserted end-to-end).
+- **Unit:** provider and install routing tests above.
+- **Integration:** **`gemini-agent-provider-rule-install.test.ts`**, **`gemini-agent-provider-skill-install.test.ts`**, and **`config-merge-journal-install-gemini.test.ts`** exercise **`dist/atp.js`** with **`atp agent gemini`**, **`.gemini/`** paths, and journal rollback into **`settings.json`**.
 
 # References
 

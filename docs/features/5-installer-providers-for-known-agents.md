@@ -85,6 +85,12 @@ Path conventions:
 - **Gemini CLI** — `.gemini/` and `~/.gemini/` (including `settings.json` for
   hooks and MCP).
 
+- **ATP Gemini project installs** — **`GeminiAgentProvider`** materialises packages
+  only under the project **`.gemini/`** directory (rules, prompts, skills,
+  commands, hook scripts, and merged **`settings.json`**). It does **not** use
+  **`.agents/`** for Gemini so the on-disk layout matches the Gemini CLI project
+  tree and stays unambiguous.
+
 - **Codex CLI** — `~/.codex/` and project `.codex/` (including `config.toml`
   for MCP and defaults, and optional `hooks.json` when hooks are enabled).
 
@@ -111,7 +117,7 @@ and **Codex CLI** below.
 | claude | Experimental | TBD     | —     | —                               |
 | gemini | Rule         | Y       | N     | `GEMINI.md`, `~/.gemini/`       |
 | gemini | Prompt       | Partial | N     | (1)                             |
-| gemini | Skill        | Y       | N     | `.gemini/skills/` etc.          |
+| gemini | Skill        | Y       | N     | `.gemini/skills/{name}/`        |
 | gemini | Hook         | Y       | Y     | `hooks` in `settings.json`      |
 | gemini | Mcp          | Y       | Y     | `mcpServers` in `settings.json` |
 | gemini | Command      | Y       | N     | `.gemini/commands/*.toml`       |
@@ -328,10 +334,10 @@ and leaves room for a future **`--dry-run`** without changing the contract.
 Each agent has different locations and configuration needs. Those rules live in
 one place: the provider class for that agent.
 
-**`CursorAgentProvider`**, **`ClaudeAgentProvider`**, **`GeminiAgentProvider`**,
-and **`CodexAgentProvider`** implement **`AgentProvider`**, using shared
-low-level operations (MCP JSON merge, rule assembly, future hook graph merge,
-and so on) according to the capability matrix.
+**`CursorAgentProvider`**, **`ClaudeAgentProvider`**, **`GeminiAgentProvider`**
+(project tree **`.gemini/`** only—not **`.agents/`**), and **`CodexAgentProvider`**
+implement **`AgentProvider`**, using shared low-level operations (MCP JSON merge,
+rule assembly, future hook graph merge, and so on) according to the capability matrix.
 
 Each implementation can be exercised with **unit** tests (plan shape, paths,
 operation IDs) and **integration** tests (temp project + real files). Changes to
@@ -617,10 +623,16 @@ Reference:
   `activate_skill` tool with user consent, then loads `SKILL.md` and grants the
   skill directory on the allow path.
 
-- **Tiers:** Workspace `.gemini/skills/` or `.agents/skills/` (within tier,
-  `.agents/skills/` wins over `.gemini/skills/`), user `~/.gemini/skills/` or
+- **Upstream / Gemini CLI tiers:** The product may discover workspace skills under
+  `.gemini/skills/` or `.agents/skills/` (with `.agents/skills/` winning over
+  `.gemini/skills/` within that tier), plus user `~/.gemini/skills/` or
   `~/.agents/skills/`, and extension-bundled skills. Precedence: workspace >
   user > extension.
+
+- **ATP `GeminiAgentProvider` (project Safehouse):** installs skills only under
+  **`.gemini/skills/{name}/`** (paths relative to project **`layerRoot`**, which
+  is the project **`.gemini/`** directory from Station **`agent-paths.gemini.project_path`**).
+  ATP does **not** write skills to **`.agents/skills/`** for Gemini.
 
 - **Management:** `/skills` and `gemini skills` for list, link, install,
   enable, and disable.

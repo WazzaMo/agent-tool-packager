@@ -54,6 +54,6 @@ Integration tests that spawn the CLI depend on **`npm run build`** so `dist/atp.
 
 ## Follow-ups (optional)
 
-- Parameterise the skills **subdir** (`skills` vs `.agents/skills`, etc.) when Claude/Gemini/Codex providers adopt the same helper.
+- Parameterise the skills **subdir** when providers differ (e.g. Codex uses **`.agents/skills/`**; **Gemini ATP** uses **`.gemini/skills/`** under **`layerRoot`**; Cursor **`.cursor/skills/`**).
 - Authoring-time validation (package validate) can call the same normalisers to fail fast before catalog publish.
 - If multi-skill-per-part layouts appear in the wild, extend grouping beyond “one bundle root per part” of skill assets.
