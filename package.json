@@ -33,6 +33,7 @@
     "node": ">=24.14.0"
   },
   "dependencies": {
+    "@iarna/toml": "^3.0.0",
     "commander": "^12.1.0",
     "js-yaml": "^4.1.0"
   },
