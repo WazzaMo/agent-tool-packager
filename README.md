@@ -233,7 +233,8 @@ The Station configuration has the agent-relative paths for installing files for 
 #### MCP and hooks merges (conflicts)
 
 Packages with **Mcp** or **Hook** parts merge into agent JSON (for **Cursor**:
-`.cursor/mcp.json` and `.cursor/hooks.json`; for **Gemini**: `.gemini/settings.json`).
+`.cursor/mcp.json` and `.cursor/hooks.json`; for **Gemini**: `.gemini/settings.json`;
+for **Codex**: `.codex/config.toml` (`mcp_servers` tables) and `.codex/hooks.json`).
 If your file already defines the same server name or hook id with different
 content, **`atp install`** fails until you add **`--force-config`** (overwrite the
 conflicting entry) or **`--skip-config`** (skip those merges). Use **`--verbose`**

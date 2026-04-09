@@ -162,20 +162,22 @@ limited or indirect; **TBD** means not yet defined for ATP.
 
 # Merge policy and troubleshooting for atp install
 
-This section describes how ATP merges **Mcp** and **Hook** payloads for **Cursor**
-and **Gemini** project installs today, what happens when the on-disk config
-already differs, and which CLI flags apply. Deeper design notes:
+This section describes how ATP merges **Mcp** and **Hook** payloads for **Cursor**,
+**Gemini**, and **Codex** project installs today, what happens when the on-disk
+config already differs, and which CLI flags apply. Deeper design notes:
 [2026-04-08-plan-ambiguity-errors-clarity](../notes/2026-04-08-plan-ambiguity-errors-clarity.md).
 
 ## What gets merged
 
-For **`CursorAgentProvider`** and **`GeminiAgentProvider`**, MCP and hook parts
-merge into JSON under the project agent directory:
+For **`CursorAgentProvider`**, **`GeminiAgentProvider`**, and **`CodexAgentProvider`**
+(project installs), MCP and hook parts merge into JSON under the project agent
+directory (unless **`--skip-config`**):
 
 | Agent  | MCP payload target        | Hooks payload target      |
 |--------|---------------------------|---------------------------|
 | cursor | `.cursor/mcp.json`        | `.cursor/hooks.json`      |
 | gemini | `.gemini/settings.json` (`mcpServers`) | same file (`hooks`) |
+| codex  | `.codex/config.toml` (`mcp_servers`) | `.codex/hooks.json` |
 
 The merge **adds or updates** entries associated with the package. Other
 top-level keys in the file are left unchanged.
@@ -403,7 +405,10 @@ one place: the provider class for that agent.
 **`CursorAgentProvider`**, **`ClaudeAgentProvider`**, **`GeminiAgentProvider`**
 (project tree **`.gemini/`** only—not **`.agents/`**), and **`CodexAgentProvider`**
 implement **`AgentProvider`**, using shared low-level operations (MCP JSON merge,
-rule assembly, future hook graph merge, and so on) according to the capability matrix.
+rule assembly, hooks JSON merge, and so on) according to the capability matrix.
+**Codex** additionally writes skills under project **`.agents/skills/`** (via
+**`destinationRoot: project`** on write actions) while rules and merges use
+**`.codex/`**.
 
 Each implementation can be exercised with **unit** tests (plan shape, paths,
 operation IDs) and **integration** tests (temp project + real files). Changes to
@@ -830,6 +835,10 @@ Reference:
   for sharing; `$skill-creator` and `$skill-installer` help author and fetch
   skills.
 
+- **ATP catalog install:** **`CodexAgentProvider`** materialises Agent Skills
+  under project **`.agents/skills/{name}/`** (repo root), matching discovery
+  above.
+
 ## Hook
 
 Reference:
@@ -869,6 +878,11 @@ Reference:
   table).
 
 - **TUI:** `/mcp` lists configured MCP tools in session.
+
+- **ATP catalog install:** Packaged MCP assets use JSON **`mcpServers`** and
+  **`CodexAgentProvider`** merges them into project **`.codex/config.toml`** as
+  **`[mcp_servers.<name>]`** tables (same **`--force-config`** /
+  **`--skip-config`** semantics as other MCP merges).
 
 ## Command
 

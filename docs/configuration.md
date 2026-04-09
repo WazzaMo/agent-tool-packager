@@ -291,7 +291,8 @@ When you run **`atp install`** with **`--project`** (default) or **`--station`**
 packages that include **Mcp** or **Hook** parts may **merge** into the active
 agent’s JSON files. Paths depend on the Safehouse agent and Station
 **`agent-paths`** (for example **`.cursor/mcp.json`**, **`.cursor/hooks.json`**,
-or **Gemini** **`.gemini/settings.json`** for both MCP and hooks).
+**Gemini** **`.gemini/settings.json`** for both MCP and hooks, or **Codex**
+**`.codex/config.toml`** (MCP) and **`.codex/hooks.json`**).
 
 If an existing MCP server or hook handler **matches by name or dedupe key** but
 **differs** from the package, install **fails** until you pass either

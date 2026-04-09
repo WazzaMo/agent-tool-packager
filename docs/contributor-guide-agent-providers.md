@@ -51,14 +51,17 @@ installs.
 
 | Field | Meaning |
 |-------|---------|
-| **`agent`** | Normalised agent id (**`cursor`**, **`gemini`**, …). |
+| **`agent`** | Normalised agent id (**`cursor`**, **`gemini`**, **`claude`**, **`codex`**). |
 | **`layer`** | **`project`** or **`user`** (install scope). |
 | **`layerRoot`** | Absolute root for agent files (e.g. **`.cursor/`** tree). |
 | **`projectRoot`** | Project root. |
 | **`stagingDir`** | Absolute path to extracted package files. |
 
-Paths in **`ProviderAction`** are **relative to `layerRoot`** unless an action
-carries an absolute source path (e.g. **`raw_file_copy`**).
+Paths in **`ProviderAction`** are **relative to `layerRoot`** by default. Set
+**`destinationRoot: "project"`** on **`plain_markdown_write`**, **`raw_file_copy`**,
+or **`delete_managed_file`** when the target must live under **`projectRoot`**
+(e.g. Codex skills at **`.agents/skills/`**). **`raw_file_copy`** still uses an
+absolute **`sourceAbsolutePath`** for the staged file.
 
 # Provider plans and actions
 
@@ -67,11 +70,12 @@ Common kinds:
 
 | Kind | Use |
 |------|-----|
-| **`plain_markdown_write`** | Rules, prompts, assembled markdown. |
+| **`plain_markdown_write`** | Rules, prompts, assembled markdown; optional **`destinationRoot: project`**. |
 | **`mcp_json_merge`** | Merge packaged MCP JSON into a target file. |
+| **`mcp_codex_config_toml_merge`** | Merge packaged MCP JSON into Codex **`config.toml`** (`mcp_servers`). |
 | **`hooks_json_merge`** | Merge packaged hooks JSON into a target file. |
-| **`raw_file_copy`** | Copy a staged file to a relative path under **`layerRoot`**. |
-| **`delete_managed_file`** | Remove a single managed file on uninstall plan. |
+| **`raw_file_copy`** | Copy a staged file to a relative path (layer or project per **`destinationRoot`**). |
+| **`delete_managed_file`** | Remove a single managed file on uninstall plan (layer or project). |
 
 Each action carries **`AtpProvenance`** so uninstall can target ATP-owned
 fragments.
@@ -95,8 +99,8 @@ That executor:
 
 Either:
 
-1. Emit **`mcp_json_merge`** / **`hooks_json_merge`** actions and call
-   **`applyProviderPlan`**, or  
+1. Emit **`mcp_json_merge`**, **`mcp_codex_config_toml_merge`**, and/or
+   **`hooks_json_merge`** actions and call **`applyProviderPlan`**, or  
 2. Call **`mergeMcpJsonDocument`** / **`mergeHooksJsonDocument`** yourself with
    **`mergeTargetLabel`** set from **`mergeConfigTargetLabel`** (**`src/file-ops/merge-config-target-label.ts`**).
 
@@ -114,7 +118,7 @@ New providers must be reachable from the catalog install path.
 | When to use provider | **`src/install/catalog-install-agent-provider-routing.ts`** (routing gates). |
 | Install branch | **`src/install/install-package-assets.ts`** (construct provider, call **`planInstall`** / **`applyPlan`**). |
 | Removal paths | **`src/install/copy-assets.ts`** (**`agentProviderRemovalDestination`**). |
-| Safehouse remove | **`src/remove/remove-safehouse.ts`** (journal, MCP/hooks fragments, skills). |
+| Safehouse remove | **`src/remove/remove-safehouse.ts`** and **`src/remove/safehouse-remove-agent-assets.ts`** (journal, MCP/hooks fragments, skill bundle trees — Codex uses **`.agents/skills/`**). |
 
 Station **`atp-config.yaml`** **`agent-paths`** must include the new agent’s
 **`project_path`** (and **`home_path`** when user layer is supported).
@@ -171,5 +175,7 @@ Mirror existing tests under **`test/provider/`** and
 | Merge label helper | `src/file-ops/merge-config-target-label.ts` |
 | Cursor reference impl | `src/provider/cursor-agent-provider.ts` |
 | Gemini reference impl | `src/provider/gemini-agent-provider.ts` |
+| Claude reference impl | `src/provider/claude-agent-provider.ts` |
+| Codex reference impl | `src/provider/codex-agent-provider.ts` |
 | Feature 5 | [5-installer-providers-for-known-agents.md](./features/5-installer-providers-for-known-agents.md) |
 | Clean code / small files | [clean-code.md](./clean-code.md) |
