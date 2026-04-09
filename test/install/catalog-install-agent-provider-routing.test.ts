@@ -1,5 +1,5 @@
 /**
- * Unit tests: when catalog install uses CursorAgentProvider vs copy.
+ * Unit tests: catalog install routing (`uses*AgentProvider*` gates).
  */
 
 import { describe, it, expect } from "vitest";
@@ -8,7 +8,7 @@ import {
   usesClaudeAgentProviderCatalogInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
-} from "../../src/install/rule-only-cursor-provider.js";
+} from "../../src/install/catalog-install-agent-provider-routing.js";
 import type { PackageManifest } from "../../src/install/types.js";
 
 function ctx(agent: "cursor" | "claude" | "gemini", layer: "project" | "user") {

@@ -13,7 +13,7 @@ import {
   createTempPackageEnv,
   cleanupTempPackageEnv,
 } from "./package-developer-helpers.js";
-import { usesCursorAgentProviderProjectInstall } from "../../src/install/rule-only-cursor-provider.js";
+import { usesCursorAgentProviderProjectInstall } from "../../src/install/catalog-install-agent-provider-routing.js";
 
 describe("Integration: CursorAgentProvider rule install", () => {
   let base: string;

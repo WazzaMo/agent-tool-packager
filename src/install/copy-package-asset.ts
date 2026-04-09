@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { mergeHooksJsonDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
+import { mergeHooksJsonDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";

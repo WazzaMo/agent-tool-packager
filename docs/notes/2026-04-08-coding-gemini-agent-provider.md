@@ -35,7 +35,7 @@ Enrichment still maps **Command** / **Experimental** parts to **`rule`** assets 
 
 - `src/provider/gemini-agent-provider.ts` — **`GeminiAgentProvider`**, **`createGeminiAgentProvider`**; **`planRemove`** blocks full delete of **`settings.json`**.
 
-- `src/install/rule-only-cursor-provider.ts` — Shared gate helper plus **`usesGeminiAgentProviderProjectInstall`** and existing **`usesCursorAgentProviderProjectInstall`**.
+- `src/install/catalog-install-agent-provider-routing.ts` — Shared gate helper plus **`usesGeminiAgentProviderProjectInstall`** and existing **`usesCursorAgentProviderProjectInstall`**.
 
 - `src/install/install-package-assets.ts` — Gemini provider branch (before Cursor), then programs-only copy.
 

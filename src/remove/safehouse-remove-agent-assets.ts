@@ -8,7 +8,7 @@ import path from "node:path";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import { loadSafehouseConfig, loadStationConfig } from "../config/load.js";
-import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
+import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import {
   formatJsonDocument,
   normalizeMcpServersPayload,

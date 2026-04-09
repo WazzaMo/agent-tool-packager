@@ -27,9 +27,9 @@ Targets **`GeminiAgentProvider`** (`src/provider/gemini-agent-provider.ts`) plan
 - **Hooks + MCP in one part:** second action **`hooks_json_merge`** into the same **`settings.json`**; asserts both **`mcpServers`** and **`hooks`** after apply.
 - **`planRemove`:** no action for **`settings.json`**; deletes a file under **`rules/`** when **`fragmentKey`** is safe.
 
-## `test/install/rule-only-cursor-provider.test.ts`
+## `test/install/catalog-install-agent-provider-routing.test.ts`
 
-Adds **`usesGeminiAgentProviderProjectInstall`** (`src/install/rule-only-cursor-provider.ts`).
+Adds **`usesGeminiAgentProviderProjectInstall`** (`src/install/catalog-install-agent-provider-routing.ts`).
 
 - **True** for **gemini**, project layer, project prompt scope, rule-only or **mcp + hook** manifests.
 - **False** for **cursor** as agent, **user** layer, or when the gate would not select Gemini.
@@ -51,7 +51,7 @@ Targets **`installPackageAssetsForCatalogContext`** (`src/install/install-packag
 
 - Ambiguity: exact **`McpMergeAmbiguousError.message`** for default **`mergeTargetLabel`** and for **`.gemini/settings.json`**; **`mergeTargetLabel`** property on the error instance.
 
-## `test/file-ops/cursor-hooks-json-merge.test.ts`
+## `test/file-ops/hooks-json-merge.test.ts`
 
 - Ambiguity with **`mergeTargetLabel`**: exact **`HooksMergeAmbiguousError.message`** and **`mergeTargetLabel`** property.
 
@@ -79,7 +79,7 @@ Targets **`installPackageAssetsForCatalogContext`** (`src/install/install-packag
 # Pass rate and scope
 
 - These specs run under **`npm run test:run`** with the full suite (all tests must pass in CI).
-- **Unit:** provider, install routing, **`mcp-json-merge`**, **`cursor-hooks-json-merge`**, and **`format-install-user-failure`** tests above.
+- **Unit:** provider, install routing, **`mcp-json-merge`**, **`hooks-json-merge`**, and **`format-install-user-failure`** tests above.
 - **Integration:** **`gemini-agent-provider-rule-install.test.ts`**, **`gemini-agent-provider-skill-install.test.ts`**, **`config-merge-journal-install-gemini.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`**, and **`install-cli-config-flags-help.test.ts`** exercise **`dist/atp.js`** with **`atp agent gemini`**, **`.gemini/`** paths, journal rollback into **`settings.json`**, conflict stderr, and install help.
 - **Cross-agent integration:** **`install-force-config-conflicts.test.ts`** (Cursor) pairs with the Gemini conflict file for the same canonical message + hint expectations.
 
@@ -90,7 +90,7 @@ Targets **`installPackageAssetsForCatalogContext`** (`src/install/install-packag
 | Gemini provider | `src/provider/gemini-agent-provider.ts` |
 | Plan executor | `src/provider/apply-provider-plan.ts` |
 | Install stderr formatting | `src/install/format-install-user-failure.ts` |
-| Provider routing (Cursor + Gemini) | `src/install/rule-only-cursor-provider.ts` |
+| Provider routing (Cursor + Gemini) | `src/install/catalog-install-agent-provider-routing.ts` |
 | Install routing | `src/install/install-package-assets.ts` |
 | Removal paths + skill tree cleanup | `src/install/copy-assets.ts`, `src/remove/remove-safehouse.ts`, `src/provider/skill/remove-skill-bundles.ts` |
 | Ambiguity plan + behaviour | [2026-04-08-plan-ambiguity-errors-clarity](./2026-04-08-plan-ambiguity-errors-clarity.md) |

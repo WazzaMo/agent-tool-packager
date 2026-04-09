@@ -1,5 +1,6 @@
 /**
- * Prepare Cursor rule / sub-agent markdown for install (plain `.md` vs assembled `.mdc`).
+ * Normalise rule-like markdown for agent installs (Cursor, Claude, Gemini, skills): plain `.md`
+ * passthrough; splittable `.mdc` (YAML between `---` lines) assembled via {@link assembleCursorMdcContent}.
  */
 
 import {
@@ -33,13 +34,13 @@ export interface RuleLikeMaterializeResult {
 }
 
 /**
- * Normalise rule-like file contents for Cursor `rules/` (`.md` passthrough, `.mdc` assembled when splittable).
+ * Prepare rule-like file text for writing: `.md` unchanged; `.mdc` assembled when splittable.
  *
  * @param fileName - Basename or path (extension drives `.mdc` handling).
  * @param raw - Staged UTF-8 file body (placeholders already patched).
  * @returns Text to write and the tracing operation id.
  */
-export function materializeRuleLikeForCursor(fileName: string, raw: string): RuleLikeMaterializeResult {
+export function materializeRuleLike(fileName: string, raw: string): RuleLikeMaterializeResult {
   const lower = fileName.toLowerCase();
   if (!lower.endsWith(".mdc")) {
     return { content: raw, operationId: OperationIds.PlainMarkdownEmit };

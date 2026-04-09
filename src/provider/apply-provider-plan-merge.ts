@@ -11,7 +11,7 @@ import { canonicalJsonStringify, sha256HexCanonicalJson } from "../config/canoni
 import {
   extractHooksDeltaFromPayload,
   mergeHooksJsonDocument,
-} from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
+} from "../file-ops/hooks-merge/hooks-json-merge.js";
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { formatJsonDocument, normalizeMcpServersPayload } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";

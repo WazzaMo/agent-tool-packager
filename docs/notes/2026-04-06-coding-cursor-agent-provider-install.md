@@ -49,13 +49,13 @@ Programs (from bundles) are handled separately via **`copyProgramAssetsOnly`**.
 
 - `src/provider/apply-provider-plan.ts` — Sync executor: markdown writes, **`mergeMcpJsonDocument`** + **`formatJsonDocument`** for **`mcp.json`**, **`mergeHooksJsonDocument`** for **`hooks.json`**, raw file copy, managed file delete; takes **`ProviderMergeOptions`**.
 
-- `src/provider/cursor-rule-materialize.ts` — **`trySplitCursorMdcSource`**, **`materializeRuleLikeForCursor`** (delegates to **`assembleCursorMdcContent`** when a **`.mdc`** file matches YAML frontmatter delimiters).
+- `src/provider/rule-like-materialize.ts` — **`trySplitCursorMdcSource`**, **`materializeRuleLike`** (delegates to **`assembleCursorMdcContent`** when a **`.mdc`** file matches YAML frontmatter delimiters).
 
 - `src/provider/skill/` — Shared Agent Skills install logic reused by **`CursorAgentProvider`** (and intended for other agents later): normalise/assemble YAML, bundle roots, **`buildSkillInstallProviderActions`**. Barrel: **`index.ts`**. Detail: [2026-04-07-note-standardised-skill-provider](./2026-04-07-note-standardised-skill-provider.md).
 
 - `src/provider/cursor-agent-provider.ts` — **`planInstall`** per staged part (skips **`program`**): all **`type: skill`** rows first → **`buildSkillInstallProviderActions`**; remaining assets follow the JSON / markdown branches. **`planRemove`** deletes one safe relative file; omits **`mcp.json`** / **`hooks.json`** from automated full-file remove. **`SkillFrontmatterError`** from the skill module is wrapped with a **`CursorAgentProvider:`** prefix.
 
-- `src/file-ops/hooks-merge/cursor-hooks-json-merge.ts` — **`mergeHooksJsonDocument`**; append handlers per event with dedupe by **`id`** when present; **`skipConfig`** mirrors MCP skip semantics for hooks.
+- `src/file-ops/hooks-merge/hooks-json-merge.ts` — **`mergeHooksJsonDocument`**; append handlers per event with dedupe by **`id`** when present; **`skipConfig`** mirrors MCP skip semantics for hooks.
 
 - `src/file-ops/operation-ids.ts` — Exported literal types for DTOs (**`RuleAssemblyOperationId`**, **`ConfigMergeOperationId`**, etc.).
 
@@ -63,7 +63,7 @@ Programs (from bundles) are handled separately via **`copyProgramAssetsOnly`**.
 
 - `src/file-ops/mcp-merge/apply-mcp-json-merge.ts` — Imports **`formatJsonDocument`** from helpers (removes duplicate local helper).
 
-- `src/install/rule-only-cursor-provider.ts` — **`usesCursorAgentProviderProjectInstall`** replaces rule-only gate; allows mixed non-program Cursor asset types and program-only packages.
+- `src/install/catalog-install-agent-provider-routing.ts` — **`usesCursorAgentProviderProjectInstall`** replaces rule-only gate; allows mixed non-program Cursor asset types and program-only packages.
 
 - `src/install/install-package-assets.ts` — Provider path: all **`stagedParts`**, **`providerMergeFromInstallOptions`**, then **`copyProgramAssetsOnly`**. Legacy path: **`copyPackageAssets`** with MCP merge options.
 

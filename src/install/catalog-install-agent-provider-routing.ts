@@ -1,5 +1,6 @@
 /**
- * Detect when catalog install should use Cursor, Gemini, or Claude {@link AgentProvider}.
+ * Catalog install routing: when a package install should use Cursor, Gemini, or Claude
+ * {@link AgentProvider} (vs generic asset copy).
  */
 
 import type { InstallContext } from "../file-ops/install-context.js";

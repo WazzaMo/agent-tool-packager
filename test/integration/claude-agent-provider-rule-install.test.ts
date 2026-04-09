@@ -13,7 +13,7 @@ import {
   createTempPackageEnv,
   cleanupTempPackageEnv,
 } from "./package-developer-helpers.js";
-import { usesClaudeAgentProviderCatalogInstall } from "../../src/install/rule-only-cursor-provider.js";
+import { usesClaudeAgentProviderCatalogInstall } from "../../src/install/catalog-install-agent-provider-routing.js";
 
 describe("Integration: ClaudeAgentProvider rule install", () => {
   let base: string;

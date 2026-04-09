@@ -1,5 +1,5 @@
 /**
- * Unit tests: Cursor hooks.json merge helper.
+ * Unit tests: hooks JSON merge (shared Cursor-style `hooks` map; used for multiple agents).
  */
 
 import { describe, it, expect } from "vitest";
@@ -8,7 +8,7 @@ import { HooksMergeAmbiguousError } from "../../src/file-ops/hooks-merge/errors.
 import {
   mergeHooksJsonDocument,
   removeHookHandlersFromDocument,
-} from "../../src/file-ops/hooks-merge/cursor-hooks-json-merge.js";
+} from "../../src/file-ops/hooks-merge/hooks-json-merge.js";
 
 describe("mergeHooksJsonDocument", () => {
   it("appends new handlers and dedupes by id", () => {

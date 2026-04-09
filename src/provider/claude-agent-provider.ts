@@ -17,7 +17,7 @@ import { agentDestinationForAsset, patchMarkdownBundlePlaceholders } from "../in
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 
 import { applyProviderPlan } from "./apply-provider-plan.js";
-import { materializeRuleLikeForCursor } from "./cursor-rule-materialize.js";
+import { materializeRuleLike } from "./rule-like-materialize.js";
 import {
   appendSkillInstallActions,
   installPlanForPart,
@@ -42,6 +42,121 @@ const PROTECTED_REMOVE_PATHS = new Set<string>([
   USER_CLAUDE_JSON,
 ]);
 
+/**
+ * Builds a single MCP JSON merge action for `.mcp.json` (project) or `~/.claude.json` (user layer).
+ *
+ * @param src - Absolute path to staged JSON payload.
+ * @returns One-element action list.
+ */
+function actionsForMcpAsset(
+  ctx: InstallContext,
+  part: StagedPartInstallInput,
+  asset: PackageAsset,
+  src: string,
+  packageName: string | undefined,
+  packageVersion: string | undefined
+): ProviderAction[] {
+  const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
+  const userLayer = ctx.layer === "user";
+  const mcpFile = userLayer ? USER_CLAUDE_JSON : PROJECT_MCP_JSON;
+  return [
+    {
+      kind: "mcp_json_merge",
+      operationId: OperationIds.ConfigMerge,
+      provenance: provenanceForFragment(packageName, packageVersion, part, mcpFile),
+      mergeBase: userLayer ? "user_home" : "project",
+      relativeTargetPath: mcpFile,
+      payload,
+    },
+  ];
+}
+
+/**
+ * Builds hook actions: `hooks.json` merges into layer `settings.json`; other hook files copy as raw files.
+ *
+ * @param src - Absolute path to staged hook file.
+ * @returns One-element action list.
+ */
+function actionsForHookAsset(
+  ctx: InstallContext,
+  part: StagedPartInstallInput,
+  asset: PackageAsset,
+  src: string,
+  packageName: string | undefined,
+  packageVersion: string | undefined
+): ProviderAction[] {
+  const baseName = path.basename(asset.path);
+  if (baseName === "hooks.json") {
+    const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
+    return [
+      {
+        kind: "hooks_json_merge",
+        operationId: OperationIds.HookJsonGraph,
+        provenance: provenanceForFragment(packageName, packageVersion, part, SETTINGS_JSON),
+        relativeTargetPath: SETTINGS_JSON,
+        payload,
+      },
+    ];
+  }
+  const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
+  const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
+  return [
+    {
+      kind: "raw_file_copy",
+      operationId: OperationIds.TreeMaterialise,
+      provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
+      relativeTargetPath,
+      sourceAbsolutePath: src,
+    },
+  ];
+}
+
+/**
+ * Materialises rule-, prompt-, or sub-agent markdown under the Claude layer (with bundle placeholder patching).
+ *
+ * @param src - Absolute path to staged markdown source.
+ * @returns One-element plain markdown write action.
+ */
+function actionsForMarkdownLikeAsset(
+  ctx: InstallContext,
+  part: StagedPartInstallInput,
+  asset: PackageAsset,
+  src: string,
+  packageName: string | undefined,
+  packageVersion: string | undefined,
+  bundlePathMap: Record<string, string> | undefined
+): ProviderAction[] {
+  let content = fs.readFileSync(src, "utf8");
+  content = patchMarkdownBundlePlaceholders(content, bundlePathMap);
+  const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
+  const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
+  const baseName = path.basename(asset.path);
+  const { content: outContent, operationId } = materializeRuleLike(baseName, content);
+
+  return [
+    {
+      kind: "plain_markdown_write",
+      operationId,
+      provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
+      relativeTargetPath,
+      writeMode: "create_or_replace",
+      content: outContent,
+      encoding: "utf-8",
+    },
+  ];
+}
+
+/**
+ * Plans install actions for one non-skill asset (MCP, hook, or markdown-like).
+ *
+ * @param ctx - Install layer and paths.
+ * @param part - Staged part being installed.
+ * @param asset - Package asset descriptor.
+ * @param packageName - Manifest name for provenance.
+ * @param packageVersion - Manifest version for provenance.
+ * @param bundlePathMap - Optional bundle path substitutions for markdown.
+ * @returns Actions to append to the part plan.
+ */
 function planNonSkillAsset(
   ctx: InstallContext,
   part: StagedPartInstallInput,
@@ -52,46 +167,12 @@ function planNonSkillAsset(
 ): ProviderAction[] {
   const src = path.join(ctx.stagingDir, asset.path);
   requireStagedSourceFile(PROVIDER_LABEL, asset.path, src);
-  const out: ProviderAction[] = [];
 
   if (asset.type === "mcp") {
-    const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
-    const userLayer = ctx.layer === "user";
-    const mcpFile = userLayer ? USER_CLAUDE_JSON : PROJECT_MCP_JSON;
-    out.push({
-      kind: "mcp_json_merge",
-      operationId: OperationIds.ConfigMerge,
-      provenance: provenanceForFragment(packageName, packageVersion, part, mcpFile),
-      mergeBase: userLayer ? "user_home" : "project",
-      relativeTargetPath: mcpFile,
-      payload,
-    });
-    return out;
+    return actionsForMcpAsset(ctx, part, asset, src, packageName, packageVersion);
   }
-
   if (asset.type === "hook") {
-    const baseName = path.basename(asset.path);
-    if (baseName === "hooks.json") {
-      const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
-      out.push({
-        kind: "hooks_json_merge",
-        operationId: OperationIds.HookJsonGraph,
-        provenance: provenanceForFragment(packageName, packageVersion, part, SETTINGS_JSON),
-        relativeTargetPath: SETTINGS_JSON,
-        payload,
-      });
-      return out;
-    }
-    const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
-    const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
-    out.push({
-      kind: "raw_file_copy",
-      operationId: OperationIds.TreeMaterialise,
-      provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
-      relativeTargetPath,
-      sourceAbsolutePath: src,
-    });
-    return out;
+    return actionsForHookAsset(ctx, part, asset, src, packageName, packageVersion);
   }
 
   const isMarkdownLike =
@@ -100,34 +181,38 @@ function planNonSkillAsset(
     throw new Error(`${PROVIDER_LABEL}: unsupported asset type "${asset.type}" for ${asset.path}`);
   }
 
-  let content = fs.readFileSync(src, "utf8");
-  content = patchMarkdownBundlePlaceholders(content, bundlePathMap);
-  const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
-  const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
-  const baseName = path.basename(asset.path);
-  const { content: outContent, operationId } = materializeRuleLikeForCursor(baseName, content);
-
-  out.push({
-    kind: "plain_markdown_write",
-    operationId,
-    provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
-    relativeTargetPath,
-    writeMode: "create_or_replace",
-    content: outContent,
-    encoding: "utf-8",
-  });
-  return out;
+  return actionsForMarkdownLikeAsset(
+    ctx,
+    part,
+    asset,
+    src,
+    packageName,
+    packageVersion,
+    bundlePathMap
+  );
 }
 
 /**
  * Claude Code install provider for payloads staged under {@link InstallContext.stagingDir}.
  */
 export class ClaudeAgentProvider implements AgentProvider {
+  /**
+   * @param manifest - Package manifest (name/version for provenance).
+   * @param bundlePathMap - Optional path map for markdown bundle placeholders.
+   */
   constructor(
     private readonly manifest: PackageManifest,
     private readonly bundlePathMap?: Record<string, string>
   ) {}
 
+  /**
+   * Builds an install plan: skills via shared helpers; other assets via MCP merge, hooks, or markdown writes.
+   *
+   * @param ctx - Layer root, staging dir, and project vs user layer.
+   * @param part - Staged part (files under staging).
+   * @param _merge - Reserved for structured merge policy (unused for Claude v1 paths).
+   * @returns Provider plan for this part.
+   */
   planInstall(
     ctx: InstallContext,
     part: StagedPartInstallInput,
@@ -160,6 +245,14 @@ export class ClaudeAgentProvider implements AgentProvider {
     return installPlanForPart(ctx, part, packageName, packageVersion, actions);
   }
 
+  /**
+   * Executes the plan (file copies, merges, journal).
+   *
+   * @param plan - Plan from {@link ClaudeAgentProvider.planInstall}.
+   * @param merge - Force/skip policy for structured merges.
+   * @param onFileWritten - Optional callback after each written path.
+   * @param configMergeJournal - Optional journal entries for config merges.
+   */
   applyPlan(
     plan: ProviderPlan,
     merge: ProviderMergeOptions,
@@ -171,12 +264,23 @@ export class ClaudeAgentProvider implements AgentProvider {
 
   /**
    * Remove one managed file under `layerRoot`. Does not delete merged `.mcp.json` or `settings.json`.
+   *
+   * @param ctx - Layer containing the target.
+   * @param target - Provenance of the file to remove.
+   * @returns Plan with context; `actions` is empty when the path is unsafe or protected.
    */
   planRemove(ctx: InstallContext, target: AtpProvenance): ProviderPlan {
     return buildRemoveManagedFilePlan(ctx, target, PROTECTED_REMOVE_PATHS);
   }
 }
 
+/**
+ * Factory for {@link ClaudeAgentProvider} (same args as constructor).
+ *
+ * @param manifest - Package manifest.
+ * @param bundlePathMap - Optional bundle path map for markdown.
+ * @returns Configured Claude provider instance.
+ */
 export function createClaudeAgentProvider(
   manifest: PackageManifest,
   bundlePathMap?: Record<string, string>

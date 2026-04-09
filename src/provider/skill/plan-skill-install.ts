@@ -10,7 +10,7 @@ import type { PartKind } from "../../file-ops/part-install-input.js";
 import { patchMarkdownBundlePlaceholders } from "../../install/copy-assets.js";
 import type { PackageAsset } from "../../install/types.js";
 import type { AtpProvenance, ProviderAction } from "../provider-dtos.js";
-import { materializeRuleLikeForCursor } from "../cursor-rule-materialize.js";
+import { materializeRuleLike } from "../rule-like-materialize.js";
 
 import { finalizeSkillMdContent } from "./finalize-skill-md.js";
 import { patchSkillScriptsPlaceholder } from "./patch-skill-placeholders.js";
@@ -52,7 +52,7 @@ export function buildSkillInstallProviderActions(
   const finalised = finalizeSkillMdContent(text, fallbackName);
   text = patchSkillScriptsPlaceholder(finalised.content, "scripts");
 
-  const { content, operationId } = materializeRuleLikeForCursor("SKILL.md", text);
+  const { content, operationId } = materializeRuleLike("SKILL.md", text);
 
   const skillDirName = finalised.skillDirName;
   const relativeSkillDir = path.posix.join("skills", skillDirName);

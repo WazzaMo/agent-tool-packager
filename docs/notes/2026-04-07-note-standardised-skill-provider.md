@@ -29,7 +29,7 @@ Public barrel: `src/provider/skill/index.ts`.
 
 `CursorAgentProvider.planInstall` routes all manifest rows with `type: skill` through `buildSkillInstallProviderActions` before the existing rule/prompt/MCP/hook logic. `SkillFrontmatterError` is wrapped with a `CursorAgentProvider:` prefix for clearer CLI-facing messages.
 
-Skill markdown still passes through `patchMarkdownBundlePlaceholders` (bundle install paths) and `materializeRuleLikeForCursor` only affects `.mdc`-style rule assembly; skills use `SKILL.md` and stay on the plain-markdown / rule-assembly path as appropriate.
+Skill markdown still passes through `patchMarkdownBundlePlaceholders` (bundle install paths) and `materializeRuleLike` only affects `.mdc`-style rule assembly; skills use `SKILL.md` and stay on the plain-markdown / rule-assembly path as appropriate.
 
 ## Behaviour change (Cursor project install)
 

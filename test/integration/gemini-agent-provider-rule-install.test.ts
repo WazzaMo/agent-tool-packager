@@ -13,7 +13,7 @@ import {
   createTempPackageEnv,
   cleanupTempPackageEnv,
 } from "./package-developer-helpers.js";
-import { usesGeminiAgentProviderProjectInstall } from "../../src/install/rule-only-cursor-provider.js";
+import { usesGeminiAgentProviderProjectInstall } from "../../src/install/catalog-install-agent-provider-routing.js";
 
 describe("Integration: GeminiAgentProvider rule install", () => {
   let base: string;

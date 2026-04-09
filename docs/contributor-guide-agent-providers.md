@@ -111,7 +111,7 @@ New providers must be reachable from the catalog install path.
 | Area | File (typical) |
 |------|----------------|
 | Agent id | **`src/file-ops/install-context.ts`** (**`normaliseAgentId`**, supported list). |
-| When to use provider | **`src/install/rule-only-cursor-provider.ts`** (or similar gate). |
+| When to use provider | **`src/install/catalog-install-agent-provider-routing.ts`** (routing gates). |
 | Install branch | **`src/install/install-package-assets.ts`** (construct provider, call **`planInstall`** / **`applyPlan`**). |
 | Removal paths | **`src/install/copy-assets.ts`** (**`agentProviderRemovalDestination`**). |
 | Safehouse remove | **`src/remove/remove-safehouse.ts`** (journal, MCP/hooks fragments, skills). |

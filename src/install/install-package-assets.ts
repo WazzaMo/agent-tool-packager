@@ -17,7 +17,7 @@ import {
   usesClaudeAgentProviderCatalogInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
-} from "./rule-only-cursor-provider.js";
+} from "./catalog-install-agent-provider-routing.js";
 
 import type { CatalogInstallContext, InstallOptions } from "./types.js";
 import type { InstallContext } from "../file-ops/install-context.js";

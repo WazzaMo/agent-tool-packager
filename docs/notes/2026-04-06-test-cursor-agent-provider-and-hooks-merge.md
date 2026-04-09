@@ -14,9 +14,9 @@ Automated tests added or updated for **`CursorAgentProvider`** (rules, skills, p
 
 # New or updated test files
 
-## `test/file-ops/cursor-hooks-json-merge.test.ts`
+## `test/file-ops/hooks-json-merge.test.ts`
 
-Targets **`mergeHooksJsonDocument`** (`src/file-ops/hooks-merge/cursor-hooks-json-merge.ts`).
+Targets **`mergeHooksJsonDocument`** (`src/file-ops/hooks-merge/hooks-json-merge.ts`).
 
 - Appends handlers on the same event key and **dedupes** entries that share an **`id`**.
 - **`skipConfig: true`** returns a clone of the existing document with **`changed`** false (no merge).
@@ -31,9 +31,9 @@ Targets **`CursorAgentProvider`** plan/apply/remove (`src/provider/cursor-agent-
 - **MCP asset**: emits **`mcp_json_merge`**; apply creates **`.cursor/mcp.json`** with expected **`mcpServers`**.
 - **`planRemove`**: deletes a file under **`rules/`** by safe **`fragmentKey`**; **does not** emit actions for **`mcp.json`**.
 
-## `test/install/rule-only-cursor-provider.test.ts`
+## `test/install/catalog-install-agent-provider-routing.test.ts`
 
-Targets **`usesCursorAgentProviderProjectInstall`** (`src/install/rule-only-cursor-provider.ts`).
+Targets **`usesCursorAgentProviderProjectInstall`** (`src/install/catalog-install-agent-provider-routing.ts`).
 
 - **True** for Cursor project scope with **rule-only**, **skill-only**, **mcp-only**, **rule+skill**, and **program-only** manifests (programs copied separately after the provider run).
 - **False** for non-Cursor agent, **user** layer, **station** prompt scope, or **empty** **`assets`**.
@@ -61,7 +61,7 @@ Targets **`installPackageAssetsForCatalogContext`** (`src/install/install-packag
 | Cursor provider | `src/provider/cursor-agent-provider.ts` |
 | Plan executor | `src/provider/apply-provider-plan.ts` |
 | Provider DTOs | `src/provider/provider-dtos.ts` |
-| Cursor routing gate | `src/install/rule-only-cursor-provider.ts` |
+| Cursor routing gate | `src/install/catalog-install-agent-provider-routing.ts` |
 | Install routing | `src/install/install-package-assets.ts` |
-| Hooks merge | `src/file-ops/hooks-merge/cursor-hooks-json-merge.ts` |
+| Hooks merge | `src/file-ops/hooks-merge/hooks-json-merge.ts` |
 | MCP merge (related) | `src/file-ops/mcp-merge/mcp-json-merge.ts` |

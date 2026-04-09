@@ -16,7 +16,7 @@ This note summarises automated tests for **Agent Skills** install logic under **
 | Skill helpers (bundle root, YAML, assembly, placeholders, planner) | `test/provider/skill/skill-standard.test.ts` | Unit |
 | Cursor provider (rules, skills, MCP, hooks, remove) | `test/provider/cursor-agent-provider.test.ts` | Unit |
 | Catalog install via provider (skills tree) | `test/install/install-package-assets.test.ts` | Unit |
-| Provider routing gate | `test/install/rule-only-cursor-provider.test.ts` | Unit |
+| Provider routing gate | `test/install/catalog-install-agent-provider-routing.test.ts` | Unit |
 | Staged part inputs (multi-part Skill paths) | `test/file-ops/part-install-input.test.ts`, `test/integration/part-install-input-pipeline.test.ts` | Unit / integration |
 | Full CLI install (fixture package) | `test/integration/install.test.ts` | Integration (spawns **`dist/atp`**) |
 | Feature 3 skill install + bundle patching | `test/integration/feature3-package-install-process.test.ts` | Integration |

@@ -59,7 +59,7 @@ Hook handler for event "beforeSubmit" (id:atp-force-hook) conflicts with existin
 - **§2** — **`src/install/format-install-user-failure.ts`**: **`formatInstallUserFailureLines`**, **`MERGE_CONFIG_AMBIGUITY_HINT`**; **`installPackage`** prints returned lines on failure.
 - **§3** — **`atp install --verbose`**; equivalent when **`mergeAmbiguityVerboseRequested`** is true via **`DEBUG`** and **`atp`** token.
 - **Install path** — **`executeCatalogInstall`** rethrows ambiguity errors so the hint and verbose lines apply; generic wrap only for other failures.
-- **Tests** — Unit expectations on exact messages in **`test/file-ops/mcp-json-merge.test.ts`**, **`cursor-hooks-json-merge.test.ts`**, **`test/install/format-install-user-failure.test.ts`**, **`test/provider/gemini-agent-provider.test.ts`**; integration coverage in **`install-force-config-conflicts.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`** (including **`--verbose`** JSON), **`install-cli-config-flags-help.test.ts`**.
+- **Tests** — Unit expectations on exact messages in **`test/file-ops/mcp-json-merge.test.ts`**, **`hooks-json-merge.test.ts`**, **`test/install/format-install-user-failure.test.ts`**, **`test/provider/gemini-agent-provider.test.ts`**; integration coverage in **`install-force-config-conflicts.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`** (including **`--verbose`** JSON), **`install-cli-config-flags-help.test.ts`**.
 
 # AgentProvider implementations
 
@@ -130,7 +130,7 @@ When **MCP** and **hooks** both target **`settings.json`**, failures are **per a
 |-------|----------|
 | Merge target label helper | `src/file-ops/merge-config-target-label.ts` |
 | MCP ambiguity | `src/file-ops/mcp-merge/errors.ts`, `mcp-json-merge.ts` |
-| Hooks ambiguity | `src/file-ops/hooks-merge/errors.ts`, `cursor-hooks-json-merge.ts` |
+| Hooks ambiguity | `src/file-ops/hooks-merge/errors.ts`, `hooks-json-merge.ts` |
 | Provider apply + labels | `src/provider/apply-provider-plan.ts` |
 | Install stderr formatting + hint + verbose | `src/install/format-install-user-failure.ts` |
 | Install orchestration (rethrow ambiguity) | `src/install/install.ts` |

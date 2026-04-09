@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/cursor-hooks-json-merge.js";
+import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { removeMcpServersByNamesFromDocument } from "../file-ops/mcp-merge/remove-mcp-servers.js";
 

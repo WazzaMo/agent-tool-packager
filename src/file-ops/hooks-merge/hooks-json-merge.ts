@@ -1,6 +1,7 @@
 /**
- * Merge Cursor-style `hooks.json`: event-keyed handler arrays, append with dedupe,
- * and conflict handling aligned with MCP merges (`--force-config` / `--skip-config`).
+ * Merge hook handler maps into agent JSON (e.g. Cursor `hooks.json`, Gemini/Claude `settings.json`):
+ * event-keyed handler arrays, append with dedupe, and conflict handling aligned with MCP merges
+ * (`--force-config` / `--skip-config`). Uses the Cursor-style top-level `hooks` object shape.
  */
 
 import { isDeepStrictEqual } from "node:util";
@@ -22,7 +23,7 @@ export interface HooksMergeOptions {
 
 function assertPlainObject(label: string, v: unknown): Record<string, unknown> {
   if (!isPlainObject(v)) {
-    throw new McpMergeInvalidDocumentError(`Expected ${label} to be a plain JSON object.`);
+    throw new McpMergeInvalidDocumentError(`Expected ${label} to be a plain object.`);
   }
   return v;
 }
