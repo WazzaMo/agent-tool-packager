@@ -7,6 +7,11 @@ import os from "node:os";
 import path from "node:path";
 
 import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
+import {
+  parseCodexConfigTomlRoot,
+  removeMcpServerNamesFromCodexTomlParsedRoot,
+  stringifyCodexConfigTomlRoot,
+} from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { removeMcpServersByNamesFromDocument } from "../file-ops/mcp-merge/remove-mcp-servers.js";
 
@@ -133,8 +138,11 @@ export function deletePackageConfigJournalFile(
   }
 }
 
-function readJsonRoot(absolutePath: string): Record<string, unknown> {
+function readConfigMergeDocumentRoot(absolutePath: string): Record<string, unknown> {
   const raw = fs.readFileSync(absolutePath, "utf8");
+  if (absolutePath.toLowerCase().endsWith(".toml")) {
+    return parseCodexConfigTomlRoot(raw);
+  }
   const parsed = JSON.parse(raw) as unknown;
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error(`Expected JSON object in ${absolutePath}`);
@@ -181,7 +189,7 @@ export function rollbackMergedConfigJournal(
       currentSha = sha256HexCanonicalJson(currentValue);
     } else {
       try {
-        currentValue = readJsonRoot(dest);
+        currentValue = readConfigMergeDocumentRoot(dest);
         currentSha = sha256HexCanonicalJson(currentValue);
       } catch (e) {
         warnings.push(
@@ -208,7 +216,21 @@ export function rollbackMergedConfigJournal(
           continue;
         }
         fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, formatJsonDocument(restored), "utf8");
+        if (dest.toLowerCase().endsWith(".toml")) {
+          if (restored === null || typeof restored !== "object" || Array.isArray(restored)) {
+            warnings.push(
+              `ATP: invalid before_canonical for TOML ${entry.agent_relative_path}; skipping exact restore.`
+            );
+            continue;
+          }
+          fs.writeFileSync(
+            dest,
+            stringifyCodexConfigTomlRoot(restored as Record<string, unknown>),
+            "utf8"
+          );
+        } else {
+          fs.writeFileSync(dest, formatJsonDocument(restored), "utf8");
+        }
       }
       continue;
     }
@@ -218,13 +240,24 @@ export function rollbackMergedConfigJournal(
     );
 
     if (entry.fragments.type === "mcp") {
-      const { document, changed } = removeMcpServersByNamesFromDocument(
-        currentValue,
-        entry.fragments.server_names
-      );
-      if (changed) {
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+      if (dest.toLowerCase().endsWith(".toml")) {
+        const { root, changed } = removeMcpServerNamesFromCodexTomlParsedRoot(
+          currentValue as Record<string, unknown>,
+          entry.fragments.server_names
+        );
+        if (changed) {
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(root), "utf8");
+        }
+      } else {
+        const { document, changed } = removeMcpServersByNamesFromDocument(
+          currentValue,
+          entry.fragments.server_names
+        );
+        if (changed) {
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+        }
       }
       continue;
     }

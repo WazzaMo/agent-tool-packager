@@ -31,13 +31,18 @@ const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
  * @param asset - Asset row (must not be `program`).
  * @returns Parent directory to create and final file path.
  */
+function isCodexAgentBase(agentBase: string): boolean {
+  return path.basename(path.normalize(agentBase)) === ".codex";
+}
+
 export function agentDestinationForAsset(
   agentBase: string,
   asset: Pick<PackageAsset, "type" | "path">
 ): { dir: string; filePath: string } {
   const baseName = path.basename(asset.path);
   if (asset.type === "mcp") {
-    return { dir: agentBase, filePath: path.join(agentBase, "mcp.json") };
+    const mcpFile = isCodexAgentBase(agentBase) ? "config.toml" : "mcp.json";
+    return { dir: agentBase, filePath: path.join(agentBase, mcpFile) };
   }
   if (asset.type === "hook") {
     if (baseName === "hooks.json") {
@@ -73,6 +78,9 @@ export function agentProviderRemovalDestination(
     }
     if (agent === "claude") {
       return { filePath: path.normalize(path.join(agentBase, "..", ".mcp.json")) };
+    }
+    if (agent === "codex") {
+      return { filePath: path.join(agentBase, "config.toml") };
     }
     return { filePath: path.join(agentBase, "mcp.json") };
   }

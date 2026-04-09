@@ -6,14 +6,21 @@ import { describe, it, expect } from "vitest";
 
 import {
   usesClaudeAgentProviderCatalogInstall,
+  usesCodexAgentProviderProjectInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
 } from "../../src/install/catalog-install-agent-provider-routing.js";
 import type { PackageManifest } from "../../src/install/types.js";
 
-function ctx(agent: "cursor" | "claude" | "gemini", layer: "project" | "user") {
+function ctx(agent: "cursor" | "claude" | "gemini" | "codex", layer: "project" | "user") {
   const layerRoot =
-    agent === "gemini" ? "/p/.gemini" : agent === "cursor" ? "/p/.cursor" : "/p/.claude";
+    agent === "gemini"
+      ? "/p/.gemini"
+      : agent === "cursor"
+        ? "/p/.cursor"
+        : agent === "codex"
+          ? "/p/.codex"
+          : "/p/.claude";
   return {
     agent,
     layer,
@@ -145,6 +152,43 @@ describe("usesGeminiAgentProviderProjectInstall", () => {
     expect(usesGeminiAgentProviderProjectInstall(ctx("gemini", "project"), manifest, baseOpts)).toBe(
       true
     );
+  });
+});
+
+describe("usesCodexAgentProviderProjectInstall", () => {
+  const ruleManifest: PackageManifest = {
+    name: "r",
+    assets: [{ path: "a.md", type: "rule", name: "a" }],
+  };
+
+  const baseOpts = {
+    promptScope: "project" as const,
+    binaryScope: "user-bin" as const,
+    dependencies: false,
+  };
+
+  it("is true for codex + project layer + project scope + supported assets", () => {
+    expect(usesCodexAgentProviderProjectInstall(ctx("codex", "project"), ruleManifest, baseOpts)).toBe(
+      true
+    );
+  });
+
+  it("is false when agent is cursor", () => {
+    expect(usesCodexAgentProviderProjectInstall(ctx("cursor", "project"), ruleManifest, baseOpts)).toBe(
+      false
+    );
+  });
+
+  it("is false when layer is user", () => {
+    expect(usesCodexAgentProviderProjectInstall(ctx("codex", "user"), ruleManifest, baseOpts)).toBe(false);
+  });
+
+  it("is true for skill-only manifest", () => {
+    const skill: PackageManifest = {
+      name: "s",
+      assets: [{ path: "SKILL.md", type: "skill", name: "s" }],
+    };
+    expect(usesCodexAgentProviderProjectInstall(ctx("codex", "project"), skill, baseOpts)).toBe(true);
   });
 });
 

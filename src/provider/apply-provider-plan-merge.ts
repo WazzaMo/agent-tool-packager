@@ -14,6 +14,10 @@ import {
 } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { formatJsonDocument, normalizeMcpServersPayload } from "../file-ops/mcp-merge/mcp-json-helpers.js";
+import {
+  mergeCodexConfigTomlMcp,
+  parseCodexConfigTomlRoot,
+} from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
 import {
@@ -24,6 +28,7 @@ import {
 
 import type {
   HooksJsonMergeAction,
+  McpCodexConfigTomlMergeAction,
   McpJsonMergeAction,
   ProviderPlan,
 } from "./provider-dtos.js";
@@ -108,6 +113,55 @@ export function applyMcpJsonMergeAction(
   pushJournal(configMergeJournal, {
     agent_relative_path: rel,
     ...journalConfigRootForMcp(action),
+    kind: "mcp",
+    before_absent: beforeAbsent,
+    before_sha256: beforeSha,
+    after_sha256: afterSha,
+    fragments: {
+      type: "mcp",
+      server_names: mcpServerNamesFromPayload(action.payload),
+    },
+    before_canonical: beforeCanonical,
+  });
+}
+
+export function applyMcpCodexConfigTomlMergeAction(
+  plan: ProviderPlan,
+  action: McpCodexConfigTomlMergeAction,
+  merge: ProviderMergeOptions,
+  onFileWritten?: (absolutePath: string) => void,
+  configMergeJournal?: ConfigMergeJournalEntryV1[]
+): void {
+  const layerRoot = plan.context.layerRoot;
+  const rel = action.relativeTargetPath.replace(/\\/g, "/");
+  if (rel.includes("..") || path.posix.isAbsolute(rel)) {
+    throw new Error(
+      `Invalid mcp_codex_config_toml_merge path "${action.relativeTargetPath}" (no .. or absolute segments).`
+    );
+  }
+  const dest = path.join(layerRoot, rel);
+  const beforeAbsent = !fs.existsSync(dest);
+  const existingRaw = beforeAbsent ? null : fs.readFileSync(dest, "utf8");
+  const beforeObj = parseCodexConfigTomlRoot(existingRaw);
+  const beforeCanonical = canonicalJsonStringify(beforeObj);
+  const beforeSha = sha256HexCanonicalJson(beforeObj);
+
+  const mergeLabel = mergeConfigTargetLabel(layerRoot, rel);
+  const outcome = mergeCodexConfigTomlMcp(
+    existingRaw,
+    action.payload,
+    mcpMergeOptionsFromProvider(merge, mergeLabel)
+  );
+  if (outcome.status !== "applied") {
+    return;
+  }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, outcome.content, "utf8");
+  onFileWritten?.(dest);
+  const afterObj = parseCodexConfigTomlRoot(outcome.content);
+  const afterSha = sha256HexCanonicalJson(afterObj);
+  pushJournal(configMergeJournal, {
+    agent_relative_path: rel,
     kind: "mcp",
     before_absent: beforeAbsent,
     before_sha256: beforeSha,

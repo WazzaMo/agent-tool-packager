@@ -1,5 +1,5 @@
 /**
- * Shared helpers for {@link AgentProvider} install planning (Cursor, Claude, Gemini).
+ * Shared helpers for {@link AgentProvider} install planning (Cursor, Claude, Gemini, Codex).
  */
 
 import fs from "node:fs";
@@ -9,7 +9,10 @@ import type { InstallContext } from "../file-ops/install-context.js";
 import type { StagedPartInstallInput } from "../file-ops/part-install-input.js";
 import type { PackageAsset, PackageManifest } from "../install/types.js";
 
-import { buildSkillInstallProviderActions } from "./skill/plan-skill-install.js";
+import {
+  buildSkillInstallProviderActions,
+  type SkillInstallPathOptions,
+} from "./skill/plan-skill-install.js";
 import { SkillFrontmatterError } from "./skill/normalize-skill-frontmatter.js";
 import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
 
@@ -100,16 +103,18 @@ export function appendSkillInstallActions(
   packageName: string | undefined,
   packageVersion: string | undefined,
   bundlePathMap: Record<string, string> | undefined,
-  providerLabel: string
+  providerLabel: string,
+  skillPathOptions?: SkillInstallPathOptions
 ): void {
   try {
     actions.push(
       ...buildSkillInstallProviderActions(
-        { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot },
+        { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot, projectRoot: ctx.projectRoot },
         { partIndex: part.partIndex, partKind: part.partKind },
         skillAssets,
         { name: packageName, version: packageVersion },
-        bundlePathMap
+        bundlePathMap,
+        skillPathOptions
       )
     );
   } catch (e) {

@@ -37,7 +37,7 @@ export interface McpJsonMergeOutcome {
  * Merge incoming server definitions by name: add missing keys, no-op when equal,
  * or throw unless `forceConfig` replaces a conflicting entry.
  */
-function mergeServerRecords(
+export function mergeMcpServerRecordsByName(
   existingServers: Record<string, unknown>,
   incomingServers: Record<string, unknown>,
   options: McpMergeOptions
@@ -103,7 +103,7 @@ export function mergeMcpJsonDocument(
       : assertPlainObject("existing document", existingDocument);
 
   const serversBefore = readMcpServersObject(existingRoot, "Existing document");
-  const { mergedServers, changed } = mergeServerRecords(
+  const { mergedServers, changed } = mergeMcpServerRecordsByName(
     serversBefore,
     payload.mcpServers,
     options

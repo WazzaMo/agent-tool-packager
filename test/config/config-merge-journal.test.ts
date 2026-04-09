@@ -13,6 +13,60 @@ import {
   type ConfigMergeJournalEntryV1,
 } from "../../src/config/config-merge-journal.js";
 import { formatJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-helpers.js";
+import {
+  mergeCodexConfigTomlMcp,
+  parseCodexConfigTomlRoot,
+  stringifyCodexConfigTomlRoot,
+} from "../../src/file-ops/mcp-merge/mcp-codex-toml-merge.js";
+
+describe("rollbackMergedConfigJournal — Codex config.toml", () => {
+  let tmp: string;
+  let agentBase: string;
+  let projectRoot: string;
+
+  beforeEach(() => {
+    tmp = path.join(os.tmpdir(), `atp-jrnl-codex-${Date.now()}`);
+    projectRoot = path.join(tmp, "proj");
+    agentBase = path.join(projectRoot, ".codex");
+    fs.mkdirSync(agentBase, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("exact-restore MCP entry when agent file is config.toml", () => {
+    const beforeToml = stringifyCodexConfigTomlRoot({
+      other: { n: 1 },
+      mcp_servers: { keep: { command: "k" } },
+    });
+    const merged = mergeCodexConfigTomlMcp(
+      beforeToml,
+      { mcpServers: { pkg: { command: "c" } } },
+      {}
+    );
+    expect(merged.status).toBe("applied");
+    const cfgPath = path.join(agentBase, "config.toml");
+    fs.writeFileSync(cfgPath, merged.content, "utf8");
+
+    const beforeObj = parseCodexConfigTomlRoot(beforeToml);
+    const afterObj = parseCodexConfigTomlRoot(merged.content);
+
+    const entry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "config.toml",
+      kind: "mcp",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(beforeObj),
+      after_sha256: sha256HexCanonicalJson(afterObj),
+      fragments: { type: "mcp", server_names: ["pkg"] },
+      before_canonical: canonicalJsonStringify(beforeObj),
+    };
+
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
+    expect(warnings).toEqual([]);
+    expect(parseCodexConfigTomlRoot(fs.readFileSync(cfgPath, "utf8"))).toEqual(beforeObj);
+  });
+});
 
 describe("rollbackMergedConfigJournal — Gemini settings.json path", () => {
   let tmp: string;

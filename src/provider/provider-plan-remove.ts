@@ -11,15 +11,17 @@ import type { InstallContext } from "../file-ops/install-context.js";
 import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
 
 /**
- * Build a remove plan that deletes `target.fragmentKey` under `layerRoot` when it is a safe relative path
- * and not one of the protected merge targets (e.g. `mcp.json`, `settings.json`).
+ * Build a remove plan that deletes `target.fragmentKey` under `layerRoot` (default) or `projectRoot`
+ * when it is a safe relative path and not one of the protected merge targets (e.g. `mcp.json`, `settings.json`).
  *
  * @param protectedRelativePaths - Normalised POSIX paths (no leading `./`) that must not be deleted via this plan.
+ * @param fileDestinationRoot - When `project`, the file path is resolved under {@link InstallContext.projectRoot}.
  */
 export function buildRemoveManagedFilePlan(
   ctx: InstallContext,
   target: AtpProvenance,
-  protectedRelativePaths: ReadonlySet<string>
+  protectedRelativePaths: ReadonlySet<string>,
+  fileDestinationRoot?: "layer" | "project"
 ): ProviderPlan {
   const rel = target.fragmentKey.replace(/\\/g, "/").trim();
   const unsafe =
@@ -35,6 +37,7 @@ export function buildRemoveManagedFilePlan(
       operationId: OperationIds.ExperimentalDrop,
       provenance: target,
       relativeTargetPath: rel,
+      destinationRoot: fileDestinationRoot === "project" ? "project" : undefined,
     });
   }
 

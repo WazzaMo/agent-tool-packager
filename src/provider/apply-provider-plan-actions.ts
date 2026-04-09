@@ -11,4 +11,8 @@ export {
   applyDeleteManagedFileAction,
 } from "./apply-provider-plan-base.js";
 
-export { applyMcpJsonMergeAction, applyHooksJsonMergeAction } from "./apply-provider-plan-merge.js";
+export {
+  applyMcpJsonMergeAction,
+  applyMcpCodexConfigTomlMergeAction,
+  applyHooksJsonMergeAction,
+} from "./apply-provider-plan-merge.js";

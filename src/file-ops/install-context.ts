@@ -2,7 +2,7 @@
  * Provider install roots (internal DTO). See docs/notes/2026-04-03-plan-provider-internal-dtos.md.
  */
 
-/** Agents with an {@link AgentProvider} implementation (install / handover). */
+/** Agents that may be assigned in Safehouse; each has an {@link AgentProvider} for catalog install (Codex skills use `.agents/skills/` under the project root). */
 export const PROVIDER_AGENT_IDS = ["cursor", "claude", "gemini", "codex"] as const;
 
 /** Canonical agent keys (Feature 5 / Station `agent-paths`). */

@@ -13,6 +13,7 @@ import {
   formatJsonDocument,
   normalizeMcpServersPayload,
 } from "../file-ops/mcp-merge/mcp-json-helpers.js";
+import { removeMcpServerNamesFromCodexConfigToml } from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { removeMcpServersByNamesFromDocument } from "../file-ops/mcp-merge/remove-mcp-servers.js";
 import { agentProviderRemovalDestination } from "../install/copy-assets.js";
 import { removeProviderSkillBundleTrees } from "../provider/skill/remove-skill-bundles.js";
@@ -39,7 +40,14 @@ function readJsonConfigFile(filePath: string): unknown | null {
  * Relative path under the agent project directory for merged MCP JSON (varies by agent).
  */
 function mergedMcpConfigRelativePath(agentName: string): string {
-  return agentName.trim().toLowerCase() === "gemini" ? "settings.json" : "mcp.json";
+  const k = agentName.trim().toLowerCase();
+  if (k === "gemini") {
+    return "settings.json";
+  }
+  if (k === "codex") {
+    return "config.toml";
+  }
+  return "mcp.json";
 }
 
 /**
@@ -90,6 +98,26 @@ function stripMcpServersFromAgentForPackage(
   }
 
   const destPath = path.join(mergeRoot, destConfigRelative);
+  if (destPath.toLowerCase().endsWith(".toml")) {
+    if (!fs.existsSync(destPath)) {
+      return;
+    }
+    const raw = fs.readFileSync(destPath, "utf8");
+    try {
+      const { content, changed } = removeMcpServerNamesFromCodexConfigToml(raw, serverNames);
+      if (!changed) {
+        return;
+      }
+      fs.mkdirSync(path.dirname(destPath), { recursive: true });
+      fs.writeFileSync(destPath, content, "utf8");
+    } catch (e) {
+      console.warn(
+        `ATP: skipping Codex config.toml MCP rollback for ${destConfigRelative}: ${(e as Error).message}`
+      );
+    }
+    return;
+  }
+
   const existing = readJsonConfigFile(destPath);
   if (existing === null) {
     return;
@@ -149,6 +177,28 @@ function warnMergeRollbackSkippedOnce(state: { warned: boolean }): void {
   console.warn(MERGE_ROLLBACK_SKIP_MSG);
 }
 
+function removeProviderSkillBundlesIfNeeded(
+  agentKey: string,
+  agentBase: string,
+  projectBase: string,
+  pkgDir: string,
+  assets: PackageAsset[]
+): void {
+  if (!pkgDir) {
+    return;
+  }
+  if (agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude") {
+    removeProviderSkillBundleTrees(agentBase, pkgDir, assets);
+    return;
+  }
+  if (agentKey === "codex") {
+    removeProviderSkillBundleTrees(agentBase, pkgDir, assets, {
+      projectBase,
+      skillsParentRelative: ".agents/skills",
+    });
+  }
+}
+
 function stripMcpMergeRollbackForAsset(
   agentKey: string,
   projectBase: string,
@@ -189,16 +239,17 @@ export function removeAgentCopies(
   const hooksRollbackFile = mergedHooksConfigRelativePath(agentName);
   const agentKey = agentName.trim().toLowerCase();
 
-  if ((agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude") && pkgDir) {
-    removeProviderSkillBundleTrees(agentBase, pkgDir, assets);
-  }
+  removeProviderSkillBundlesIfNeeded(agentKey, agentBase, projectBase, pkgDir ?? "", assets);
 
   const warnState = { warned: false };
 
   for (const asset of assets) {
     if (asset.type === "program") continue;
 
-    if (asset.type === "skill" && (agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude")) {
+    if (
+      asset.type === "skill" &&
+      (agentKey === "cursor" || agentKey === "gemini" || agentKey === "claude" || agentKey === "codex")
+    ) {
       continue;
     }
 

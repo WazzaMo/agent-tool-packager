@@ -33,8 +33,13 @@ export interface PlainMarkdownWriteAction {
   kind: "plain_markdown_write";
   operationId: PlainMarkdownEmitOperationId | RuleAssemblyOperationId;
   provenance: AtpProvenance;
-  /** Path relative to {@link InstallContext.layerRoot} (e.g. `rules/doc.md`). */
+  /**
+   * Path relative to {@link InstallContext.layerRoot} by default, or to
+   * {@link InstallContext.projectRoot} when {@link destinationRoot} is `project` (e.g. Codex `.agents/skills/`).
+   */
   relativeTargetPath: string;
+  /** Default `layer` (agent directory such as `.codex/`). */
+  destinationRoot?: "layer" | "project";
   writeMode: "create_or_replace" | "create_only";
   content: string;
   encoding: "utf-8";
@@ -61,6 +66,18 @@ export interface McpJsonMergeAction {
 }
 
 /**
+ * Merge packaged MCP JSON (`mcpServers`) into Codex **`config.toml`** `[mcp_servers]` tables (op **1** ConfigMerge).
+ */
+export interface McpCodexConfigTomlMergeAction {
+  kind: "mcp_codex_config_toml_merge";
+  operationId: ConfigMergeOperationId;
+  provenance: AtpProvenance;
+  /** Relative to {@link InstallContext.layerRoot} (typically `config.toml`). */
+  relativeTargetPath: string;
+  payload: unknown;
+}
+
+/**
  * Merge hook handlers into agent JSON (op **7** HookJsonGraph), e.g. `hooks.json` or Gemini
  * `settings.json`.
  */
@@ -80,8 +97,10 @@ export interface RawFileCopyAction {
   kind: "raw_file_copy";
   operationId: TreeMaterialiseOperationId;
   provenance: AtpProvenance;
-  /** Destination relative to {@link InstallContext.layerRoot}. */
+  /** Destination relative to layer or project root per {@link destinationRoot}. */
   relativeTargetPath: string;
+  /** Default `layer`. */
+  destinationRoot?: "layer" | "project";
   /** Absolute path to the staged source file. */
   sourceAbsolutePath: string;
 }
@@ -94,12 +113,15 @@ export interface DeleteManagedFileAction {
   operationId: ExperimentalDropOperationId;
   provenance: AtpProvenance;
   relativeTargetPath: string;
+  /** Default `layer`. */
+  destinationRoot?: "layer" | "project";
 }
 
 /** Actions the Cursor provider executor can apply. */
 export type ProviderAction =
   | PlainMarkdownWriteAction
   | McpJsonMergeAction
+  | McpCodexConfigTomlMergeAction
   | HooksJsonMergeAction
   | RawFileCopyAction
   | DeleteManagedFileAction;

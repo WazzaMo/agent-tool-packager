@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { parseCodexConfigTomlRoot } from "../../src/file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import {
   agentDestinationForAsset,
   agentProviderRemovalDestination,
@@ -108,6 +109,42 @@ describe("copyPackageAssets", () => {
     expect(
       agentProviderRemovalDestination("claude", claudeDir, { type: "hook", path: "hooks.json" }).filePath
     ).toBe(path.join(claudeDir, "settings.json"));
+  });
+
+  it("agentDestinationForAsset and agentProviderRemovalDestination use config.toml for Codex MCP under .codex/", () => {
+    const codexDir = path.join(os.tmpdir(), "atp-codex-rem", ".codex");
+    expect(agentDestinationForAsset(codexDir, { type: "mcp", path: "m.json" }).filePath).toBe(
+      path.join(codexDir, "config.toml")
+    );
+    expect(agentProviderRemovalDestination("codex", codexDir, { type: "mcp", path: "m.json" }).filePath).toBe(
+      path.join(codexDir, "config.toml")
+    );
+  });
+
+  it("merges MCP asset into Codex config.toml when agent base is .codex/", () => {
+    const base = createTempDir();
+    const pkg = path.join(base, "pkg");
+    const codex = path.join(base, "proj", ".codex");
+    fs.mkdirSync(pkg, { recursive: true });
+    fs.mkdirSync(codex, { recursive: true });
+    fs.writeFileSync(
+      path.join(pkg, "packaged-mcp.json"),
+      JSON.stringify({ mcpServers: { atp_test_srv: { command: "echo" } } })
+    );
+    copyPackageAssets(
+      pkg,
+      { name: "t", assets: [{ path: "packaged-mcp.json", type: "mcp", name: "m" }] },
+      codex
+    );
+    const dest = path.join(codex, "config.toml");
+    expect(fs.existsSync(dest)).toBe(true);
+    const root = parseCodexConfigTomlRoot(fs.readFileSync(dest, "utf8"));
+    expect((root.mcp_servers as Record<string, unknown>).atp_test_srv).toEqual({ command: "echo" });
+    try {
+      fs.rmSync(base, { recursive: true });
+    } catch {
+      /* ignore */
+    }
   });
 
   it("copies prompt asset to agent prompts/ directory", () => {

@@ -1,5 +1,5 @@
 /**
- * Install catalog package file assets via Cursor, Gemini, or Claude provider or legacy copy.
+ * Install catalog package file assets via Cursor, Gemini, Claude, Codex provider or legacy copy.
  */
 
 import {
@@ -9,12 +9,14 @@ import {
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 
 import { createClaudeAgentProvider } from "../provider/claude-agent-provider.js";
+import { createCodexAgentProvider } from "../provider/codex-agent-provider.js";
 import { createCursorAgentProvider } from "../provider/cursor-agent-provider.js";
 import { createGeminiAgentProvider } from "../provider/gemini-agent-provider.js";
 import type { ProviderMergeOptions } from "../provider/types.js";
 
 import {
   usesClaudeAgentProviderCatalogInstall,
+  usesCodexAgentProviderProjectInstall,
   usesCursorAgentProviderProjectInstall,
   usesGeminiAgentProviderProjectInstall,
 } from "./catalog-install-agent-provider-routing.js";
@@ -55,6 +57,16 @@ export function installPackageAssetsForCatalogContext(
   // Gemini: layerRoot is project `.gemini/` only (not `.agents/`); provider paths are relative to it.
   if (usesGeminiAgentProviderProjectInstall(providerCtx, ctx.manifest, ctx.opts)) {
     const provider = createGeminiAgentProvider(ctx.manifest, ctx.bundlePathMap);
+    for (const part of stagedParts) {
+      const plan = provider.planInstall(providerCtx, part, mergeOpts);
+      provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);
+    }
+    copyProgramAssetsOnly(ctx.pkgDir, ctx.manifest, ctx.installBinDir, onFileCopied);
+    return;
+  }
+
+  if (usesCodexAgentProviderProjectInstall(providerCtx, ctx.manifest, ctx.opts)) {
+    const provider = createCodexAgentProvider(ctx.manifest, ctx.bundlePathMap);
     for (const part of stagedParts) {
       const plan = provider.planInstall(providerCtx, part, mergeOpts);
       provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);

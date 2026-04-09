@@ -35,6 +35,11 @@ export const DEFAULT_AGENT_PATHS: AgentPaths = {
   },
   codex: {
     home_path: "~/.codex",
+    project_path: ".codex/",
+    rule: "rules/",
+    prompts: "prompts/",
+    hooks: "hooks/",
+    skills: "skills/",
   },
   claude: {
     home_path: "~/.claude",

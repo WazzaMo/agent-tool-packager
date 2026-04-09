@@ -8,12 +8,18 @@ import path from "node:path";
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 import type { McpMergeOptions } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
+import type { InstallContext } from "../file-ops/install-context.js";
+
 import type {
   DeleteManagedFileAction,
   PlainMarkdownWriteAction,
   RawFileCopyAction,
 } from "./provider-dtos.js";
 import type { ProviderMergeOptions } from "./types.js";
+
+function resolveActionRoot(ctx: InstallContext, destinationRoot?: "layer" | "project"): string {
+  return destinationRoot === "project" ? ctx.projectRoot : ctx.layerRoot;
+}
 
 export function readJsonIfExists(absolutePath: string): unknown | null {
   if (!fs.existsSync(absolutePath)) {
@@ -47,10 +53,11 @@ export function pushJournal(
 }
 
 export function applyPlainMarkdownWriteAction(
-  root: string,
+  ctx: InstallContext,
   action: PlainMarkdownWriteAction,
   onFileWritten?: (absolutePath: string) => void
 ): void {
+  const root = resolveActionRoot(ctx, action.destinationRoot);
   const dest = path.join(root, action.relativeTargetPath);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   if (action.writeMode === "create_only" && fs.existsSync(dest)) {
@@ -61,10 +68,11 @@ export function applyPlainMarkdownWriteAction(
 }
 
 export function applyRawFileCopyAction(
-  root: string,
+  ctx: InstallContext,
   action: RawFileCopyAction,
   onFileWritten?: (absolutePath: string) => void
 ): void {
+  const root = resolveActionRoot(ctx, action.destinationRoot);
   const dest = path.join(root, action.relativeTargetPath);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(action.sourceAbsolutePath, dest);
@@ -72,10 +80,11 @@ export function applyRawFileCopyAction(
 }
 
 export function applyDeleteManagedFileAction(
-  root: string,
+  ctx: InstallContext,
   action: DeleteManagedFileAction,
   onFileWritten?: (absolutePath: string) => void
 ): void {
+  const root = resolveActionRoot(ctx, action.destinationRoot);
   const dest = path.join(root, action.relativeTargetPath);
   if (fs.existsSync(dest) && fs.statSync(dest).isFile()) {
     fs.unlinkSync(dest);

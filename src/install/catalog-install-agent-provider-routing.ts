@@ -1,5 +1,5 @@
 /**
- * Catalog install routing: when a package install should use Cursor, Gemini, or Claude
+ * Catalog install routing: when a package install should use Cursor, Gemini, Claude, or Codex
  * {@link AgentProvider} (vs generic asset copy).
  */
 
@@ -20,7 +20,7 @@ function usesAgentProviderProjectInstallForAgent(
   providerCtx: InstallContext,
   manifest: PackageManifest,
   opts: InstallOptions,
-  agent: "cursor" | "gemini" | "claude"
+  agent: "cursor" | "gemini" | "claude" | "codex"
 ): boolean {
   if (providerCtx.agent !== agent) {
     return false;
@@ -66,6 +66,18 @@ export function usesGeminiAgentProviderProjectInstall(
   opts: InstallOptions
 ): boolean {
   return usesAgentProviderProjectInstallForAgent(providerCtx, manifest, opts, "gemini");
+}
+
+/**
+ * True when every **non-program** asset is a type the Codex provider materialises: project `.codex/`
+ * for rules, prompts, hooks, MCP JSON, and **`.agents/skills/`** for skills at the repo root.
+ */
+export function usesCodexAgentProviderProjectInstall(
+  providerCtx: InstallContext,
+  manifest: PackageManifest,
+  opts: InstallOptions
+): boolean {
+  return usesAgentProviderProjectInstallForAgent(providerCtx, manifest, opts, "codex");
 }
 
 /**

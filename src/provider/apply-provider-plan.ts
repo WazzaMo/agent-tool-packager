@@ -7,6 +7,7 @@ import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.j
 import {
   applyDeleteManagedFileAction,
   applyHooksJsonMergeAction,
+  applyMcpCodexConfigTomlMergeAction,
   applyMcpJsonMergeAction,
   applyPlainMarkdownWriteAction,
   applyRawFileCopyAction,
@@ -29,15 +30,19 @@ export function applyProviderPlan(
   onFileWritten?: (absolutePath: string) => void,
   configMergeJournal?: ConfigMergeJournalEntryV1[]
 ): void {
-  const root = plan.context.layerRoot;
+  const ctx = plan.context;
 
   for (const action of plan.actions) {
     if (action.kind === "plain_markdown_write") {
-      applyPlainMarkdownWriteAction(root, action, onFileWritten);
+      applyPlainMarkdownWriteAction(ctx, action, onFileWritten);
       continue;
     }
     if (action.kind === "mcp_json_merge") {
       applyMcpJsonMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
+      continue;
+    }
+    if (action.kind === "mcp_codex_config_toml_merge") {
+      applyMcpCodexConfigTomlMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
       continue;
     }
     if (action.kind === "hooks_json_merge") {
@@ -45,11 +50,11 @@ export function applyProviderPlan(
       continue;
     }
     if (action.kind === "raw_file_copy") {
-      applyRawFileCopyAction(root, action, onFileWritten);
+      applyRawFileCopyAction(ctx, action, onFileWritten);
       continue;
     }
     if (action.kind === "delete_managed_file") {
-      applyDeleteManagedFileAction(root, action, onFileWritten);
+      applyDeleteManagedFileAction(ctx, action, onFileWritten);
     }
   }
 }

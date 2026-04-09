@@ -30,17 +30,26 @@ function partitionSkillAssetsByPartPrefix(assets: PackageAsset[]): PackageAsset[
   return [...groups.values()];
 }
 
+export interface RemoveProviderSkillBundleOptions {
+  /** When set with {@link skillsParentRelative}, skill dirs are under `path.join(projectBase, skillsParentRelative, name)`. */
+  projectBase?: string;
+  /** POSIX segment(s) under project root, e.g. `.agents/skills` (Codex). */
+  skillsParentRelative?: string;
+}
+
 /**
- * Best-effort removal of provider-style skill trees for Cursor / Gemini project installs.
+ * Best-effort removal of provider-style skill trees for Cursor / Gemini / Codex project installs.
  *
- * @param agentBase - Absolute agent project directory (e.g. `.cursor` or `.gemini`).
+ * @param agentBase - Absolute agent project directory (e.g. `.cursor` or `.gemini`); used as skill parent unless `options` overrides.
  * @param pkgDir - Extracted package directory (same layout as at install).
  * @param assets - Full manifest asset list (non-skill rows ignored).
+ * @param options - Codex: `{ projectBase, skillsParentRelative: ".agents/skills" }`.
  */
 export function removeProviderSkillBundleTrees(
   agentBase: string,
   pkgDir: string,
-  assets: PackageAsset[]
+  assets: PackageAsset[],
+  options?: RemoveProviderSkillBundleOptions
 ): void {
   for (const group of partitionSkillAssetsByPartPrefix(assets)) {
     const paths = group.map((a) => toPosixPath(a.path));
@@ -69,7 +78,11 @@ export function removeProviderSkillBundleTrees(
     } catch {
       continue;
     }
-    const skillDir = path.join(agentBase, "skills", skillDirName);
+    const skillBase =
+      options?.projectBase && options.skillsParentRelative
+        ? path.join(options.projectBase, options.skillsParentRelative.replace(/^\/+|\/+$/g, ""))
+        : path.join(agentBase, "skills");
+    const skillDir = path.join(skillBase, skillDirName);
     if (fs.existsSync(skillDir) && fs.statSync(skillDir).isDirectory()) {
       fs.rmSync(skillDir, { recursive: true });
     }

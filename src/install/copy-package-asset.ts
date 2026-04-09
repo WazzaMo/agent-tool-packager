@@ -8,6 +8,7 @@ import path from "node:path";
 import { mergeHooksJsonDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import { formatJsonDocument } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
+import { mergeCodexConfigTomlMcp } from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
 import {
@@ -17,6 +18,49 @@ import {
 } from "./copy-asset-support.js";
 
 import type { PackageAsset } from "./types.js";
+
+function isCodexAgentBase(agentBase: string): boolean {
+  return path.basename(path.normalize(agentBase)) === ".codex";
+}
+
+function resolveMcpMergeDestination(
+  agentBase: string,
+  legacyClaude: LegacyClaudeMergeContext | undefined
+): { destPath: string; mergeLabel: string } {
+  if (legacyClaude) {
+    return {
+      destPath: path.join(legacyClaude.projectRoot, ".mcp.json"),
+      mergeLabel: ".mcp.json",
+    };
+  }
+  if (isCodexAgentBase(agentBase)) {
+    const destPath = path.join(agentBase, "config.toml");
+    return { destPath, mergeLabel: mergeConfigTargetLabel(agentBase, "config.toml") };
+  }
+  const destPath = path.join(agentBase, "mcp.json");
+  return { destPath, mergeLabel: mergeConfigTargetLabel(agentBase, "mcp.json") };
+}
+
+function writeCodexMcpTomlMerge(
+  destPath: string,
+  incoming: unknown,
+  mcpMerge: { forceConfig: boolean; skipConfig: boolean } | undefined,
+  mergeLabel: string,
+  onFileCopied?: (destAbsolute: string) => void
+): void {
+  const existingRaw = fs.existsSync(destPath) ? fs.readFileSync(destPath, "utf8") : null;
+  const outcome = mergeCodexConfigTomlMcp(existingRaw, incoming, {
+    forceConfig: mcpMerge?.forceConfig ?? false,
+    skipConfig: mcpMerge?.skipConfig ?? false,
+    mergeTargetLabel: mergeLabel,
+  });
+  if (outcome.status !== "applied") {
+    return;
+  }
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.writeFileSync(destPath, outcome.content, "utf8");
+  onFileCopied?.(destPath);
+}
 
 function copyMcpAssetToAgent(
   pkgDir: string,
@@ -36,16 +80,17 @@ function copyMcpAssetToAgent(
     const err = e as SyntaxError;
     throw new Error(`Invalid JSON in MCP asset ${asset.path}: ${err.message}`);
   }
-  const destPath = legacyClaude
-    ? path.join(legacyClaude.projectRoot, ".mcp.json")
-    : path.join(agentBase, "mcp.json");
+  const { destPath, mergeLabel } = resolveMcpMergeDestination(agentBase, legacyClaude);
   const destDir = path.dirname(destPath);
+
+  if (!legacyClaude && isCodexAgentBase(agentBase)) {
+    writeCodexMcpTomlMerge(destPath, incoming, mcpMerge, mergeLabel, onFileCopied);
+    return;
+  }
+
   const existing = fs.existsSync(destPath)
     ? (JSON.parse(fs.readFileSync(destPath, "utf8")) as unknown)
     : null;
-  const mergeLabel = legacyClaude
-    ? ".mcp.json"
-    : mergeConfigTargetLabel(agentBase, "mcp.json");
   const outcome = mergeMcpJsonDocument(existing, incoming, {
     forceConfig: mcpMerge?.forceConfig ?? false,
     skipConfig: mcpMerge?.skipConfig ?? false,

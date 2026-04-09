@@ -364,6 +364,38 @@ describe("buildSkillInstallProviderActions", () => {
     fs.rmSync(tmp, { recursive: true });
   });
 
+  it("emits Codex-style paths under project .agents/skills when pathOptions set", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-codex-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "SKILL.md"),
+      "---\nname: codex-skill\ndescription: D\n---\n\n# Hi\n"
+    );
+    const layerRoot = path.join(tmp, ".codex");
+    const projectRoot = path.join(tmp, "repo");
+    fs.mkdirSync(layerRoot, { recursive: true });
+    fs.mkdirSync(projectRoot, { recursive: true });
+
+    const actions = buildSkillInstallProviderActions(
+      { stagingDir: tmp, layerRoot, projectRoot },
+      { partIndex: 1, partKind: "Skill" },
+      [{ path: "SKILL.md", type: "skill", name: "c" }],
+      { name: "pkg", version: "1.0.0" },
+      undefined,
+      { destinationRoot: "project", skillsParentRelative: ".agents/skills" }
+    );
+
+    expect(actions).toHaveLength(1);
+    const a = actions[0];
+    expect(a.kind).toBe("plain_markdown_write");
+    if (a.kind === "plain_markdown_write") {
+      expect(a.relativeTargetPath).toBe(".agents/skills/codex-skill/SKILL.md");
+      expect(a.destinationRoot).toBe("project");
+    }
+
+    fs.rmSync(tmp, { recursive: true });
+  });
+
   it("throws when assembled SKILL.md frontmatter exceeds spec (install-time guard)", () => {
     const tmp = path.join(os.tmpdir(), `atp-skill-inv-${Date.now()}`);
     fs.mkdirSync(tmp, { recursive: true });
