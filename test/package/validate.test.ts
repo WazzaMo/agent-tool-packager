@@ -3,10 +3,25 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { validatePackage } from "../../src/package/validate.js";
+
+function writeStageTarWithFiles(pkgRoot: string, files: Record<string, string>): void {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "atp-validate-tar-"));
+  try {
+    for (const [rel, body] of Object.entries(files)) {
+      const abs = path.join(tmp, ...rel.split("/"));
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, body, "utf8");
+    }
+    execSync(`tar -cf "${path.join(pkgRoot, "stage.tar")}" -C "${tmp}" .`, { stdio: "pipe" });
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
 
 function createTempDir(): string {
   const dir = path.join(os.tmpdir(), `atp-validate-test-${Date.now()}`);
@@ -76,7 +91,7 @@ components:
   - a.md
 `
     );
-    fs.writeFileSync(path.join(cwd, "stage.tar"), "x"); // non-empty
+    writeStageTarWithFiles(cwd, { "a.md": "# Rule\n\nBody.\n" });
     const result = validatePackage(cwd);
     expect(result.ok).toBe(true);
     expect(result.exitCode).toBe(0);

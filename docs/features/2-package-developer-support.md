@@ -351,6 +351,12 @@ Exit code:
 
 ----
 
+## atp validate catalog-package [dir]
+
+Validates an **extracted catalog package** directory (e.g. `user_packages/<name>/` under the Station—the same layout ATP checks immediately before `atp install`). Optional **`dir`** defaults to the current working directory. Uses `validateCatalogInstallPackage` in code (on-disk files and manifest, not `stage.tar`). Exit codes follow the same tiers as `atp validate package` where applicable.
+
+----
+
 ## atp package summary
 
 Prints the content of the `atp-package.yaml` file.

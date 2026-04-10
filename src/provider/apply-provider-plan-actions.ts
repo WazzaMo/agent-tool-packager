@@ -13,6 +13,7 @@ export {
 
 export {
   applyMcpJsonMergeAction,
+  applyJsonDocumentStrategyMergeAction,
   applyMcpCodexConfigTomlMergeAction,
   applyHooksJsonMergeAction,
 } from "./apply-provider-plan-merge.js";

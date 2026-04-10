@@ -363,11 +363,15 @@ Codex hooks need feature flags in `config.toml` and `hooks.json`. See [Codex Hoo
 
 Treat hooks as supported; do not treat as experimental. The product should warn if `config.toml` has hooks disabled before install and let the user decide (they stay in control).
 
-#### Cursor rules (.mdc vs .md)
+#### Cursor rules (.mdc vs .md) and authoring validation (see **4.10**)
 
-Markdown-only implies missing YAML front matter. Extend package validation so failures are explicit.
+Markdown-only implies missing YAML front matter. Extend **package validation** (authoring time) so failures are explicit.
 
-Require validation that pairs rule body with YAML (e.g. `foo.md` + `foo.yaml` for front matter) where needed. Cursor treats `.md` and `.mdc` similarly; missing front matter means the rule is not used.
+Rules and skills that use YAML front matter may be authored as **one file** (body + `---` front matter in the same `.md`) or as **two files** with the same basename: `x.md` plus `x.yaml` or `x.yml` for the front matter. Validation should accept both layouts, require consistency when both shapes appear, and report clear errors when front matter is missing or mismatched. Cursor treats `.md` and `.mdc` similarly; missing front matter means the rule is not used.
+
+#### Install-time validation (tampering / pre-flight)
+
+**Install-time validation (implemented as **5.5**):** immediately before `installPackageAssetsForCatalogContext` (catalog install and reinstall), `validateCatalogInstallPackage` runs on the extracted catalog directory. This is the **install integration** for “validate package” semantics: same manifest and staging checks as `atp validate package`, with **scope limited to the catalog package directory and what `installPackageAssetsForCatalogContext` / providers consume** (on-disk files instead of `stage.tar`; optional `assets` sweep; **4.10** rule/skill YAML via `collectCatalogInstallRuleSkillViolations`). Invalid or tampered packages fail fast with no provider plan or file writes. Target agent merge ambiguity remains apply-time (`--force-config` / `--skip-config`). See [Developer and install-time validation](../features/1-package-definition-and-installation.md#developer-and-install-time-validation).
 
 #### Idempotency and CLI overrides
 
@@ -382,7 +386,7 @@ Progress against
 
 - `[x]` = done in the repo at last alignment; `[ ]` = not done.
 
-Last aligned with the repo: **2026-04-10** (Feature 5 providers for catalog install; Codex MCP TOML merge; journal rollback for `.toml`).
+Last aligned with the repo: **2026-04-11** (Feature 5 providers for catalog install; Codex MCP TOML merge; journal rollback for `.toml`; **4.10** authoring + **5.5** pre-install rule/skill validation).
 
 ### 1 Capability matrix (this document)
 
@@ -418,7 +422,7 @@ Last aligned with the repo: **2026-04-10** (Feature 5 providers for catalog inst
 
 - [x] **3.7** Integration tests: `test/integration/mcp-json-merge-files.test.ts`.
 
-- [ ] **3.8** Additional JSON merge strategies from the DTO note (non-`mcpServers` paths, replace-at-pointer, other agent files).
+- [x] **3.8** Additional JSON merge strategies from the DTO note: `deep_assign_paths` and `replace_at_pointer` via `mergeJsonDocumentWithStrategy` (`src/file-ops/json-merge/`). **`json_document_strategy_merge`** is wired in **`applyProviderPlan`**; Cursor / Claude / Gemini MCP parts may include optional **`atpJsonDocumentStrategy`** in staged JSON (see `provider-mcp-staged-json.ts`). Standard `{ mcpServers }` installs still use **`mcp_json_merge`** / **`mergeMcpJsonDocument`** (ambiguity rules).
 
 - [x] **3.9** Codex MCP TOML (op **1**): `mergeCodexConfigTomlMcp`, journal + rollback for `.codex/config.toml`, provider action `mcp_codex_config_toml_merge` (`src/file-ops/mcp-merge/mcp-codex-toml-merge.ts`; tests in `test/file-ops/mcp-codex-toml-merge.test.ts` and config journal tests). Legacy `copyPackageAsset` merges MCP into `config.toml` when the agent base is `.codex/`.
 
@@ -426,7 +430,7 @@ Last aligned with the repo: **2026-04-10** (Feature 5 providers for catalog inst
 
 ### 4 Rule assembly (op **2**)
 
-Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.10** extend rule assembly. Installs use step **5** wire-up.
+Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend install-time rule handling. **4.10** (**authoring-time**, `atp validate package` / package dev workflow) is done: rules and skills with YAML as one file or paired `x.md` + `x.yaml` or `x.yml`. Installs use step **5** wire-up; **5.5** pre-install rule/skill validation matches **4.10** before apply.
 
 - [x] **4.1** Cursor `.mdc` assembly (`src/file-ops/rule-assembly/cursor-mdc.ts`).
 
@@ -446,7 +450,7 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.10** extend rul
 
 - [x] **4.9** Gemini / Codex rule installs: `GeminiAgentProvider` / `CodexAgentProvider` use `materializeRuleLike` + `plain_markdown_write` (Gemini layout per agent; Codex `.codex/rules/`). Op **4** managed-block flows (`AGENTS.md`, `GEMINI.md`) still **[ ]**.
 
-- [ ] **4.10** Package validation integration (paired `foo.yaml` + rule body where required; clearer errors for missing front matter).
+- [x] **4.10** Package validation (**authoring time**): rules and skills with YAML front matter—either a **single** `.md` (embedded `---` front matter) or **paired** files `x.md` + `x.yaml` or `x.yml` (same basename). Integrated into `atp validate package` (and related package-dev checks) with clear errors for missing, duplicated, or inconsistent front matter (`src/package/validate-rule-skill-frontmatter.ts`). **5.5** reuses the same rule/skill checks on the staged install payload before apply.
 
 ### 5 Wire providers into `atp install`
 
@@ -457,6 +461,8 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.10** extend rul
 - [x] **5.3** `applyProviderPlan` runs actions; programs via `copyProgramAssetsOnly`; Feature 4 multi-part staging feeds the loop.
 
 - [x] **5.4** Integration tests: per-agent rule/skill/MCP/hooks and journal rollback (e.g. `test/integration/cursor-agent-provider-rule-install.test.ts`, `config-merge-journal-install*.test.ts`, `codex-agent-provider-rule-install.test.ts`).
+
+- [x] **5.5** **Pre-install validation:** `validateCatalogInstallPackage` (`src/package/validate-catalog-install-package.ts`) mirrors `validatePackage` for catalog extract layout (manifest structure, Multi/legacy conflicts, staged files on disk vs `parts`/root `components` & `bundles`, optional `assets` path sweep, **4.10** rule/skill YAML via `collectCatalogInstallRuleSkillViolations`) **before** `installPackageAssetsForCatalogContext` (`src/install/catalog-install-execute.ts`); same on reinstall (`src/install/reinstall.ts`). Re-exported from `validate.ts`. **CLI:** `atp validate catalog-package [dir]`. Fails install with no merges or copies when checks fail.
 
 ### 6 Remaining file operations (matrix-driven)
 
@@ -504,6 +510,6 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.10** extend rul
 
 See [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
 
-**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.3–6.6**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
+**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.3–6.6**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
 
-**Still open:** op **4** aggregate (**6.2**), explicit executable `+x` (**6.7**), interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**), package validation (**4.10**), extra JSON merge strategies (**3.8**).
+**Still open:** op **4** aggregate (**6.2**), explicit executable `+x` (**6.7**), interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).

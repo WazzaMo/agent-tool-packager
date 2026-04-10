@@ -16,3 +16,11 @@ export {
   type ApplyMcpJsonMergeResult,
 } from "./apply-mcp-json-merge.js";
 export { removeMcpServersByNamesFromDocument } from "./remove-mcp-servers.js";
+export { mergeMcpServerRecordsByName } from "./mcp-json-merge.js";
+export {
+  mergeJsonDocumentWithStrategy,
+  applyJsonDocumentMergeWithStrategyToFile,
+  parseJsonPointer,
+  deepMergePlainObjects,
+  type JsonMergeStrategy,
+} from "../json-merge/index.js";

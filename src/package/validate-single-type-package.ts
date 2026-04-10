@@ -11,12 +11,13 @@ import { STAGE_TAR_FILENAME } from "./stage-tar-read.js";
 
 import type { DevPackageManifest } from "./types.js";
 import type { ValidateResult } from "./validate-types.js";
+import { appendDevPackageRuleSkillFrontmatterViolations } from "./validate-rule-skill-frontmatter.js";
 
 /**
  * @param manifest - Parsed developer manifest.
  * @param missing - List to append field names / phrases into.
  */
-function collectSingleTypeRootFieldGaps(manifest: DevPackageManifest, missing: string[]): void {
+export function collectSingleTypeRootFieldGaps(manifest: DevPackageManifest, missing: string[]): void {
   if (!manifest.name || String(manifest.name).trim() === "") missing.push("name");
   if (!manifest.version || String(manifest.version).trim() === "") missing.push("version");
 
@@ -47,7 +48,7 @@ function hasNonEmptyStageTar(cwd: string): boolean {
  * @param missing - Collected gap labels from validation.
  * @returns Whether any gap is treated as mandatory (exit code 2).
  */
-function singleTypeHasMandatoryGap(missing: string[]): boolean {
+export function singleTypeHasMandatoryGap(missing: string[]): boolean {
   return missing.some(
     (m) =>
       m === "name" ||
@@ -62,7 +63,7 @@ function singleTypeHasMandatoryGap(missing: string[]): boolean {
  * @param missing - Collected gap labels.
  * @returns User-facing multi-line hint for incomplete packages.
  */
-function buildSingleTypeFailureMessage(missing: string[]): string {
+export function buildSingleTypeFailureMessage(missing: string[]): string {
   let message =
     "Only package type is set and many properties remain to make the package viable to install, such as:";
   if (missing.includes("name")) message += "\n- name";
@@ -90,6 +91,10 @@ export function validateSingleTypePackage(
 
   if (!hasNonEmptyStageTar(cwd)) {
     missing.push("stage.tar (non-empty)");
+  }
+
+  if (missing.length === 0) {
+    appendDevPackageRuleSkillFrontmatterViolations(cwd, manifest, missing);
   }
 
   if (missing.length === 0) {

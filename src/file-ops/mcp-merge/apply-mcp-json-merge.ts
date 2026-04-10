@@ -5,8 +5,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { readJsonObjectFile } from "../read-json-object-file.js";
 import { mergeConfigTargetLabel } from "../merge-config-target-label.js";
-import { McpMergeInvalidDocumentError } from "./errors.js";
 import {
   mergeMcpJsonDocument,
   type McpMergeOptions,
@@ -14,40 +14,13 @@ import {
 } from "./mcp-json-merge.js";
 import { formatJsonDocument } from "./mcp-json-helpers.js";
 
-function parseJsonUtf8(raw: string, absolutePath: string): unknown {
-  try {
-    return JSON.parse(raw) as unknown;
-  } catch (e) {
-    const err = e as SyntaxError;
-    throw new McpMergeInvalidDocumentError(
-      `Invalid JSON in ${absolutePath}: ${err.message}`
-    );
-  }
-}
-
 export interface ApplyMcpJsonMergeResult {
   status: McpMergeOutcomeStatus;
   /** True when the file was written. */
   wrote: boolean;
 }
 
-/**
- * Parse `absolutePath` as JSON if it exists; treat ENOENT as empty.
- * @throws McpMergeInvalidDocumentError on invalid JSON.
- */
-export async function readJsonObjectFile(absolutePath: string): Promise<unknown | null> {
-  let raw: string;
-  try {
-    raw = await fs.readFile(absolutePath, "utf8");
-  } catch (e) {
-    const err = e as NodeJS.ErrnoException;
-    if (err.code === "ENOENT") {
-      return null;
-    }
-    throw e;
-  }
-  return parseJsonUtf8(raw, absolutePath);
-}
+export { readJsonObjectFile } from "../read-json-object-file.js";
 
 /**
  * Merge `incoming` into the JSON file at `absolutePath` (MCP-style `mcpServers` map).

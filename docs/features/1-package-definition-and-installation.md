@@ -150,6 +150,24 @@ atp install vecfs-ts --project --dependencies
 The dependencies flag acts as a pre-approval to installed dependencies.
 Without this, lacking dependencies will cause installation to fail.
 
+### Developer and install-time validation
+
+- **`atp validate package`** (developer / authoring) checks the package **working tree**: `atp-package.yaml` plus a non-empty **`stage.tar`**. The archive is the staging source of truth while you author; validation also covers Multi vs legacy layout, part structure, duplicate component basenames across parts, membership of declared components and bundles inside the tar, and rule/skill YAML pairing (**embedded `---` vs sidecar `.yaml` / `.yml`**).
+
+- **`atp catalog add package`** requires developer validation to pass before ATP materialises the package under the Station (typically `user_packages/<name>/`: gzip of `stage.tar`, extracted files, and an enriched manifest including **`assets`**).
+
+- **`atp install`** and **reinstall** run **`validateCatalogInstallPackage`** on that **catalog extract directory** immediately before `installPackageAssetsForCatalogContext` copies or merges into the agent project. This is the **install-time integration** with the same validation *intent* as `atp validate package`, scoped to **what install will actually use**:
+
+  - Manifest shape and mandatory fields (name, version, type, usage, components/bundles or Multi `parts`, layout conflicts).
+  - **On-disk staging** instead of `stage.tar`: every declared component and bundle path must exist under the package root; if **`assets`** is present, every listed path must exist (installers and rule/skill checks rely on those rows).
+  - The same **rule/skill YAML** rules as authoring, applied to files on disk.
+
+- **Scope matches install intention**: checks run only on the **catalog package directory** and **manifest** that feed the provider plan. They do not inspect the target project’s existing agent files (that is merge-time behaviour, e.g. `--force-config` / ambiguity errors). Failures block install **before** any agent tree mutation.
+
+- **Deliberate representation difference**: authoring requires **`stage.tar`**; the catalog copy uses **extracted files** at the package root (and may retain `package.tar.gz`). Logical payload is the same; only the checked medium differs.
+
+- **CLI:** `atp validate catalog-package [dir]` runs **`validateCatalogInstallPackage`** on `dir` (default: current directory). Use this on `user_packages/<name>/` (or any catalog extract) before install to confirm the same gate `atp install` applies.
+
 ### Package metadata in general
 
 Package metadata that is stored in the Station and the package as two

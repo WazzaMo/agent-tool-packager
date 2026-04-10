@@ -47,7 +47,7 @@ export interface ResolvedSkillSource {
   consumedRelPaths: Set<string>;
 }
 
-function readStaging(stagingDir: string, rel: string): string {
+function readStagingFs(stagingDir: string, rel: string): string {
   const abs = path.join(stagingDir, rel);
   return fs.readFileSync(abs, "utf8");
 }
@@ -55,13 +55,13 @@ function readStaging(stagingDir: string, rel: string): string {
 /**
  * Resolve SKILL.md text from staged skill assets sharing one bundle root.
  *
- * @param stagingDir - Package extract root.
+ * @param readUtf8 - Read a staged member by posix path relative to package root; must throw if missing.
  * @param bundleRoot - Directory containing the skill tree (posix '' allowed).
  * @param skillAssets - Manifest rows for `skill` type in this part.
  * @throws SkillFrontmatterError for invalid combinations.
  */
-export function resolvePrimarySkillSource(
-  stagingDir: string,
+export function resolvePrimarySkillSourceWithReader(
+  readUtf8: (relativePosixPath: string) => string,
   bundleRoot: string,
   skillAssets: PackageAsset[]
 ): ResolvedSkillSource {
@@ -91,7 +91,7 @@ export function resolvePrimarySkillSource(
     }
     const pick = assembled[0];
     consumed.add(pick.full);
-    const raw = readStaging(stagingDir, pick.full);
+    const raw = readUtf8(pick.full);
     const asset = byRel.get(pick.full);
     if (!asset) {
       throw new Error(`Skill bundle: internal error resolving asset for ${pick.full}`);
@@ -113,8 +113,8 @@ export function resolvePrimarySkillSource(
     const y = yamlFiles[0];
     consumed.add(y.full);
     consumed.add(partialMd.full);
-    const yamlText = readStaging(stagingDir, y.full);
-    const body = readStaging(stagingDir, partialMd.full);
+    const yamlText = readUtf8(y.full);
+    const body = readUtf8(partialMd.full);
     const skillMdUtf8 = assembleSkillMdFromPartials(yamlText, body);
     const pa = byRel.get(partialMd.full);
     if (!pa) {
@@ -131,7 +131,7 @@ export function resolvePrimarySkillSource(
   if (mdCandidates.length === 1) {
     const pick = mdCandidates[0];
     consumed.add(pick.full);
-    const raw = readStaging(stagingDir, pick.full);
+    const raw = readUtf8(pick.full);
     const asset = byRel.get(pick.full);
     if (!asset) {
       throw new Error(`Skill bundle: internal error resolving asset for ${pick.full}`);
@@ -151,5 +151,25 @@ export function resolvePrimarySkillSource(
 
   throw new SkillFrontmatterError(
     "Skill bundle: multiple markdown files; use SKILL.md or skill.yaml + skill.md to disambiguate"
+  );
+}
+
+/**
+ * Resolve SKILL.md text from staged skill assets sharing one bundle root.
+ *
+ * @param stagingDir - Package extract root.
+ * @param bundleRoot - Directory containing the skill tree (posix '' allowed).
+ * @param skillAssets - Manifest rows for `skill` type in this part.
+ * @throws SkillFrontmatterError for invalid combinations.
+ */
+export function resolvePrimarySkillSource(
+  stagingDir: string,
+  bundleRoot: string,
+  skillAssets: PackageAsset[]
+): ResolvedSkillSource {
+  return resolvePrimarySkillSourceWithReader(
+    (rel) => readStagingFs(stagingDir, rel),
+    bundleRoot,
+    skillAssets
   );
 }

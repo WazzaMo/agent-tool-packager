@@ -156,6 +156,39 @@ describe("GeminiAgentProvider", () => {
     }
   });
 
+  it("merges atpJsonDocumentStrategy into settings.json alongside mcpServers", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({
+        mcpServers: { g: { url: "http://g" } },
+        atpJsonDocumentStrategy: {
+          strategy: { mode: "deep_assign_paths", paths: [[]] },
+          payload: { trust: { sandbox: true } },
+        },
+      })
+    );
+    const manifest = {
+      name: "mg",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createGeminiAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "json_document_strategy_merge"]);
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const doc = JSON.parse(fs.readFileSync(path.join(layerRoot, "settings.json"), "utf8")) as {
+      mcpServers: Record<string, unknown>;
+      trust: { sandbox: boolean };
+    };
+    expect(doc.mcpServers.g).toEqual({ url: "http://g" });
+    expect(doc.trust).toEqual({ sandbox: true });
+  });
+
   it("merges MCP payload into settings.json", () => {
     fs.writeFileSync(
       path.join(staging, "mcp.json"),

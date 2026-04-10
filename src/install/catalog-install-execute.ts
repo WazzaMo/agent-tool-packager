@@ -17,6 +17,8 @@ import { coercePackageParts } from "../file-ops/part-install-input.js";
 import { HooksMergeAmbiguousError } from "../file-ops/hooks-merge/errors.js";
 import { McpMergeAmbiguousError } from "../file-ops/mcp-merge/errors.js";
 
+import { validateCatalogInstallPackage } from "../package/validate-catalog-install-package.js";
+
 import { installPackageAssetsForCatalogContext } from "./install-package-assets.js";
 import { resolvePackage } from "./resolve.js";
 
@@ -108,6 +110,14 @@ export async function executeCatalogInstall(
     if (n > 0 && stagedParts.length !== n) {
       throw new Error("Install internal error: staged part count does not match manifest parts.");
     }
+  }
+
+  const preInstall = validateCatalogInstallPackage(pkgResolved);
+  if (!preInstall.ok) {
+    throw new Error(
+      "Package failed pre-install validation. Fix or restore the catalog package, then retry.\n" +
+        preInstall.missing.map((line) => `  - ${line}`).join("\n")
+    );
   }
 
   const copied: string[] = [];

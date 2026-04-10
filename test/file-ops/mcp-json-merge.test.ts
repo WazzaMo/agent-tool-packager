@@ -4,7 +4,10 @@
 
 import { describe, it, expect } from "vitest";
 
-import { mergeMcpJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-merge.js";
+import {
+  mergeMcpJsonDocument,
+  mergeMcpServerRecordsByName,
+} from "../../src/file-ops/mcp-merge/mcp-json-merge.js";
 import {
   McpMergeAmbiguousError,
   McpMergeInvalidPayloadError,
@@ -134,5 +137,29 @@ describe("mergeMcpJsonDocument", () => {
     expect(() =>
       mergeMcpJsonDocument({ mcpServers: [] }, sample, {})
     ).toThrowError(/mcpServers.*plain object/);
+  });
+});
+
+describe("mergeMcpServerRecordsByName", () => {
+  it("adds new server keys", () => {
+    const r = mergeMcpServerRecordsByName(
+      { a: { command: "x" } },
+      { b: { command: "y" } },
+      {}
+    );
+    expect(r.changed).toBe(true);
+    expect(r.mergedServers).toEqual({
+      a: { command: "x" },
+      b: { command: "y" },
+    });
+  });
+
+  it("returns changed false when incoming is a subset of equal entries", () => {
+    const r = mergeMcpServerRecordsByName(
+      { a: { command: "x" } },
+      { a: { command: "x" } },
+      {}
+    );
+    expect(r.changed).toBe(false);
   });
 });

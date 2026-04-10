@@ -9,6 +9,7 @@ import os from "node:os";
 
 import {
   applyMcpJsonMergeToFile,
+  applyJsonDocumentMergeWithStrategyToFile,
   readJsonObjectFile,
   mergeMcpJsonDocument,
   McpMergeAmbiguousError,
@@ -127,6 +128,20 @@ describe("applyMcpJsonMergeToFile", () => {
       applyMcpJsonMergeToFile(file, { mcpServers: {} }, {})
     ).rejects.toThrowError(/Invalid JSON/);
   });
+
+  it("surfaces mergeTargetLabel as .cursor/mcp.json for nested agent dirs", async () => {
+    const file = path.join(tmp, ".cursor", "mcp.json");
+    await applyMcpJsonMergeToFile(file, {
+      mcpServers: { srv: { command: "a" } },
+    });
+    await expect(
+      applyMcpJsonMergeToFile(file, {
+        mcpServers: { srv: { command: "b" } },
+      })
+    ).rejects.toMatchObject({
+      mergeTargetLabel: ".cursor/mcp.json",
+    });
+  });
 });
 
 describe("mergeMcpJsonDocument (settings.json parity)", () => {
@@ -143,5 +158,73 @@ describe("mergeMcpJsonDocument (settings.json parity)", () => {
       one: { url: "http://a" },
       two: { url: "http://b" },
     });
+  });
+});
+
+describe("applyJsonDocumentMergeWithStrategyToFile (task 3.8)", () => {
+  let tmp: string;
+
+  beforeEach(async () => {
+    tmp = await fs.mkdtemp(path.join(os.tmpdir(), "atp-json-strategy-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmp, { recursive: true, force: true });
+  });
+
+  it("writes deep_assign_paths merge into a new file", async () => {
+    const file = path.join(tmp, "config.json");
+    const r = await applyJsonDocumentMergeWithStrategyToFile(
+      file,
+      { k: 1 },
+      { mode: "deep_assign_paths", paths: [[]] }
+    );
+    expect(r).toEqual({ status: "applied", wrote: true });
+    expect(await readJsonObjectFile(file)).toEqual({ k: 1 });
+  });
+
+  it("preserves sibling keys for nested deep_assign_paths", async () => {
+    const file = path.join(tmp, "settings.json");
+    await fs.writeFile(
+      file,
+      JSON.stringify({ hooks: {}, extensions: { other: true } }),
+      "utf8"
+    );
+    const r = await applyJsonDocumentMergeWithStrategyToFile(
+      file,
+      { srv: { command: "x" } },
+      { mode: "deep_assign_paths", paths: [["extensions", "mcp"]] }
+    );
+    expect(r.status).toBe("applied");
+    const parsed = (await readJsonObjectFile(file)) as Record<string, unknown>;
+    expect(parsed.hooks).toEqual({});
+    expect(parsed.extensions).toEqual({
+      other: true,
+      mcp: { srv: { command: "x" } },
+    });
+  });
+
+  it("applies replace_at_pointer on disk", async () => {
+    const file = path.join(tmp, "patch.json");
+    await fs.writeFile(file, JSON.stringify({ a: { b: 1 } }), "utf8");
+    const r = await applyJsonDocumentMergeWithStrategyToFile(
+      file,
+      { b: 2 },
+      { mode: "replace_at_pointer", jsonPointer: "/a" }
+    );
+    expect(r).toEqual({ status: "applied", wrote: true });
+    expect(await readJsonObjectFile(file)).toEqual({ a: { b: 2 } });
+  });
+
+  it("skipConfig does not touch the file", async () => {
+    const file = path.join(tmp, "absent.json");
+    const r = await applyJsonDocumentMergeWithStrategyToFile(
+      file,
+      { x: 1 },
+      { mode: "deep_assign_paths", paths: [[]] },
+      { skipConfig: true }
+    );
+    expect(r).toEqual({ status: "skipped", wrote: false });
+    await expect(fs.access(file)).rejects.toMatchObject({ code: "ENOENT" });
   });
 });

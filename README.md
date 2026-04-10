@@ -143,6 +143,8 @@ Then check if the package definition is complete enough. An integrity check, bas
 
 `atp validate package`
 
+When you run **`atp install`** (or a reinstall), ATP repeats the **same validation intent** against the **catalog extract** on disk (`validateCatalogInstallPackage`): manifest completeness, declared files present, `assets` paths if listed, and rule/skill YAML—**before** copying or merging into the agent project. You can run the same check yourself: **`atp validate catalog-package [path]`** (default: current directory), e.g. under `~/.atp_station/user_packages/<name>/`. Scope is limited to that package directory and what the installer will apply; see [Developer and install-time validation](docs/features/1-package-definition-and-installation.md#developer-and-install-time-validation).
+
 Get a summary of the definition and contents... and an indication if the package
 is complete enough, by running...
 
@@ -259,6 +261,8 @@ atp station init
 atp safehouse init
 atp agent cursor
 atp catalog list
+atp validate package
+atp validate catalog-package [dir]
 atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies] [--force-config|--skip-config] [--verbose]
 atp station list
 atp safehouse list
@@ -311,6 +315,8 @@ npx atp station init
 npx atp safehouse init
 npx atp agent cursor
 npx atp catalog list
+npx atp validate package
+npx atp validate catalog-package [dir]
 npx atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies] [--force-config|--skip-config] [--verbose]
 npx atp station list
 npx atp safehouse list

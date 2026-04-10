@@ -45,3 +45,47 @@ export function tarEntriesHavePathPrefix(entries: string[], prefix: string): boo
 export function tarEntriesHaveFileOrTree(entries: string[], relPath: string): boolean {
   return entries.some((e) => e === relPath || e.startsWith(`${relPath}/`));
 }
+
+/**
+ * Read one member from a tar archive as UTF-8 text (for validation without extracting).
+ *
+ * @param tarPath - Absolute path to the archive.
+ * @param memberPath - Member path as listed by {@link listStageTarEntries} (posix, no leading `./`).
+ * @returns File text, or `null` when missing or `tar` fails.
+ */
+export function readStageTarMemberUtf8(tarPath: string, memberPath: string): string | null {
+  const norm = memberPath.replace(/^\.\/+/, "").replace(/\\/g, "/");
+  const candidates = [norm, `./${norm}`];
+  for (const member of candidates) {
+    try {
+      const out = execSync(`tar -xOf "${tarPath}" "${member}"`, {
+        encoding: "utf8",
+        maxBuffer: 20 * 1024 * 1024,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      return out as string;
+    } catch {
+      /* try next */
+    }
+  }
+  const entries = listStageTarEntries(tarPath);
+  const hit =
+    entries.find((e) => e === norm) ??
+    entries.find((e) => e.replace(/^\.\/+/, "") === norm) ??
+    entries.find((e) => e.endsWith(`/${norm}`));
+  if (!hit) {
+    return null;
+  }
+  for (const member of [hit, `./${hit}`]) {
+    try {
+      return execSync(`tar -xOf "${tarPath}" "${member}"`, {
+        encoding: "utf8",
+        maxBuffer: 20 * 1024 * 1024,
+        stdio: ["pipe", "pipe", "pipe"],
+      }) as string;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}

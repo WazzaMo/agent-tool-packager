@@ -202,6 +202,37 @@ describe("ClaudeAgentProvider", () => {
     expect(settings.hooks.SessionStart).toEqual([{ command: "echo hi" }]);
   });
 
+  it("applies atpJsonDocumentStrategy into project .mcp.json after mcp merge", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({
+        mcpServers: { cl: { command: "cl" } },
+        atpJsonDocumentStrategy: {
+          strategy: { mode: "deep_assign_paths", paths: [[]] },
+          payload: { atp_claude_flag: true },
+        },
+      })
+    );
+    const manifest = {
+      name: "cl-strat",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createClaudeAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "json_document_strategy_merge"]);
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const dest = path.join(projectRoot, ".mcp.json");
+    const doc = JSON.parse(fs.readFileSync(dest, "utf8")) as Record<string, unknown>;
+    expect((doc.mcpServers as Record<string, unknown>).cl).toEqual({ command: "cl" });
+    expect(doc.atp_claude_flag).toBe(true);
+  });
+
   it("planRemove does not delete settings.json or .mcp.json", () => {
     const provider = createClaudeAgentProvider({ name: "p", assets: [] });
     expect(

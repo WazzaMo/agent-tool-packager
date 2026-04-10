@@ -30,6 +30,7 @@ import {
   requireStagedSourceFile,
 } from "./provider-plan-common.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
+import { providerActionsForStagedMcpJson } from "./provider-mcp-staged-json.js";
 import type { AtpProvenance, ProviderAction, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
@@ -68,15 +69,15 @@ function actionsForMcpAsset(
   packageVersion: string | undefined
 ): ProviderAction[] {
   const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
-  return [
-    {
-      kind: "mcp_json_merge",
-      operationId: OperationIds.ConfigMerge,
-      provenance: provenanceForFragment(packageName, packageVersion, part, SETTINGS_JSON),
-      relativeTargetPath: SETTINGS_JSON,
-      payload,
-    },
-  ];
+  return providerActionsForStagedMcpJson({
+    providerLabel: PROVIDER_LABEL,
+    payload,
+    part,
+    packageName,
+    packageVersion,
+    defaultRelativeTarget: SETTINGS_JSON,
+    provenanceFragmentKey: SETTINGS_JSON,
+  });
 }
 
 /**

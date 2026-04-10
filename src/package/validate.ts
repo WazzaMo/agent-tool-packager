@@ -1,6 +1,10 @@
 /**
  * Validate package definition: dispatches to single-type vs multi-type routines.
  * See docs/features/4-multi-type-packages.md.
+ *
+ * **Install analogue:** {@link validateCatalogInstallPackage} applies the same checks to a
+ * catalog extract directory (files on disk, no `stage.tar` requirement) immediately before
+ * install. Scope is the package payload the installer consumes—not the target agent project.
  */
 
 import fs from "node:fs";
@@ -19,6 +23,9 @@ import type { ValidateResult } from "./validate-types.js";
 
 
 export type { ValidateResult } from "./validate-types.js";
+
+/** Catalog install / reinstall pre-flight: same checks as {@link validatePackage} using on-disk extract layout. */
+export { validateCatalogInstallPackage } from "./validate-catalog-install-package.js";
 
 const PACKAGE_FILE = "atp-package.yaml";
 
@@ -72,7 +79,10 @@ function multiRootPayloadConflictResult(): ValidateResult {
 }
 
 /**
- * Validate `atp-package.yaml` and `stage.tar` in the package directory.
+ * Validate `atp-package.yaml` and `stage.tar` in the **developer** package directory.
+ *
+ * For **catalog install**, use {@link validateCatalogInstallPackage} on the Station extract
+ * (same validation intent; staging verified as loose files under that root).
  *
  * @param cwd - Package root directory.
  * @returns Aggregated validation result for CLI or programmatic use.

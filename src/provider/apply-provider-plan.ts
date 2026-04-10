@@ -7,6 +7,7 @@ import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.j
 import {
   applyDeleteManagedFileAction,
   applyHooksJsonMergeAction,
+  applyJsonDocumentStrategyMergeAction,
   applyMcpCodexConfigTomlMergeAction,
   applyMcpJsonMergeAction,
   applyPlainMarkdownWriteAction,
@@ -39,6 +40,10 @@ export function applyProviderPlan(
     }
     if (action.kind === "mcp_json_merge") {
       applyMcpJsonMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
+      continue;
+    }
+    if (action.kind === "json_document_strategy_merge") {
+      applyJsonDocumentStrategyMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
       continue;
     }
     if (action.kind === "mcp_codex_config_toml_merge") {

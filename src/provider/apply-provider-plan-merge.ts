@@ -19,6 +19,7 @@ import {
   parseCodexConfigTomlRoot,
 } from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
+import { mergeJsonDocumentWithStrategy } from "../file-ops/json-merge/json-document-merge-strategies.js";
 
 import {
   mcpMergeOptionsFromProvider,
@@ -28,6 +29,7 @@ import {
 
 import type {
   HooksJsonMergeAction,
+  JsonDocumentStrategyMergeAction,
   McpCodexConfigTomlMergeAction,
   McpJsonMergeAction,
   ProviderPlan,
@@ -42,39 +44,51 @@ function mcpServerNamesFromPayload(payload: unknown): string[] {
   }
 }
 
-function mcpMergeBaseRoot(plan: ProviderPlan, action: McpJsonMergeAction): string {
-  const mergeBase = action.mergeBase ?? "layer";
-  if (mergeBase === "project") {
+function mcpMergeBaseRoot(plan: ProviderPlan, mergeBase: McpJsonMergeAction["mergeBase"]): string {
+  const b = mergeBase ?? "layer";
+  if (b === "project") {
     return plan.context.projectRoot;
   }
-  if (mergeBase === "user_home") {
+  if (b === "user_home") {
     return os.homedir();
   }
   return plan.context.layerRoot;
 }
 
-function mcpMergeLabelForAction(plan: ProviderPlan, action: McpJsonMergeAction): string {
-  const mergeBase = action.mergeBase ?? "layer";
-  if (mergeBase === "project") {
+function mcpMergeLabelForAction(
+  plan: ProviderPlan,
+  mergeBase: McpJsonMergeAction["mergeBase"],
+  relativeTargetPath: string
+): string {
+  const b = mergeBase ?? "layer";
+  if (b === "project") {
     return ".mcp.json";
   }
-  if (mergeBase === "user_home") {
+  if (b === "user_home") {
     return "~/.claude.json";
   }
-  return mergeConfigTargetLabel(plan.context.layerRoot, action.relativeTargetPath);
+  return mergeConfigTargetLabel(plan.context.layerRoot, relativeTargetPath);
 }
 
-function journalConfigRootForMcp(
-  action: McpJsonMergeAction
+function journalConfigRootForJsonMerge(
+  mergeBase: McpJsonMergeAction["mergeBase"]
 ): Pick<ConfigMergeJournalEntryV1, "configRoot"> | Record<string, never> {
-  const mergeBase = action.mergeBase ?? "layer";
-  if (mergeBase === "project") {
+  const b = mergeBase ?? "layer";
+  if (b === "project") {
     return { configRoot: "project" };
   }
-  if (mergeBase === "user_home") {
+  if (b === "user_home") {
     return { configRoot: "user_home" };
   }
   return {};
+}
+
+function assertSafeAgentRelativePath(rel: string, context: string): string {
+  const norm = rel.replace(/\\/g, "/");
+  if (norm.includes("..") || path.posix.isAbsolute(norm)) {
+    throw new Error(`Invalid ${context} path "${rel}" (no .. or absolute segments).`);
+  }
+  return norm;
 }
 
 export function applyMcpJsonMergeAction(
@@ -84,11 +98,8 @@ export function applyMcpJsonMergeAction(
   onFileWritten?: (absolutePath: string) => void,
   configMergeJournal?: ConfigMergeJournalEntryV1[]
 ): void {
-  const rel = action.relativeTargetPath.replace(/\\/g, "/");
-  if (rel.includes("..") || path.posix.isAbsolute(rel)) {
-    throw new Error(`Invalid mcp_json_merge path "${action.relativeTargetPath}" (no .. or absolute segments).`);
-  }
-  const baseRoot = mcpMergeBaseRoot(plan, action);
+  const rel = assertSafeAgentRelativePath(action.relativeTargetPath, "mcp_json_merge");
+  const baseRoot = mcpMergeBaseRoot(plan, action.mergeBase);
   const dest = path.join(baseRoot, rel);
   const beforeAbsent = !fs.existsSync(dest);
   const existing = readJsonIfExists(dest);
@@ -97,7 +108,7 @@ export function applyMcpJsonMergeAction(
   const beforeCanonical = canonicalJsonStringify(beforeObj);
   const beforeSha = sha256HexCanonicalJson(beforeObj);
 
-  const mergeLabel = mcpMergeLabelForAction(plan, action);
+  const mergeLabel = mcpMergeLabelForAction(plan, action.mergeBase, rel);
   const outcome = mergeMcpJsonDocument(
     existing,
     action.payload,
@@ -112,7 +123,59 @@ export function applyMcpJsonMergeAction(
   const afterSha = sha256HexCanonicalJson(outcome.document);
   pushJournal(configMergeJournal, {
     agent_relative_path: rel,
-    ...journalConfigRootForMcp(action),
+    ...journalConfigRootForJsonMerge(action.mergeBase),
+    kind: "mcp",
+    before_absent: beforeAbsent,
+    before_sha256: beforeSha,
+    after_sha256: afterSha,
+    fragments: {
+      type: "mcp",
+      server_names: mcpServerNamesFromPayload(action.payload),
+    },
+    before_canonical: beforeCanonical,
+  });
+}
+
+/**
+ * Apply {@link JsonDocumentStrategyMergeAction}: JSON Pointer / deep-assign merges (task 3.8).
+ * Honour {@link ProviderMergeOptions.skipConfig} without validating {@link JsonDocumentStrategyMergeAction.payload}.
+ */
+export function applyJsonDocumentStrategyMergeAction(
+  plan: ProviderPlan,
+  action: JsonDocumentStrategyMergeAction,
+  merge: ProviderMergeOptions,
+  onFileWritten?: (absolutePath: string) => void,
+  configMergeJournal?: ConfigMergeJournalEntryV1[]
+): void {
+  const rel = assertSafeAgentRelativePath(action.relativeTargetPath, "json_document_strategy_merge");
+  const baseRoot = mcpMergeBaseRoot(plan, action.mergeBase);
+  const dest = path.join(baseRoot, rel);
+  const beforeAbsent = !fs.existsSync(dest);
+  const existing = readJsonIfExists(dest);
+  const beforeObj =
+    existing === null || existing === undefined ? {} : (existing as Record<string, unknown>);
+  const beforeCanonical = canonicalJsonStringify(beforeObj);
+  const beforeSha = sha256HexCanonicalJson(beforeObj);
+
+  if (merge.skipConfig) {
+    return;
+  }
+
+  const { document, changed } = mergeJsonDocumentWithStrategy(
+    existing,
+    action.payload,
+    action.strategy
+  );
+  if (!changed) {
+    return;
+  }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+  onFileWritten?.(dest);
+  const afterSha = sha256HexCanonicalJson(document);
+  pushJournal(configMergeJournal, {
+    agent_relative_path: rel,
+    ...journalConfigRootForJsonMerge(action.mergeBase),
     kind: "mcp",
     before_absent: beforeAbsent,
     before_sha256: beforeSha,

@@ -16,6 +16,8 @@ import {
   prepareCatalogInstallPartInputs,
 } from "./install.js";
 import { buildBundleInstallPathMap } from "./bundle-path-map.js";
+import { validateCatalogInstallPackage } from "../package/validate-catalog-install-package.js";
+
 import { installPackageAssetsForCatalogContext } from "./install-package-assets.js";
 import type { CatalogInstallContext } from "./types.js";
 import {
@@ -91,6 +93,13 @@ export async function reinstallSafehousePackages(
     };
     const providerCtx = buildProviderInstallContext(ctx);
     const stagedParts = prepareCatalogInstallPartInputs(ctx);
+    const preInstall = validateCatalogInstallPackage(pkgDir);
+    if (!preInstall.ok) {
+      throw new Error(
+        `Re-install blocked for ${pkgInfo.name}: package failed pre-install validation.\n` +
+          preInstall.missing.map((line) => `  - ${line}`).join("\n")
+      );
+    }
     const journal: ConfigMergeJournalEntryV1[] = [];
     installPackageAssetsForCatalogContext(ctx, providerCtx, stagedParts, undefined, journal);
     syncSafehousePackageConfigJournal(projectBase, pkgInfo.name, journal);

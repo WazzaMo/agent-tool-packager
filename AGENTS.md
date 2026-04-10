@@ -13,6 +13,7 @@ This file summarises the project’s markdown documentation so agents can work e
 - **`atp agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
 - **`atp agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
 - **`atp catalog list`**: list packages in the station catalog.
+- **`atp validate package`**: authoring check (`atp-package.yaml` + `stage.tar` in cwd). **`atp validate catalog-package [dir]`**: same pre-install checks ATP runs before `atp install` on a catalog extract (default `dir` = cwd).
 - **`atp install <name>`**: install package from catalog. Use `--project` (default) or `--station` for prompts; `--user-bin` (default) or `--project-bin` for binaries. `--dependencies` to install deps.
 - **`atp station list`** / **`atp safehouse list`**: list installed packages. **`atp remove station <pkg>`** / **`atp remove safehouse <pkg>`**: remove the **entire** package (no per-part uninstall after install); use `--exfiltrate` with station remove to copy to Safehouses first.
 

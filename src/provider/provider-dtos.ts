@@ -3,6 +3,7 @@
  */
 
 import type { InstallContext } from "../file-ops/install-context.js";
+import type { JsonMergeStrategy } from "../file-ops/json-merge/json-document-merge-strategies.js";
 import type { PartKind } from "../file-ops/part-install-input.js";
 import type {
   ConfigMergeOperationId,
@@ -66,6 +67,21 @@ export interface McpJsonMergeAction {
 }
 
 /**
+ * Merge arbitrary JSON using {@link JsonMergeStrategy} (task 3.8), e.g. `deep_assign_paths` or
+ * `replace_at_pointer`. Does **not** apply MCP server-name ambiguity rules; use {@link McpJsonMergeAction}
+ * for standard `{ mcpServers: { … } }` catalog payloads.
+ */
+export interface JsonDocumentStrategyMergeAction {
+  kind: "json_document_strategy_merge";
+  operationId: ConfigMergeOperationId;
+  provenance: AtpProvenance;
+  mergeBase?: "layer" | "project" | "user_home";
+  relativeTargetPath: string;
+  strategy: JsonMergeStrategy;
+  payload: unknown;
+}
+
+/**
  * Merge packaged MCP JSON (`mcpServers`) into Codex **`config.toml`** `[mcp_servers]` tables (op **1** ConfigMerge).
  */
 export interface McpCodexConfigTomlMergeAction {
@@ -121,6 +137,7 @@ export interface DeleteManagedFileAction {
 export type ProviderAction =
   | PlainMarkdownWriteAction
   | McpJsonMergeAction
+  | JsonDocumentStrategyMergeAction
   | McpCodexConfigTomlMergeAction
   | HooksJsonMergeAction
   | RawFileCopyAction

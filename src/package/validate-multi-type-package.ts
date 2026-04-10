@@ -15,12 +15,13 @@ import {
 
 import type { DevPackageManifest, PackagePart } from "./types.js";
 import type { ValidateResult } from "./validate-types.js";
+import { appendDevPackageRuleSkillFrontmatterViolations } from "./validate-rule-skill-frontmatter.js";
 
 /**
  * @param manifest - Parsed developer manifest.
  * @param missing - List to append into.
  */
-function collectMultiRootMetadataGaps(manifest: DevPackageManifest, missing: string[]): void {
+export function collectMultiRootMetadataGaps(manifest: DevPackageManifest, missing: string[]): void {
   if (!manifest.name || String(manifest.name).trim() === "") missing.push("name");
   if (!manifest.version || String(manifest.version).trim() === "") missing.push("version");
   if (!manifest.type || String(manifest.type).trim() === "") missing.push("type");
@@ -30,7 +31,7 @@ function collectMultiRootMetadataGaps(manifest: DevPackageManifest, missing: str
  * @param parts - Parts list from the manifest (may be empty).
  * @param missing - List to append into.
  */
-function collectMultiPartStructureGaps(parts: PackagePart[], missing: string[]): void {
+export function collectMultiPartStructureGaps(parts: PackagePart[], missing: string[]): void {
   if (parts.length === 0) {
     missing.push("parts (at least one required for Multi)");
     return;
@@ -58,7 +59,7 @@ function collectMultiPartStructureGaps(parts: PackagePart[], missing: string[]):
  * @param parts - Declared parts.
  * @param missing - List to append into.
  */
-function collectDuplicateComponentBasenameGaps(parts: PackagePart[], missing: string[]): void {
+export function collectDuplicateComponentBasenameGaps(parts: PackagePart[], missing: string[]): void {
   const basenameToParts = new Map<string, Set<number>>();
   for (let i = 0; i < parts.length; i++) {
     const partComps = parts[i].components ?? [];
@@ -160,7 +161,7 @@ function appendBundleStagingGaps(
  * @param parts - Declared parts.
  * @returns True when two or more parts share the same normalised type string.
  */
-function hasDuplicatePartTypes(parts: PackagePart[]): boolean {
+export function hasDuplicatePartTypes(parts: PackagePart[]): boolean {
   const types = parts.map((p) => String(p.type ?? "").trim().toLowerCase());
   return new Set(types).size !== types.length;
 }
@@ -169,7 +170,7 @@ function hasDuplicatePartTypes(parts: PackagePart[]): boolean {
  * @param m - A single missing-field label.
  * @returns True when this label should block staging checks (fatal structural gap).
  */
-function isFatalMultiFieldMissing(m: string): boolean {
+export function isFatalMultiFieldMissing(m: string): boolean {
   if (m === "name" || m === "version" || m === "type" || m.includes("at least one")) {
     return true;
   }
@@ -183,7 +184,7 @@ function isFatalMultiFieldMissing(m: string): boolean {
  * @param missing - All collected gaps.
  * @returns True when exit code should be 2 (mandatory).
  */
-function multiTypeHasMandatoryFailure(missing: string[]): boolean {
+export function multiTypeHasMandatoryFailure(missing: string[]): boolean {
   return missing.some(
     (m) =>
       m === "name" ||
@@ -225,6 +226,10 @@ export function validateMultiTypePackage(
   const hasFatalStructuralGap = missing.some(isFatalMultiFieldMissing);
   if (!hasFatalStructuralGap && parts.length > 0 && !hasComponentUniquenessGap) {
     appendMultiTypeStagingGaps(cwd, parts, missing);
+  }
+
+  if (missing.length === 0) {
+    appendDevPackageRuleSkillFrontmatterViolations(cwd, manifest, missing);
   }
 
   if (missing.length === 0) {

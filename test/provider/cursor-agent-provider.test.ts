@@ -212,6 +212,66 @@ describe("CursorAgentProvider", () => {
     expect(doc.mcpServers.a).toEqual({ url: "http://a" });
   });
 
+  it("applies atpJsonDocumentStrategy after mcp_json_merge on the same file", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({
+        mcpServers: { srv: { command: "echo" } },
+        atpJsonDocumentStrategy: {
+          strategy: { mode: "deep_assign_paths", paths: [[]] },
+          payload: { editor: { fromAtp: true } },
+        },
+      })
+    );
+    const manifest = {
+      name: "m2",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "json_document_strategy_merge"]);
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const doc = JSON.parse(fs.readFileSync(path.join(layerRoot, "mcp.json"), "utf8")) as {
+      mcpServers: Record<string, unknown>;
+      editor: { fromAtp: boolean };
+    };
+    expect(doc.mcpServers.srv).toEqual({ command: "echo" });
+    expect(doc.editor).toEqual({ fromAtp: true });
+  });
+
+  it("skipConfig skips both MCP merges when plan has mcp + strategy actions", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({
+        mcpServers: { a: { command: "x" } },
+        atpJsonDocumentStrategy: {
+          strategy: { mode: "deep_assign_paths", paths: [[]] },
+          payload: { z: 1 },
+        },
+      })
+    );
+    const manifest = {
+      name: "skip",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: true });
+    expect(fs.existsSync(path.join(layerRoot, "mcp.json"))).toBe(false);
+  });
+
   it("planRemove deletes a managed rules file by fragmentKey", () => {
     const dest = path.join(layerRoot, "rules", "gone.md");
     fs.mkdirSync(path.dirname(dest), { recursive: true });
