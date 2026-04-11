@@ -62,18 +62,18 @@ function findBundleByRelBase(
 }
 
 /**
- * `atp package part <n> bundle add <execBase> [--exec-filter]` — register bundle and stage tree.
+ * `atp package part <n> bundle add <execBase> [--exec-filter|--skip-exec]` — register bundle and stage tree.
  *
  * @param cwd - Package root directory.
  * @param indexStr - 1-based part index.
  * @param execBase - Bundle directory relative to `cwd`.
- * @param opts - Optional `exec-filter` when there is no `bin/` layout.
+ * @param opts - `exec-filter` for non-UNIX bundles with executables; `skipExec` when there are none.
  */
 export function packagePartBundleAdd(
   cwd: string,
   indexStr: string,
   execBase: string,
-  opts?: { execFilter?: string }
+  opts?: { execFilter?: string; skipExec?: boolean }
 ): void {
   const index1 = parsePartIndex1OrExit(indexStr);
   const pkgRoot = path.resolve(cwd);
@@ -85,11 +85,16 @@ export function packagePartBundleAdd(
   const part = getPartAtIndexOrExit(m, index1);
   const bundlePath = path.resolve(pkgRoot, execBase);
 
+  if (opts?.skipExec && opts?.execFilter) {
+    console.error("Cannot use --skip-exec together with --exec-filter.");
+    process.exit(1);
+  }
+
   const hasBin = fs.existsSync(path.join(bundlePath, "bin"));
-  if (!hasBin && !opts?.execFilter) {
+  if (!hasBin && !opts?.execFilter && !opts?.skipExec) {
     console.error(
-      "Bundle does not have bin/ directory. Either provide --exec-filter option so " +
-        "installation can setup the executables correctly, or place them in a bin/ directory in the bundle."
+      "Bundle does not have bin/ directory. Provide --exec-filter for executables, " +
+        "--skip-exec when the bundle has no programs, or add a bin/ directory in the bundle."
     );
     process.exit(1);
   }
@@ -104,10 +109,12 @@ export function packagePartBundleAdd(
     process.exit(2);
   }
 
-  const def: BundleDefinition = {
-    path: relBase,
-    "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
-  };
+  const def: BundleDefinition = opts?.skipExec
+    ? { path: relBase, "skip-exec": true }
+    : {
+        path: relBase,
+        "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
+      };
   bundles.push(def);
   part.bundles = bundles;
   saveDevManifest(cwd, m);

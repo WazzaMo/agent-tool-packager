@@ -75,7 +75,7 @@ export interface PackageManifest {
   };
   assets?: PackageAsset[];
   /** Bundle paths for text patching {bundle_name} placeholders. From atp-package.yaml. */
-  bundles?: Array<string | { path: string; "exec-filter"?: string }>;
+  bundles?: Array<string | { path: string; "exec-filter"?: string; "skip-exec"?: boolean }>;
   program_dependencies?: string[];
   program_definitions?: ProgramDefinition[];
   /** Feature 4: when non-empty in catalog `atp-package.yaml`, install treats layout as multi-part. */

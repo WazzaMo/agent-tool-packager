@@ -63,20 +63,20 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
 }
 
 /**
- * Exit if bundle has no `bin/` and no `--exec-filter`.
+ * Exit if bundle has no `bin/` and neither `--exec-filter` nor `--skip-exec`.
  *
  * @param bundlePath - Absolute path to bundle root.
- * @param opts - Optional exec filter from CLI.
+ * @param opts - Optional exec filter or skip-exec from CLI.
  */
 function assertUnixConformantOrExecFilter(
   bundlePath: string,
-  opts?: { execFilter?: string }
+  opts?: { execFilter?: string; skipExec?: boolean }
 ): void {
   const hasBin = fs.existsSync(path.join(bundlePath, "bin"));
-  if (!hasBin && !opts?.execFilter) {
+  if (!hasBin && !opts?.execFilter && !opts?.skipExec) {
     console.error(
-      "Bundle does not have bin/ directory. Either provide --exec-filter option so " +
-        "installation can setup the executables correctly, or place them in a bin/ directory in the bundle."
+      "Bundle does not have bin/ directory. Provide --exec-filter for executables, " +
+        "--skip-exec when the bundle has no programs, or add a bin/ directory in the bundle."
     );
     process.exit(1);
   }
@@ -109,12 +109,12 @@ function appendBundleToTar(pkgRoot: string, tarPath: string, execBase: string): 
  *
  * @param cwd - Package root directory
  * @param execBase - Path to bundle directory (relative to cwd)
- * @param opts - Optional execFilter for non-UNIX bundles
+ * @param opts - Optional execFilter or skipExec for non-UNIX or data-only bundles.
  */
 export function bundleAdd(
   cwd: string,
   execBase: string,
-  opts?: { execFilter?: string }
+  opts?: { execFilter?: string; skipExec?: boolean }
 ): void {
   const pkgRoot = path.resolve(cwd);
   const bundlePath = path.resolve(cwd, execBase);
@@ -122,6 +122,11 @@ export function bundleAdd(
 
   assertValidBundlePath(execBase, pkgRoot);
   assertBundleExistsAndIsDir(execBase, pkgRoot);
+
+  if (opts?.skipExec && opts?.execFilter) {
+    console.error("Cannot use --skip-exec together with --exec-filter.");
+    process.exit(1);
+  }
 
   const manifest = loadManifestOrExit(cwd);
   exitIfMultiUsesRootStaging(manifest, "bundle add <dir>");
@@ -136,10 +141,12 @@ export function bundleAdd(
 
   assertUnixConformantOrExecFilter(bundlePath, opts);
 
-  const bundleDef: BundleDefinition = {
-    path: relBase,
-    "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
-  };
+  const bundleDef: BundleDefinition = opts?.skipExec
+    ? { path: relBase, "skip-exec": true }
+    : {
+        path: relBase,
+        "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
+      };
 
   bundles.push(bundleDef);
   manifest.bundles = bundles;

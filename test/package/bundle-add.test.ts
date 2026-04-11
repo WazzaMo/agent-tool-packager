@@ -87,6 +87,45 @@ usage:
     expect(manifest).toMatch(/scripts-util/);
   });
 
+  it("adds data-only bundle with skipExec (no bin/, no exec-filter)", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Command
+name: test-pkg
+version: 0.1.0
+usage:
+  - test
+`
+    );
+    fs.mkdirSync(path.join(pkgDir, "data-only"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "data-only", "config.json"), "{}");
+
+    bundleAdd(pkgDir, "data-only", { skipExec: true });
+
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(/skip-exec:\s*true/);
+    expect(manifest).not.toMatch(/exec-filter:/);
+  });
+
+  it("exits 1 when skipExec and execFilter together", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Command
+name: test-pkg
+version: 0.1.0
+usage:
+  - test
+`
+    );
+    fs.mkdirSync(path.join(pkgDir, "bx"), { recursive: true });
+    expect(() =>
+      bundleAdd(pkgDir, "bx", { skipExec: true, execFilter: "bx/*" })
+    ).toThrow("exit:1");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Cannot use --skip-exec together with --exec-filter."
+    );
+  });
+
   it("exits 1 when no manifest", () => {
     fs.mkdirSync(path.join(pkgDir, "my-bundle", "bin"), { recursive: true });
     expect(() => bundleAdd(pkgDir, "my-bundle")).toThrow("exit:1");

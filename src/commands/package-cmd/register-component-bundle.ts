@@ -32,9 +32,15 @@ export function registerPackageComponentAndBundleCommands(pkg: Command): void {
     .command("add <execBase>")
     .description("Add a bundle (directory with bin/) to the package and stage.tar")
     .option("--exec-filter <glob>", "Path glob for executables when bundle has no bin/")
-    .action((execBase: string, opts?: { execFilter?: string }) => {
+    .option("--skip-exec", "Bundle has no executable programs")
+    .action((execBase: string, opts?: { execFilter?: string; skipExec?: boolean }) => {
+      if (opts?.skipExec && opts?.execFilter) {
+        console.error("Cannot use --skip-exec together with --exec-filter.");
+        process.exit(1);
+      }
       bundleAdd(process.cwd(), execBase, {
         execFilter: opts?.execFilter,
+        skipExec: opts?.skipExec,
       });
     });
   bundle

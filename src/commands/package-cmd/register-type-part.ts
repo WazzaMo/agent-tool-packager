@@ -63,10 +63,11 @@ export function registerPackageTypeAndPartCommands(pkg: Command): void {
       "Multi-type: `part add <type>` (alias newpart), or `part <n> usage|add usage|component|bundle …`"
     )
     .option("--exec-filter <glob>", "With bundle add: executable glob when bundle has no bin/")
+    .option("--skip-exec", "With bundle add: bundle has no executable programs")
     .argument("<tokens...>", "Tokens after `part`")
     .action(function (this: Command, tokens: string[]) {
       const cwd = process.cwd();
-      const opts = this.opts() as { execFilter?: string };
+      const opts = this.opts() as { execFilter?: string; skipExec?: boolean };
       const t = tokens ?? [];
       if (t.length === 0) {
         console.error(
@@ -84,6 +85,13 @@ export function registerPackageTypeAndPartCommands(pkg: Command): void {
         console.error("Missing subcommand after part index.");
         process.exit(1);
       }
-      dispatchPackagePartCommand(cwd, index, subcommand, t.slice(2), opts.execFilter);
+      if (opts.execFilter && opts.skipExec) {
+        console.error("Cannot use --skip-exec together with --exec-filter.");
+        process.exit(1);
+      }
+      dispatchPackagePartCommand(cwd, index, subcommand, t.slice(2), {
+        execFilter: opts.execFilter,
+        skipExec: Boolean(opts.skipExec),
+      });
     });
 }

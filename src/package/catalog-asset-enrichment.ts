@@ -19,7 +19,7 @@ export interface CatalogAssetRow {
   name: string;
 }
 
-type YamlBundle = string | { path: string; "exec-filter"?: string };
+type YamlBundle = string | { path: string; "exec-filter"?: string; "skip-exec"?: boolean };
 
 /**
  * Choose install asset kind for a part's file components from its package type.
@@ -127,6 +127,9 @@ function appendRootLevelBundlePrograms(
 ): void {
   for (const bundle of bundles) {
     const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
+    if (typeof bundle !== "string" && bundle["skip-exec"] === true) {
+      continue;
+    }
     const execFilter = typeof bundle === "string" ? undefined : bundle["exec-filter"];
     appendProgramAssetsForBundleRoot(assets, pkgDir, bundlePath, execFilter);
   }
@@ -201,6 +204,9 @@ function appendMultiTypeMarkdownAndBundleAssets(
     }
     for (const bundle of part.bundles ?? []) {
       const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
+      if (typeof bundle !== "string" && bundle["skip-exec"] === true) {
+        continue;
+      }
       const execFilter =
         typeof bundle === "string" ? undefined : bundle["exec-filter"];
       const bundleRootRel = `${prefix}/${bundlePath}`;

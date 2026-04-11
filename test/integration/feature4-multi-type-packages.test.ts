@@ -137,6 +137,40 @@ describe("Integration: Feature 4 multi-type packages", () => {
     expect(r2.status).toBe(0);
   });
 
+  it("part bundle add with --skip-exec records skip-exec and validates (no bin/)", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "data-bundle-pkg"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.mkdirSync(path.join(pkgDir, "cfg-only"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "cfg-only", "README.txt"), "data\n", "utf8");
+    runAtp(["package", "newpart", "mcp"], o);
+    runAtp(["package", "part", "1", "usage", "MCP with data-only bundle."], o);
+    runAtp(["package", "part", "1", "bundle", "add", "cfg-only", "--skip-exec"], o);
+    const yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(yaml).toMatch(/skip-exec:\s*true/);
+    expect(yaml).not.toMatch(/exec-filter:.*cfg-only/);
+    runAtp(["validate", "package"], o);
+  });
+
+  it("part bundle add rejects --skip-exec with --exec-filter", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "bad-flags"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    fs.mkdirSync(path.join(pkgDir, "bx"), { recursive: true });
+    runAtp(["package", "newpart", "mcp"], o);
+    runAtp(["package", "part", "1", "usage", "u"], o);
+    const r = runAtpSpawn(
+      ["package", "part", "1", "bundle", "add", "bx", "--skip-exec", "--exec-filter", "bx/*"],
+      o
+    );
+    expect(r.status).not.toBe(0);
+    expect((r.stdout + r.stderr).toLowerCase()).toMatch(/cannot use/);
+  });
+
   it("part bundle add basename collision across parts exits 2", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);

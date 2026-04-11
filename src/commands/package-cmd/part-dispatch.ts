@@ -12,19 +12,24 @@ import {
   packagePartUsage,
 } from "../../package/part-ops.js";
 
+export type PartBundleCliOpts = {
+  execFilter?: string;
+  skipExec?: boolean;
+};
+
 /**
  * @param cwd - Package directory.
  * @param index - Part index string from argv.
  * @param subcommand - Second token (`usage`, `component`, `bundle`).
  * @param extra - Remaining argv tokens.
- * @param execFilter - From `--exec-filter` when adding a bundle.
+ * @param bundleOpts - From `--exec-filter` / `--skip-exec` when adding a bundle.
  */
 export function dispatchPackagePartCommand(
   cwd: string,
   index: string,
   subcommand: string,
   extra: string[],
-  execFilter: string | undefined
+  bundleOpts?: PartBundleCliOpts
 ): void {
   const sub = subcommand.toLowerCase();
   const ex = extra ?? [];
@@ -74,12 +79,14 @@ export function dispatchPackagePartCommand(
     const execBase = ex[1];
     if (a0 !== "add" || !execBase) {
       console.error(
-        "Expected: atp package part <n> bundle add <execBase> | bundle remove <execBase> [--exec-filter ...]"
+        "Expected: atp package part <n> bundle add <execBase> | bundle remove <execBase> " +
+          "[--exec-filter <glob> | --skip-exec]"
       );
       process.exit(1);
     }
     packagePartBundleAdd(cwd, index, execBase, {
-      execFilter,
+      execFilter: bundleOpts?.execFilter,
+      skipExec: bundleOpts?.skipExec,
     });
     return;
   }

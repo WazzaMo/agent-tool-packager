@@ -17,6 +17,8 @@ export type PackageType =
 export interface BundleDefinition {
   path: string;
   "exec-filter"?: string;
+  /** When true, the bundle has no program assets (no `bin/` scan, no exec glob). */
+  "skip-exec"?: boolean;
 }
 
 /** One typed slice of a Multi package (Feature 4). */

@@ -37,9 +37,13 @@ function parseBundles(arr: unknown): (string | BundleDefinition)[] | undefined {
   return arr.map((b) => {
     if (b && typeof b === "object") {
       const bObj = b as Record<string, unknown>;
+      const skipExec =
+        bObj["skip-exec"] === true ||
+        String(bObj["skip-exec"] ?? "").toLowerCase() === "true";
       return {
         path: String(bObj.path ?? ""),
         "exec-filter": bObj["exec-filter"] ? String(bObj["exec-filter"]) : undefined,
+        "skip-exec": skipExec ? true : undefined,
       };
     }
     return String(b);
