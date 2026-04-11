@@ -9,6 +9,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { loadDevManifest } from "./load-manifest.js";
+import { bundleManifestPath, resolveBundleSourcePath } from "./resolve-bundle-source.js";
 import { exitIfMultiDevManifestForLegacyRemove } from "./root-staging-guard.js";
 import { saveDevManifest } from "./save-manifest.js";
 
@@ -134,14 +135,15 @@ function removeBundleFromManifest(cwd: string, manifest: DevPackageManifest, exe
  */
 export function bundleRemove(cwd: string, execBase: string): void {
   const pkgRoot = path.resolve(cwd);
-  const relBase = path.relative(pkgRoot, path.resolve(cwd, execBase));
+  const bundleAbs = resolveBundleSourcePath(pkgRoot, execBase);
+  const manifestPath = bundleManifestPath(pkgRoot, bundleAbs);
 
   const manifest = loadManifestOrExit(cwd);
   exitIfMultiDevManifestForLegacyRemove(manifest);
-  assertBundleInManifest(manifest, relBase);
+  assertBundleInManifest(manifest, manifestPath);
   const tarPath = assertStageTarExists(cwd);
-  assertBundleInTar(tarPath, relBase, pkgRoot);
+  assertBundleInTar(tarPath, manifestPath, pkgRoot);
 
-  recreateTarWithoutBundle(tarPath, relBase, pkgRoot);
-  removeBundleFromManifest(cwd, manifest, relBase);
+  recreateTarWithoutBundle(tarPath, manifestPath, pkgRoot);
+  removeBundleFromManifest(cwd, manifest, manifestPath);
 }

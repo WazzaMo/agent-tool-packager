@@ -137,6 +137,29 @@ describe("Integration: Feature 4 multi-type packages", () => {
     expect(r2.status).toBe(0);
   });
 
+  it("part bundle add accepts peer directory via path relative to package cwd", () => {
+    const o = atpCwd(pkgDir, stationDir);
+    runAtp(["station", "init"], o);
+    runAtp(["create", "package"], o);
+    runAtp(["package", "name", "peer-bundle-pkg"], o);
+    runAtp(["package", "version", "0.1.0"], o);
+    const peerName = `peer-mcp-${Date.now()}`;
+    const peerDir = path.join(path.dirname(pkgDir), peerName);
+    fs.mkdirSync(path.join(peerDir, "bin"), { recursive: true });
+    fs.writeFileSync(path.join(peerDir, "bin", "srv.js"), "#!/usr/bin/env node\n", "utf8");
+    try {
+      const relFromPkg = path.relative(pkgDir, peerDir);
+      runAtp(["package", "newpart", "mcp"], o);
+      runAtp(["package", "part", "1", "usage", "Uses peer bundle."], o);
+      runAtp(["package", "part", "1", "bundle", "add", relFromPkg], o);
+      const yaml = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      expect(yaml).toContain(`path: ${peerName}`);
+      runAtp(["validate", "package"], o);
+    } finally {
+      fs.rmSync(peerDir, { recursive: true, force: true });
+    }
+  });
+
   it("part bundle add with --skip-exec records skip-exec and validates (no bin/)", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);

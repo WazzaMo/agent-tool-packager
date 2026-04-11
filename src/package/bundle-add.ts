@@ -9,42 +9,28 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { loadDevManifest } from "./load-manifest.js";
+import { bundleManifestPath, isBundleDirectoryUnderPackage, resolveBundleSourcePath } from "./resolve-bundle-source.js";
 import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
 import { saveDevManifest } from "./save-manifest.js";
+import { stageFlatBundleTree } from "./stage-multi.js";
 
 import type { BundleDefinition, DevPackageManifest } from "./types.js";
 
 const STAGE_TAR = "stage.tar";
 
 /**
- * Exit if bundle path escapes package root or is absolute.
- *
- * @param execBase - Bundle path relative to cwd.
- * @param pkgRoot - Resolved package root.
- */
-function assertValidBundlePath(execBase: string, pkgRoot: string): void {
-  const bundlePath = path.resolve(pkgRoot, execBase);
-  const rel = path.relative(pkgRoot, bundlePath);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) {
-    console.error(`Invalid path to bundle given: ${execBase}`);
-    process.exit(1);
-  }
-}
-
-/**
  * Exit if bundle path is missing or not a directory.
  *
- * @param execBase - Bundle path relative to cwd.
- * @param pkgRoot - Resolved package root.
+ * @param bundleAbs - Absolute path to bundle directory.
+ * @param userArg - Original user path (for errors).
  */
-function assertBundleExistsAndIsDir(execBase: string, pkgRoot: string): void {
-  const bundlePath = path.resolve(pkgRoot, execBase);
-  if (!fs.existsSync(bundlePath)) {
+function assertBundleExistsAndIsDir(bundleAbs: string, userArg: string): void {
+  if (!fs.existsSync(bundleAbs)) {
     console.error("Nominated path or directory does not exist.");
     process.exit(1);
   }
-  if (!fs.statSync(bundlePath).isDirectory()) {
-    console.error(`Path is not a directory: ${execBase}`);
+  if (!fs.statSync(bundleAbs).isDirectory()) {
+    console.error(`Path is not a directory: ${userArg}`);
     process.exit(1);
   }
 }
@@ -108,7 +94,7 @@ function appendBundleToTar(pkgRoot: string, tarPath: string, execBase: string): 
  * Validates path, manifest, and UNIX conformity; updates manifest and tar.
  *
  * @param cwd - Package root directory
- * @param execBase - Path to bundle directory (relative to cwd)
+ * @param execBase - Path to bundle directory (relative to cwd, including `..`, or absolute).
  * @param opts - Optional execFilter or skipExec for non-UNIX or data-only bundles.
  */
 export function bundleAdd(
@@ -117,11 +103,10 @@ export function bundleAdd(
   opts?: { execFilter?: string; skipExec?: boolean }
 ): void {
   const pkgRoot = path.resolve(cwd);
-  const bundlePath = path.resolve(cwd, execBase);
-  const relBase = path.relative(pkgRoot, bundlePath);
+  const bundleAbs = resolveBundleSourcePath(pkgRoot, execBase);
+  const manifestPath = bundleManifestPath(pkgRoot, bundleAbs);
 
-  assertValidBundlePath(execBase, pkgRoot);
-  assertBundleExistsAndIsDir(execBase, pkgRoot);
+  assertBundleExistsAndIsDir(bundleAbs, execBase);
 
   if (opts?.skipExec && opts?.execFilter) {
     console.error("Cannot use --skip-exec together with --exec-filter.");
@@ -134,18 +119,18 @@ export function bundleAdd(
 
   // Check if bundle already exists by path
   const existing = bundles.find((b) => {
-    if (typeof b === "string") return b === relBase;
-    return b.path === relBase;
+    if (typeof b === "string") return b === manifestPath;
+    return b.path === manifestPath;
   });
   if (existing) return;
 
-  assertUnixConformantOrExecFilter(bundlePath, opts);
+  assertUnixConformantOrExecFilter(bundleAbs, opts);
 
   const bundleDef: BundleDefinition = opts?.skipExec
-    ? { path: relBase, "skip-exec": true }
+    ? { path: manifestPath, "skip-exec": true }
     : {
-        path: relBase,
-        "exec-filter": opts?.execFilter ?? `${relBase}/bin/*`,
+        path: manifestPath,
+        "exec-filter": opts?.execFilter ?? `${manifestPath}/bin/*`,
       };
 
   bundles.push(bundleDef);
@@ -153,5 +138,9 @@ export function bundleAdd(
   saveDevManifest(cwd, manifest);
 
   const tarPath = path.join(cwd, STAGE_TAR);
-  appendBundleToTar(pkgRoot, tarPath, relBase);
+  if (isBundleDirectoryUnderPackage(pkgRoot, bundleAbs)) {
+    appendBundleToTar(pkgRoot, tarPath, manifestPath);
+  } else {
+    stageFlatBundleTree(pkgRoot, manifestPath, bundleAbs);
+  }
 }

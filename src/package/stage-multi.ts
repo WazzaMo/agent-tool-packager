@@ -86,3 +86,28 @@ export function stageMultiBundleTree(
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
+
+/**
+ * Stage a legacy (flat) bundle tree at `bundleRelPath` inside `stage.tar` from any absolute
+ * source directory (used when the bundle lives outside the package root).
+ *
+ * @param pkgRoot - Package root directory.
+ * @param bundleRelPath - Path prefix inside the archive (manifest `path`).
+ * @param bundleAbsDir - Absolute path to the source bundle directory.
+ */
+export function stageFlatBundleTree(
+  pkgRoot: string,
+  bundleRelPath: string,
+  bundleAbsDir: string
+): void {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "atp-stage-flat-"));
+  try {
+    const dest = path.join(tmp, bundleRelPath);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.cpSync(bundleAbsDir, dest, { recursive: true });
+    const tarPath = path.join(pkgRoot, STAGE_TAR);
+    appendTarEntryFromStagingDir(pkgRoot, tarPath, tmp, bundleRelPath);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
