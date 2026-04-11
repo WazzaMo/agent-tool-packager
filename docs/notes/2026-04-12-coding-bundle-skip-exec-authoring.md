@@ -44,6 +44,10 @@ when **`skip-exec`** is true (root bundles and per-part bundles). The bundle dir
 still appears in **`stage.tar`** as before; only **`program`** rows are omitted from
 **`assets`**.
 
+For **Skill** parts (and single-type **Skill** packages), bundle trees still contribute
+**`type: skill`** file rows after catalog enrichment; see
+[2026-04-12-plan-catalog-skill-bundle-asset-enrichment](./2026-04-12-plan-catalog-skill-bundle-asset-enrichment.md).
+
 ## Core authoring implementations
 
 | Module | Role |

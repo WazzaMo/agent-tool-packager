@@ -21,6 +21,103 @@ export interface CatalogAssetRow {
 
 type YamlBundle = string | { path: string; "exec-filter"?: string; "skip-exec"?: boolean };
 
+function toPosixRelPath(pkgDir: string, absolutePath: string): string {
+  return path.relative(pkgDir, absolutePath).replace(/\\/g, "/");
+}
+
+/**
+ * Collect staged-relative POSIX paths that would be registered as `type: program` for this bundle.
+ *
+ * @param pkgDir - Extracted package directory (catalog copy).
+ * @param bundleRootRel - Directory path inside the package (POSIX segments).
+ * @param execFilterGlob - Optional glob relative to `pkgDir`; when omitted, uses `bundleRootRel/bin/*` convention.
+ */
+export function collectProgramRelPathsSet(
+  pkgDir: string,
+  bundleRootRel: string,
+  execFilterGlob?: string
+): Set<string> {
+  const out = new Set<string>();
+  if (execFilterGlob != null && execFilterGlob !== "") {
+    try {
+      const binFiles = execSync(`ls -d ${execFilterGlob}`, {
+        cwd: pkgDir,
+        encoding: "utf8",
+        stdio: "pipe",
+      });
+      for (const file of binFiles
+        .split("\n")
+        .map((f) => f.trim())
+        .filter(Boolean)) {
+        out.add(file.replace(/\\/g, "/"));
+      }
+    } catch {
+      /* no matches */
+    }
+    return out;
+  }
+  const binDir = path.join(pkgDir, ...bundleRootRel.split("/"));
+  const binSub = path.join(binDir, "bin");
+  if (!fs.existsSync(binSub) || !fs.statSync(binSub).isDirectory()) {
+    return out;
+  }
+  for (const entry of fs.readdirSync(binSub)) {
+    const fullPath = path.join(binSub, entry);
+    if (fs.statSync(fullPath).isFile()) {
+      out.add(path.posix.join(bundleRootRel.replace(/\\/g, "/"), "bin", entry));
+    }
+  }
+  return out;
+}
+
+/**
+ * Append `type: skill` rows for every file under a staged bundle tree (except program paths).
+ *
+ * @param assets - Accumulator.
+ * @param pkgDir - Extracted package directory.
+ * @param bundleRootRel - Bundle directory relative to `pkgDir` (POSIX).
+ * @param programRelPaths - Paths (POSIX, relative to `pkgDir`) already claimed as programs.
+ * @param seenRelPaths - Paths already emitted; updated as rows are appended.
+ */
+export function appendSkillFilesFromBundleTree(
+  assets: CatalogAssetRow[],
+  pkgDir: string,
+  bundleRootRel: string,
+  programRelPaths: ReadonlySet<string>,
+  seenRelPaths: Set<string>
+): void {
+  const rootRel = bundleRootRel.replace(/\\/g, "/");
+  const absRoot = path.join(pkgDir, ...rootRel.split("/"));
+  if (!fs.existsSync(absRoot) || !fs.statSync(absRoot).isDirectory()) {
+    return;
+  }
+
+  function visit(absDir: string): void {
+    for (const ent of fs.readdirSync(absDir, { withFileTypes: true })) {
+      const abs = path.join(absDir, ent.name);
+      const rel = toPosixRelPath(pkgDir, abs);
+      if (ent.isDirectory()) {
+        visit(abs);
+        continue;
+      }
+      if (!ent.isFile()) {
+        continue;
+      }
+      if (programRelPaths.has(rel) || seenRelPaths.has(rel)) {
+        continue;
+      }
+      seenRelPaths.add(rel);
+      assets.push({
+        path: rel,
+        type: "skill",
+        name: path.basename(ent.name, path.extname(ent.name)),
+      });
+    }
+  }
+
+  visit(absRoot);
+}
+
 /**
  * Choose install asset kind for a part's file components from its package type.
  *
@@ -39,62 +136,6 @@ function componentAssetTypeForPart(
 }
 
 /**
- * Append program rows by running `ls -d` on a glob relative to `pkgDir`.
- *
- * @param assets - Accumulator.
- * @param pkgDir - Extracted package directory (catalog copy).
- * @param execFilterGlob - Glob relative to `pkgDir`.
- */
-function appendProgramsFromExecGlob(
-  assets: CatalogAssetRow[],
-  pkgDir: string,
-  execFilterGlob: string
-): void {
-  try {
-    const binFiles = execSync(`ls -d ${execFilterGlob}`, {
-      cwd: pkgDir,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
-    for (const file of binFiles
-      .split("\n")
-      .map((f) => f.trim())
-      .filter(Boolean)) {
-      assets.push({ path: file, type: "program", name: path.basename(file) });
-    }
-  } catch {
-    /* no matches */
-  }
-}
-
-/**
- * Append program rows from `bundleRootRel/bin/*` when present.
- *
- * @param assets - Accumulator.
- * @param pkgDir - Extracted package directory.
- * @param bundleRootRel - Path from package root to bundle directory.
- */
-function appendProgramsFromUnixBinDirectory(
-  assets: CatalogAssetRow[],
-  pkgDir: string,
-  bundleRootRel: string
-): void {
-  const binDir = path.join(pkgDir, bundleRootRel, "bin");
-  if (!fs.existsSync(binDir) || !fs.statSync(binDir).isDirectory()) return;
-
-  for (const entry of fs.readdirSync(binDir)) {
-    const fullPath = path.join(binDir, entry);
-    if (fs.statSync(fullPath).isFile()) {
-      assets.push({
-        path: path.join(bundleRootRel, "bin", entry),
-        type: "program",
-        name: entry,
-      });
-    }
-  }
-}
-
-/**
  * Append program assets for one bundle tree under `pkgDir`.
  *
  * @param assets - Accumulator.
@@ -108,30 +149,13 @@ export function appendProgramAssetsForBundleRoot(
   bundleRootRel: string,
   execFilterGlob?: string
 ): void {
-  if (execFilterGlob != null && execFilterGlob !== "") {
-    appendProgramsFromExecGlob(assets, pkgDir, execFilterGlob);
-    return;
-  }
-  appendProgramsFromUnixBinDirectory(assets, pkgDir, bundleRootRel);
-}
-
-/**
- * @param assets - Accumulator.
- * @param pkgDir - Extracted package directory.
- * @param bundles - Root-level bundle entries from YAML.
- */
-function appendRootLevelBundlePrograms(
-  assets: CatalogAssetRow[],
-  pkgDir: string,
-  bundles: YamlBundle[]
-): void {
-  for (const bundle of bundles) {
-    const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
-    if (typeof bundle !== "string" && bundle["skip-exec"] === true) {
-      continue;
-    }
-    const execFilter = typeof bundle === "string" ? undefined : bundle["exec-filter"];
-    appendProgramAssetsForBundleRoot(assets, pkgDir, bundlePath, execFilter);
+  const paths = collectProgramRelPathsSet(pkgDir, bundleRootRel, execFilterGlob);
+  for (const p of paths) {
+    assets.push({
+      path: p,
+      type: "program",
+      name: path.posix.basename(p),
+    });
   }
 }
 
@@ -166,16 +190,41 @@ export function enrichSingleTypePackageAssets(
 ): CatalogAssetRow[] {
   const assets: CatalogAssetRow[] = [];
   const assetType = singleTypeComponentAssetType(manifest);
+  const seenRelPaths = new Set<string>();
   const components = (outManifest.components as string[]) ?? [];
   for (const p of components) {
+    const norm = p.replace(/\\/g, "/");
+    if (seenRelPaths.has(norm)) {
+      continue;
+    }
+    seenRelPaths.add(norm);
     assets.push({
-      path: p,
+      path: norm,
       type: assetType,
       name: path.basename(p, path.extname(p)),
     });
   }
   const bundles = (outManifest.bundles as YamlBundle[]) ?? [];
-  appendRootLevelBundlePrograms(assets, pkgDir, bundles);
+  for (const bundle of bundles) {
+    const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
+    const normBundlePath = bundlePath.replace(/\\/g, "/");
+    const skipExec = typeof bundle !== "string" && bundle["skip-exec"] === true;
+    const execFilter = typeof bundle === "string" ? undefined : bundle["exec-filter"];
+    const programPaths = skipExec
+      ? new Set<string>()
+      : collectProgramRelPathsSet(pkgDir, normBundlePath, execFilter);
+
+    if (!skipExec) {
+      appendProgramAssetsForBundleRoot(assets, pkgDir, normBundlePath, execFilter);
+      for (const pr of programPaths) {
+        seenRelPaths.add(pr);
+      }
+    }
+
+    if (assetType === "skill") {
+      appendSkillFilesFromBundleTree(assets, pkgDir, normBundlePath, programPaths, seenRelPaths);
+    }
+  }
   return assets;
 }
 
@@ -189,29 +238,53 @@ function appendMultiTypeMarkdownAndBundleAssets(
   pkgDir: string,
   manifest: DevPackageManifest
 ): void {
+  const seenRelPaths = new Set<string>();
   const parts = manifest.parts ?? [];
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     const prefix = partStagePrefix(i + 1, part.type);
     const mdType = componentAssetTypeForPart(part.type);
+    const isSkillPart = String(part.type ?? "")
+      .trim()
+      .toLowerCase() === "skill";
+
     for (const p of part.components ?? []) {
-      const rel = `${prefix}/${p}`;
+      const rel = `${prefix}/${p}`.replace(/\\/g, "/");
+      if (seenRelPaths.has(rel)) {
+        continue;
+      }
+      seenRelPaths.add(rel);
       assets.push({
         path: rel,
         type: mdType,
         name: path.basename(p, path.extname(p)),
       });
     }
+
     for (const bundle of part.bundles ?? []) {
       const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
-      if (typeof bundle !== "string" && bundle["skip-exec"] === true) {
-        continue;
-      }
+      const normBundlePath = bundlePath.replace(/\\/g, "/");
+      const skipExec = typeof bundle !== "string" && bundle["skip-exec"] === true;
       const execFilter =
         typeof bundle === "string" ? undefined : bundle["exec-filter"];
-      const bundleRootRel = `${prefix}/${bundlePath}`;
-      const globFromPkgRoot = execFilter != null ? `${prefix}/${execFilter}` : undefined;
-      appendProgramAssetsForBundleRoot(assets, pkgDir, bundleRootRel, globFromPkgRoot);
+      const bundleRootRel = path.posix.join(prefix, normBundlePath);
+      const globFromPkgRoot =
+        execFilter != null ? path.posix.join(prefix, execFilter.replace(/\\/g, "/")) : undefined;
+
+      const programPaths = skipExec
+        ? new Set<string>()
+        : collectProgramRelPathsSet(pkgDir, bundleRootRel, globFromPkgRoot);
+
+      if (!skipExec) {
+        appendProgramAssetsForBundleRoot(assets, pkgDir, bundleRootRel, globFromPkgRoot);
+        for (const pr of programPaths) {
+          seenRelPaths.add(pr);
+        }
+      }
+
+      if (isSkillPart) {
+        appendSkillFilesFromBundleTree(assets, pkgDir, bundleRootRel, programPaths, seenRelPaths);
+      }
     }
   }
 }
