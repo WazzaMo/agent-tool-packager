@@ -281,7 +281,7 @@ IDs that must exist for a **complete** provider set (**Def** rows excluded). Lon
 
 ### C1
 
-**cursor:Mcp**, **claude:Mcp**, **codex:Mcp** (Codex uses `config.toml` `mcp_servers`; others JSON). **codex:Hook** as **Opt**: `codex_hooks` in `config.toml` is not automated yet; hooks payload remains `hooks.json`.
+**cursor:Mcp**, **claude:Mcp**, **codex:Mcp** (Codex uses `config.toml` `mcp_servers`; others JSON). **codex:Hook**: `hooks.json` merge plus `[features].codex_hooks` in `config.toml` (conflict unless `--force-config`); see **3.10**.
 
 ### C2
 
@@ -426,7 +426,7 @@ Last aligned with the repo: **2026-04-11** (Feature 5 providers for catalog inst
 
 - [x] **3.9** Codex MCP TOML (op **1**): `mergeCodexConfigTomlMcp`, journal + rollback for `.codex/config.toml`, provider action `mcp_codex_config_toml_merge` (`src/file-ops/mcp-merge/mcp-codex-toml-merge.ts`; tests in `test/file-ops/mcp-codex-toml-merge.test.ts` and config journal tests). Legacy `copyPackageAsset` merges MCP into `config.toml` when the agent base is `.codex/`.
 
-- [ ] **3.10** Remaining TOML op **1** scope: `[features]` (e.g. `codex_hooks`) and interactive warnings before toggling hook-related flags in `config.toml`.
+- [x] **3.10** Codex TOML `[features].codex_hooks`: `mergeCodexConfigTomlEnableCodexHooks`, `CodexHooksFeatureConflictError` when `false` without `--force-config`, journal kind `codex_features` + fragment rollback; provider action `codex_config_toml_hooks_feature_merge` before `hooks_json_merge` (`mcp-codex-toml-merge.ts`, `apply-provider-plan-merge.ts`, `codex-agent-provider.ts`). Console warning when `--force-config` overrides explicit `false`.
 
 ### 4 Rule assembly (op **2**)
 
@@ -466,7 +466,7 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 ### 6 Remaining file operations (matrix-driven)
 
-- [x] **6.1** Op **3** — `TreeMaterialise`: per-file `raw_file_copy` for hook scripts, skill bundles, prompts, and other non-merge assets. Full directory sync beyond per-asset copies: **[ ]**.
+- [x] **6.1** Op **3** — `TreeMaterialise`: per-file `raw_file_copy` for hook scripts, skill bundles, prompts, and other non-merge assets; **directory trees** when `recursiveDirectorySource: true` on the action (`apply-provider-plan-base.ts` `copyDirectoryRecursive`). Planned hook script paths set the flag from staged `fs.stat` (Cursor, Codex, Claude, Gemini) and non-primary skill assets (`plan-skill-install.ts`).
 
 - [x] **6.2** Op **4** — markdown aggregate / managed-block patch: `markdown_managed_block_patch` in `apply-provider-plan` (`applyMarkdownManagedBlockPatchAction`), markers + `applyManagedBlockToText` (`src/file-ops/markdown-merge/`). Gemini / Claude / Codex rule installs (non-`.toml`) append a bullet + link into `GEMINI.md` / `CLAUDE.md` / `AGENTS.md` via `rule-project-aggregate-md.ts`. Uninstall does not strip aggregate blocks yet.
 
@@ -504,12 +504,12 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 ### 9 Non-goals and deferred layers
 
-- [ ] **9.1** Document non-goals (e.g. Team/Enterprise-only Cursor paths) until ATP scopes those layers.
+- [x] **9.1** Non-goals / deferred layers: [2026-04-11-atp-non-goals-deferred-layers](./2026-04-11-atp-non-goals-deferred-layers.md) (enterprise paths, experimental surfaces, sync vs materialise, JSON-only interpolation, aggregate uninstall scope).
 
 ## Next steps
 
 See [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
 
-**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.10** (interpolation, Cursor `AGENTS.md` discovery hint, Experimental opaque drop), CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
+**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Codex `[features].codex_hooks` (**3.10**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (per-file + recursive directory `raw_file_copy`), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.10** (interpolation, Cursor `AGENTS.md` discovery hint, Experimental opaque drop), CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**), non-goals note (**9.1**).
 
-**Still open:** non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**); optional: more `opaque_payload` handlers, discovery hints for non-Cursor agents, TOML interpolation.
+**Still open:** optional: more `opaque_payload` handlers, discovery hints for non-Cursor agents, TOML interpolation for Codex MCP strings.

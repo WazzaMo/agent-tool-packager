@@ -14,6 +14,7 @@ import {
 } from "../../src/config/config-merge-journal.js";
 import { formatJsonDocument } from "../../src/file-ops/mcp-merge/mcp-json-helpers.js";
 import {
+  mergeCodexConfigTomlEnableCodexHooks,
   mergeCodexConfigTomlMcp,
   parseCodexConfigTomlRoot,
   stringifyCodexConfigTomlRoot,
@@ -65,6 +66,54 @@ describe("rollbackMergedConfigJournal — Codex config.toml", () => {
     const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
     expect(warnings).toEqual([]);
     expect(parseCodexConfigTomlRoot(fs.readFileSync(cfgPath, "utf8"))).toEqual(beforeObj);
+  });
+
+  it("exact-restore removes config.toml when codex_hooks was added to absent file", () => {
+    const merged = mergeCodexConfigTomlEnableCodexHooks(null, { mergeTargetLabel: "config.toml" });
+    expect(merged.status).toBe("applied");
+    const beforeObj = parseCodexConfigTomlRoot(null);
+    const afterObj = parseCodexConfigTomlRoot(merged.content);
+    const cfgPath = path.join(agentBase, "config.toml");
+    fs.writeFileSync(cfgPath, merged.content, "utf8");
+
+    const entry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "config.toml",
+      kind: "codex_features",
+      before_absent: true,
+      before_sha256: sha256HexCanonicalJson(beforeObj),
+      after_sha256: sha256HexCanonicalJson(afterObj),
+      fragments: { type: "codex_features", codex_hooks_before: null },
+      before_canonical: canonicalJsonStringify(beforeObj),
+    };
+
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
+    expect(warnings).toEqual([]);
+    expect(fs.existsSync(cfgPath)).toBe(false);
+  });
+
+  it("fragment rollback strips codex_hooks when file drifted after hooks feature merge", () => {
+    const merged = mergeCodexConfigTomlEnableCodexHooks(null, { mergeTargetLabel: "c" });
+    const beforeObj = parseCodexConfigTomlRoot(null);
+    const afterObj = parseCodexConfigTomlRoot(merged.content);
+    const cfgPath = path.join(agentBase, "config.toml");
+    const driftRoot = { ...afterObj, other: { n: 42 } };
+    fs.writeFileSync(cfgPath, stringifyCodexConfigTomlRoot(driftRoot), "utf8");
+
+    const entry: ConfigMergeJournalEntryV1 = {
+      agent_relative_path: "config.toml",
+      kind: "codex_features",
+      before_absent: false,
+      before_sha256: sha256HexCanonicalJson(beforeObj),
+      after_sha256: sha256HexCanonicalJson(afterObj),
+      fragments: { type: "codex_features", codex_hooks_before: null },
+      before_canonical: canonicalJsonStringify(beforeObj),
+    };
+
+    const warnings = rollbackMergedConfigJournal(agentBase, projectRoot, [entry]);
+    expect(warnings.length).toBe(1);
+    expect(warnings[0]).toContain("changed since install");
+    const rolled = parseCodexConfigTomlRoot(fs.readFileSync(cfgPath, "utf8"));
+    expect(rolled).toEqual({ other: { n: 42 } });
   });
 });
 

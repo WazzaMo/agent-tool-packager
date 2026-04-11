@@ -111,6 +111,7 @@ function actionsForHookAsset(
   }
   const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
   const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
+  const st = fs.statSync(src);
   return [
     {
       kind: "raw_file_copy",
@@ -118,6 +119,7 @@ function actionsForHookAsset(
       provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
       relativeTargetPath,
       sourceAbsolutePath: src,
+      recursiveDirectorySource: st.isDirectory(),
     },
   ];
 }

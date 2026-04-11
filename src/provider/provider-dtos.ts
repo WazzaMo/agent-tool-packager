@@ -131,6 +131,8 @@ export interface HooksJsonMergeAction {
 
 /**
  * Copy a staged binary or script into the agent tree (op **3** TreeMaterialise).
+ * When {@link RawFileCopyAction.recursiveDirectorySource} is true, the source must be a directory
+ * and the destination path is the **directory** to create under the layer (full tree copy).
  */
 export interface RawFileCopyAction {
   kind: "raw_file_copy";
@@ -140,8 +142,21 @@ export interface RawFileCopyAction {
   relativeTargetPath: string;
   /** Default `layer`. */
   destinationRoot?: "layer" | "project";
-  /** Absolute path to the staged source file. */
+  /** Absolute path to the staged source file or directory. */
   sourceAbsolutePath: string;
+  /** When true, copy a directory tree; throws if the source is not a directory. */
+  recursiveDirectorySource?: boolean;
+}
+
+/**
+ * Enable `[features].codex_hooks` in Codex `config.toml` before merging `hooks.json` (op **1** TOML).
+ */
+export interface CodexConfigTomlHooksFeatureMergeAction {
+  kind: "codex_config_toml_hooks_feature_merge";
+  operationId: ConfigMergeOperationId;
+  provenance: AtpProvenance;
+  /** Typically `config.toml` under the install layer root (e.g. `.codex/`). */
+  relativeTargetPath: string;
 }
 
 /**
@@ -194,6 +209,7 @@ export type ProviderAction =
   | McpJsonMergeAction
   | JsonDocumentStrategyMergeAction
   | McpCodexConfigTomlMergeAction
+  | CodexConfigTomlHooksFeatureMergeAction
   | HooksJsonMergeAction
   | InterpolationPolicyAction
   | DiscoveryHintAppendAction

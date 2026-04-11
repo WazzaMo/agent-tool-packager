@@ -5,7 +5,10 @@
 import { describe, it, expect, afterEach } from "vitest";
 
 import { HooksMergeAmbiguousError } from "../../src/file-ops/hooks-merge/errors.js";
-import { McpMergeAmbiguousError } from "../../src/file-ops/mcp-merge/errors.js";
+import {
+  CodexHooksFeatureConflictError,
+  McpMergeAmbiguousError,
+} from "../../src/file-ops/mcp-merge/errors.js";
 import {
   MERGE_CONFIG_AMBIGUITY_HINT,
   formatInstallUserFailureLines,
@@ -24,6 +27,26 @@ describe("formatInstallUserFailureLines", () => {
       err.message,
       MERGE_CONFIG_AMBIGUITY_HINT,
     ]);
+  });
+
+  it("adds hint after Codex hooks feature conflict message", () => {
+    const err = new CodexHooksFeatureConflictError(".codex/config.toml");
+    expect(formatInstallUserFailureLines(err, false)).toEqual([
+      err.message,
+      MERGE_CONFIG_AMBIGUITY_HINT,
+    ]);
+  });
+
+  it("includes JSON for Codex hooks feature conflict when verbose", () => {
+    const err = new CodexHooksFeatureConflictError(".codex/config.toml");
+    const lines = formatInstallUserFailureLines(err, true);
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toBe(err.message);
+    expect(JSON.parse(lines[1]!)).toEqual({
+      code: err.code,
+      mergeTargetLabel: ".codex/config.toml",
+    });
+    expect(lines[2]).toBe(MERGE_CONFIG_AMBIGUITY_HINT);
   });
 
   it("inserts JSON between message and hint when verbose", () => {

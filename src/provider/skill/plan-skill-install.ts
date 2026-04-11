@@ -110,6 +110,7 @@ export function buildSkillInstallProviderActions(
     if (!fs.existsSync(src)) {
       throw new Error(`Skill install: missing staged file: ${full}`);
     }
+    const st = fs.statSync(src);
     const provenance: AtpProvenance = {
       packageName,
       packageVersion,
@@ -124,6 +125,7 @@ export function buildSkillInstallProviderActions(
       relativeTargetPath: destRel,
       destinationRoot: destinationRootField,
       sourceAbsolutePath: src,
+      recursiveDirectorySource: st.isDirectory(),
     });
   }
 

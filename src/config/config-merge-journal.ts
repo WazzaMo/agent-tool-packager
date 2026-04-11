@@ -8,6 +8,7 @@ import path from "node:path";
 
 import { removeHookHandlersFromDocument } from "../file-ops/hooks-merge/hooks-json-merge.js";
 import {
+  applyCodexHooksFeatureRollbackToRoot,
   parseCodexConfigTomlRoot,
   removeMcpServerNamesFromCodexTomlParsedRoot,
   stringifyCodexConfigTomlRoot,
@@ -30,14 +31,15 @@ export interface ConfigMergeJournalEntryV1 {
    * (e.g. `.mcp.json`). When `user_home`, under the user home directory (e.g. `.claude.json`). Default: agent layer.
    */
   configRoot?: "layer" | "project" | "user_home";
-  kind: "mcp" | "hooks";
+  kind: "mcp" | "hooks" | "codex_features";
   /** True when the target file did not exist before this merge. */
   before_absent: boolean;
   before_sha256: string;
   after_sha256: string;
   fragments:
     | { type: "mcp"; server_names: string[] }
-    | { type: "hooks"; hooks_delta: Record<string, unknown[]> };
+    | { type: "hooks"; hooks_delta: Record<string, unknown[]> }
+    | { type: "codex_features"; codex_hooks_before: boolean | null };
   /** Canonical JSON of the parsed document before merge (empty object when absent). */
   before_canonical: string;
 }
@@ -262,11 +264,25 @@ export function rollbackMergedConfigJournal(
       continue;
     }
 
-    const pkgPayload = { hooks: entry.fragments.hooks_delta };
-    const { document, changed } = removeHookHandlersFromDocument(currentValue, pkgPayload);
-    if (changed) {
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+    if (entry.fragments.type === "hooks") {
+      const pkgPayload = { hooks: entry.fragments.hooks_delta };
+      const { document, changed } = removeHookHandlersFromDocument(currentValue, pkgPayload);
+      if (changed) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+      }
+      continue;
+    }
+
+    if (entry.fragments.type === "codex_features") {
+      const { root: rolled, changed: featChanged } = applyCodexHooksFeatureRollbackToRoot(
+        currentValue as Record<string, unknown>,
+        entry.fragments.codex_hooks_before
+      );
+      if (featChanged) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(rolled), "utf8");
+      }
     }
   }
 

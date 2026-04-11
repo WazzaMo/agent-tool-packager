@@ -5,7 +5,7 @@
 
 import * as TOML from "@iarna/toml";
 
-import { McpMergeInvalidDocumentError } from "./errors.js";
+import { CodexHooksFeatureConflictError, McpMergeInvalidDocumentError } from "./errors.js";
 import { mergeMcpServerRecordsByName, type McpMergeOptions, type McpMergeOutcomeStatus } from "./mcp-json-merge.js";
 import { isPlainObject, normalizeMcpServersPayload } from "./mcp-json-helpers.js";
 
@@ -58,6 +58,119 @@ export function parseCodexConfigTomlRoot(raw: string | null | undefined): Record
 export function stringifyCodexConfigTomlRoot(root: Record<string, unknown>): string {
   const body = TOML.stringify(root as TOML.JsonMap);
   return body === "" ? "" : `${body}\n`;
+}
+
+/**
+ * Read `[features].codex_hooks`: `null` when absent, otherwise boolean.
+ */
+export function readCodexHooksFeatureFlag(root: Record<string, unknown>): boolean | null {
+  if (!isPlainObject(root.features)) {
+    return null;
+  }
+  const f = root.features as Record<string, unknown>;
+  if (!("codex_hooks" in f)) {
+    return null;
+  }
+  const v = f.codex_hooks;
+  if (v === true) {
+    return true;
+  }
+  if (v === false) {
+    return false;
+  }
+  return Boolean(v);
+}
+
+export interface CodexHooksFeatureMergeOutcome {
+  status: McpMergeOutcomeStatus;
+  content: string;
+  /** True when `codex_hooks` was added or flipped to satisfy hook install. */
+  changed: boolean;
+  /** Value before merge (`null` = key absent); used for journal fragment rollback. */
+  codexHooksBefore: boolean | null;
+}
+
+/**
+ * Ensure `[features].codex_hooks = true` so Codex applies `hooks.json` handlers.
+ * When the user set `codex_hooks = false`, throws {@link CodexHooksFeatureConflictError} unless `forceConfig`.
+ */
+export function mergeCodexConfigTomlEnableCodexHooks(
+  existingRaw: string | null | undefined,
+  options: McpMergeOptions = {}
+): CodexHooksFeatureMergeOutcome {
+  if (options.skipConfig) {
+    const raw =
+      existingRaw === null || existingRaw === undefined || existingRaw.trim() === ""
+        ? ""
+        : existingRaw;
+    const root = parseCodexConfigTomlRoot(raw);
+    return {
+      status: "skipped",
+      content: raw,
+      changed: false,
+      codexHooksBefore: readCodexHooksFeatureFlag(root),
+    };
+  }
+
+  const root = parseCodexConfigTomlRoot(existingRaw);
+  const before = readCodexHooksFeatureFlag(root);
+  if (before === true) {
+    return {
+      status: "noop",
+      content: stringifyCodexConfigTomlRoot(root),
+      changed: false,
+      codexHooksBefore: true,
+    };
+  }
+
+  if (before === false && !options.forceConfig) {
+    throw new CodexHooksFeatureConflictError(options.mergeTargetLabel ?? "Codex config.toml");
+  }
+
+  const features: Record<string, unknown> = isPlainObject(root.features)
+    ? { ...(root.features as Record<string, unknown>) }
+    : {};
+  features.codex_hooks = true;
+  const nextRoot: Record<string, unknown> = { ...root, features };
+
+  return {
+    status: "applied",
+    content: stringifyCodexConfigTomlRoot(nextRoot),
+    changed: true,
+    codexHooksBefore: before,
+  };
+}
+
+/**
+ * Fragment rollback: restore `[features].codex_hooks` to the pre-install value (or remove the key).
+ */
+export function applyCodexHooksFeatureRollbackToRoot(
+  root: Record<string, unknown>,
+  codexHooksBefore: boolean | null
+): { root: Record<string, unknown>; changed: boolean } {
+  const features: Record<string, unknown> = isPlainObject(root.features)
+    ? { ...(root.features as Record<string, unknown>) }
+    : {};
+  const nextRoot: Record<string, unknown> = { ...root };
+
+  if (codexHooksBefore === null) {
+    if (!("codex_hooks" in features)) {
+      return { root, changed: false };
+    }
+    delete features.codex_hooks;
+  } else {
+    if (features.codex_hooks === codexHooksBefore) {
+      return { root, changed: false };
+    }
+    features.codex_hooks = codexHooksBefore;
+  }
+
+  if (Object.keys(features).length === 0) {
+    delete nextRoot.features;
+  } else {
+    nextRoot.features = features;
+  }
+  return { root: nextRoot, changed: true };
 }
 
 /**

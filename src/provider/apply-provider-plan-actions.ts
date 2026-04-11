@@ -18,6 +18,7 @@ export {
   applyMcpJsonMergeAction,
   applyJsonDocumentStrategyMergeAction,
   applyMcpCodexConfigTomlMergeAction,
+  applyCodexConfigTomlHooksFeatureMergeAction,
   applyHooksJsonMergeAction,
   applyInterpolationPolicyAction,
 } from "./apply-provider-plan-merge.js";

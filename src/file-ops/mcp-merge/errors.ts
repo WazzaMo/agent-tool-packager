@@ -56,3 +56,23 @@ export class McpMergeInvalidPayloadError extends Error {
     this.name = "McpMergeInvalidPayloadError";
   }
 }
+
+/**
+ * Codex `config.toml` has `[features] codex_hooks = false` but a Hook package needs hooks enabled.
+ * Use `--force-config` to set `codex_hooks = true`, or enable it manually before installing.
+ */
+export class CodexHooksFeatureConflictError extends Error {
+  readonly code = "CODEX_HOOKS_FEATURE_CONFLICT" as const;
+
+  readonly mergeTargetLabel: string;
+
+  constructor(mergeTargetLabel: string) {
+    const label = mergeTargetLabel;
+    super(
+      `${label}: [features] codex_hooks is false; installing Codex hooks requires enabling it. ` +
+        `Set codex_hooks = true manually, or use --force-config to let ATP enable it (see docs).`
+    );
+    this.name = "CodexHooksFeatureConflictError";
+    this.mergeTargetLabel = label;
+  }
+}

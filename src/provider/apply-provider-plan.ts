@@ -5,6 +5,7 @@
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 
 import {
+  applyCodexConfigTomlHooksFeatureMergeAction,
   applyDeleteManagedFileAction,
   applyDiscoveryHintAppendAction,
   applyHooksJsonMergeAction,
@@ -56,6 +57,16 @@ export function applyProviderPlan(
     }
     if (action.kind === "mcp_codex_config_toml_merge") {
       applyMcpCodexConfigTomlMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
+      continue;
+    }
+    if (action.kind === "codex_config_toml_hooks_feature_merge") {
+      applyCodexConfigTomlHooksFeatureMergeAction(
+        plan,
+        action,
+        merge,
+        onFileWritten,
+        configMergeJournal
+      );
       continue;
     }
     if (action.kind === "hooks_json_merge") {

@@ -96,6 +96,25 @@ export function applyPlainMarkdownWriteAction(
   onFileWritten?.(dest);
 }
 
+function copyDirectoryRecursive(
+  srcDir: string,
+  destDir: string,
+  onFileWritten?: (absolutePath: string) => void
+): void {
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const ent of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    const s = path.join(srcDir, ent.name);
+    const d = path.join(destDir, ent.name);
+    if (ent.isDirectory()) {
+      copyDirectoryRecursive(s, d, onFileWritten);
+    } else if (ent.isFile()) {
+      fs.mkdirSync(path.dirname(d), { recursive: true });
+      fs.copyFileSync(s, d);
+      onFileWritten?.(d);
+    }
+  }
+}
+
 export function applyRawFileCopyAction(
   ctx: InstallContext,
   action: RawFileCopyAction,
@@ -103,6 +122,22 @@ export function applyRawFileCopyAction(
 ): void {
   const root = resolveActionRoot(ctx, action.destinationRoot);
   const dest = path.join(root, action.relativeTargetPath);
+  if (!fs.existsSync(action.sourceAbsolutePath)) {
+    return;
+  }
+  const st = fs.lstatSync(action.sourceAbsolutePath);
+  if (st.isDirectory()) {
+    if (!action.recursiveDirectorySource) {
+      throw new Error(
+        "raw_file_copy: source is a directory; set recursiveDirectorySource: true on the action."
+      );
+    }
+    copyDirectoryRecursive(action.sourceAbsolutePath, dest, onFileWritten);
+    return;
+  }
+  if (!st.isFile()) {
+    return;
+  }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(action.sourceAbsolutePath, dest);
   onFileWritten?.(dest);

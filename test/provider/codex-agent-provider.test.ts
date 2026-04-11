@@ -8,6 +8,7 @@ import path from "node:path";
 import os from "node:os";
 
 import { StagedPartInstallInput } from "../../src/file-ops/part-install-input.js";
+import { CodexHooksFeatureConflictError } from "../../src/file-ops/mcp-merge/errors.js";
 import { parseCodexConfigTomlRoot } from "../../src/file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { createCodexAgentProvider } from "../../src/provider/codex-agent-provider.js";
 
@@ -100,6 +101,59 @@ describe("CodexAgentProvider", () => {
     const dest = path.join(projectRoot, ".agents", "skills", "my-codex-skill", "SKILL.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toContain("# Body");
+  });
+
+  it("planInstall prepends codex hooks feature merge before hooks_json_merge for hooks.json", () => {
+    fs.writeFileSync(
+      path.join(staging, "hooks.json"),
+      JSON.stringify({ hooks: { SessionStart: [{ command: "echo" }] } })
+    );
+    const manifest = {
+      name: "h",
+      assets: [{ path: "hooks.json", type: "hook" as const, name: "h" }],
+    };
+    const provider = createCodexAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Hook",
+      stagingRelPaths: ["hooks.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions.map((a) => a.kind)).toEqual([
+      "codex_config_toml_hooks_feature_merge",
+      "hooks_json_merge",
+      "interpolation_policy",
+    ]);
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const root = parseCodexConfigTomlRoot(fs.readFileSync(path.join(layerRoot, "config.toml"), "utf8"));
+    expect((root.features as { codex_hooks: boolean }).codex_hooks).toBe(true);
+  });
+
+  it("applyPlan refuses hooks when config.toml sets codex_hooks false without forceConfig", () => {
+    fs.writeFileSync(
+      path.join(layerRoot, "config.toml"),
+      '[features]\ncodex_hooks = false\n'
+    );
+    fs.writeFileSync(
+      path.join(staging, "hooks.json"),
+      JSON.stringify({ hooks: { SessionStart: [{ command: "echo" }] } })
+    );
+    const manifest = {
+      name: "h2",
+      assets: [{ path: "hooks.json", type: "hook" as const, name: "h" }],
+    };
+    const provider = createCodexAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Hook",
+      stagingRelPaths: ["hooks.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(() =>
+      provider.applyPlan(plan, { forceConfig: false, skipConfig: false })
+    ).toThrow(CodexHooksFeatureConflictError);
   });
 
   it("planInstall emits mcp_codex_config_toml_merge for config.toml under layerRoot", () => {

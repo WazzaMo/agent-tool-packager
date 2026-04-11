@@ -3,7 +3,10 @@
  */
 
 import { HooksMergeAmbiguousError } from "../file-ops/hooks-merge/errors.js";
-import { McpMergeAmbiguousError } from "../file-ops/mcp-merge/errors.js";
+import {
+  CodexHooksFeatureConflictError,
+  McpMergeAmbiguousError,
+} from "../file-ops/mcp-merge/errors.js";
 
 /** Shown once after MCP / hooks merge ambiguity messages (not duplicated on the Error subclass). */
 export const MERGE_CONFIG_AMBIGUITY_HINT =
@@ -22,6 +25,19 @@ export function formatInstallUserFailureLines(err: unknown, verbose: boolean): s
         JSON.stringify({
           code: err.code,
           serverName: err.serverName,
+          mergeTargetLabel: err.mergeTargetLabel,
+        })
+      );
+    }
+    lines.push(MERGE_CONFIG_AMBIGUITY_HINT);
+    return lines;
+  }
+  if (err instanceof CodexHooksFeatureConflictError) {
+    const lines = [err.message];
+    if (verbose) {
+      lines.push(
+        JSON.stringify({
+          code: err.code,
           mergeTargetLabel: err.mergeTargetLabel,
         })
       );

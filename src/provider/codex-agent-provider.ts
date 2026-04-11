@@ -77,6 +77,12 @@ function actionsForHookAsset(
   const baseName = path.basename(asset.path);
   if (baseName === HOOKS_JSON) {
     const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
+    const hooksFeatureMerge = {
+      kind: "codex_config_toml_hooks_feature_merge" as const,
+      operationId: OperationIds.ConfigMerge,
+      provenance: provenanceForFragment(packageName, packageVersion, part, CONFIG_TOML),
+      relativeTargetPath: CONFIG_TOML,
+    };
     const hookMerge = {
       kind: "hooks_json_merge" as const,
       operationId: OperationIds.HookJsonGraph,
@@ -85,6 +91,7 @@ function actionsForHookAsset(
       payload,
     };
     return [
+      hooksFeatureMerge,
       hookMerge,
       interpolationPolicyAfterHooksMerge({
         part,
@@ -96,6 +103,7 @@ function actionsForHookAsset(
   }
   const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
   const relativeTargetPath = relativePathFromLayerRoot(ctx.layerRoot, filePath);
+  const st = fs.statSync(src);
   return [
     {
       kind: "raw_file_copy",
@@ -103,6 +111,7 @@ function actionsForHookAsset(
       provenance: provenanceForFragment(packageName, packageVersion, part, relativeTargetPath),
       relativeTargetPath,
       sourceAbsolutePath: src,
+      recursiveDirectorySource: st.isDirectory(),
     },
   ];
 }

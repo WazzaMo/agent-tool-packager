@@ -15,6 +15,7 @@ import {
 import { mergeConfigTargetLabel } from "../file-ops/merge-config-target-label.js";
 import { formatJsonDocument, normalizeMcpServersPayload } from "../file-ops/mcp-merge/mcp-json-helpers.js";
 import {
+  mergeCodexConfigTomlEnableCodexHooks,
   mergeCodexConfigTomlMcp,
   parseCodexConfigTomlRoot,
 } from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
@@ -32,6 +33,7 @@ import {
 } from "./apply-provider-plan-base.js";
 
 import type {
+  CodexConfigTomlHooksFeatureMergeAction,
   HooksJsonMergeAction,
   InterpolationPolicyAction,
   JsonDocumentStrategyMergeAction,
@@ -237,6 +239,62 @@ export function applyMcpCodexConfigTomlMergeAction(
     fragments: {
       type: "mcp",
       server_names: mcpServerNamesFromPayload(action.payload),
+    },
+    before_canonical: beforeCanonical,
+  });
+}
+
+export function applyCodexConfigTomlHooksFeatureMergeAction(
+  plan: ProviderPlan,
+  action: CodexConfigTomlHooksFeatureMergeAction,
+  merge: ProviderMergeOptions,
+  onFileWritten?: (absolutePath: string) => void,
+  configMergeJournal?: ConfigMergeJournalEntryV1[]
+): void {
+  const layerRoot = plan.context.layerRoot;
+  const rel = action.relativeTargetPath.replace(/\\/g, "/");
+  if (rel.includes("..") || path.posix.isAbsolute(rel)) {
+    throw new Error(
+      `Invalid codex_config_toml_hooks_feature_merge path "${action.relativeTargetPath}" (no .. or absolute segments).`
+    );
+  }
+  const dest = path.join(layerRoot, rel);
+  const beforeAbsent = !fs.existsSync(dest);
+  const existingRaw = beforeAbsent ? null : fs.readFileSync(dest, "utf8");
+  const beforeObj = parseCodexConfigTomlRoot(existingRaw);
+  const beforeCanonical = canonicalJsonStringify(beforeObj);
+  const beforeSha = sha256HexCanonicalJson(beforeObj);
+
+  const mergeLabel = mergeConfigTargetLabel(layerRoot, rel);
+  const outcome = mergeCodexConfigTomlEnableCodexHooks(
+    existingRaw,
+    mcpMergeOptionsFromProvider(merge, mergeLabel)
+  );
+
+  if (outcome.status === "skipped" || !outcome.changed) {
+    return;
+  }
+
+  if (outcome.codexHooksBefore === false && merge.forceConfig) {
+    console.warn(
+      `ATP: ${mergeLabel}: enabled [features].codex_hooks (--force-config; it was explicitly false).`
+    );
+  }
+
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, outcome.content, "utf8");
+  onFileWritten?.(dest);
+  const afterObj = parseCodexConfigTomlRoot(outcome.content);
+  const afterSha = sha256HexCanonicalJson(afterObj);
+  pushJournal(configMergeJournal, {
+    agent_relative_path: rel,
+    kind: "codex_features",
+    before_absent: beforeAbsent,
+    before_sha256: beforeSha,
+    after_sha256: afterSha,
+    fragments: {
+      type: "codex_features",
+      codex_hooks_before: outcome.codexHooksBefore,
     },
     before_canonical: beforeCanonical,
   });
