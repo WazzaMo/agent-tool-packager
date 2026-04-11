@@ -9,10 +9,12 @@ import type {
   ConfigMergeOperationId,
   ExperimentalDropOperationId,
   HookJsonGraphOperationId,
+  MarkdownAggregateOperationId,
   PlainMarkdownEmitOperationId,
   RuleAssemblyOperationId,
   TreeMaterialiseOperationId,
 } from "../file-ops/operation-ids.js";
+import type { ManagedBlockIfMissing } from "../file-ops/markdown-merge/managed-block-patch.js";
 
 /**
  * Stable identity for merge keys and uninstall.
@@ -43,6 +45,25 @@ export interface PlainMarkdownWriteAction {
   destinationRoot?: "layer" | "project";
   writeMode: "create_or_replace" | "create_only";
   content: string;
+  encoding: "utf-8";
+}
+
+/**
+ * Insert or replace a bounded region in a layered instruction file (op **4** MarkdownAggregate),
+ * e.g. project-root `GEMINI.md`, `CLAUDE.md`, or `AGENTS.md`.
+ */
+export interface MarkdownManagedBlockPatchAction {
+  kind: "markdown_managed_block_patch";
+  operationId: MarkdownAggregateOperationId;
+  provenance: AtpProvenance;
+  /** Relative to {@link InstallContext.projectRoot} when {@link destinationRoot} is `project`. */
+  relativeTargetPath: string;
+  /** Default `project` for aggregate files at repo root. */
+  destinationRoot?: "layer" | "project";
+  beginMarker: string;
+  endMarker: string;
+  body: string;
+  ifMissing: ManagedBlockIfMissing;
   encoding: "utf-8";
 }
 
@@ -136,6 +157,7 @@ export interface DeleteManagedFileAction {
 /** Actions the Cursor provider executor can apply. */
 export type ProviderAction =
   | PlainMarkdownWriteAction
+  | MarkdownManagedBlockPatchAction
   | McpJsonMergeAction
   | JsonDocumentStrategyMergeAction
   | McpCodexConfigTomlMergeAction

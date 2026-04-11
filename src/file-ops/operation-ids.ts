@@ -97,5 +97,8 @@ export type HookJsonGraphOperationId = typeof OperationIds.HookJsonGraph;
 /** Literal id for {@link OperationIds.TreeMaterialise}. */
 export type TreeMaterialiseOperationId = typeof OperationIds.TreeMaterialise;
 
+/** Literal id for {@link OperationIds.MarkdownAggregate}. */
+export type MarkdownAggregateOperationId = typeof OperationIds.MarkdownAggregate;
+
 /** Literal id for {@link OperationIds.ExperimentalDrop}. */
 export type ExperimentalDropOperationId = typeof OperationIds.ExperimentalDrop;

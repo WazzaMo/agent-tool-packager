@@ -44,7 +44,7 @@ describe("CodexAgentProvider", () => {
     };
   }
 
-  it("planInstall emits plain_markdown_write under rules/", () => {
+  it("planInstall emits plain_markdown_write under rules/ plus AGENTS.md managed block", () => {
     fs.writeFileSync(path.join(staging, "alpha.md"), "# A\n");
     const manifest = {
       name: "pkg-a",
@@ -59,11 +59,16 @@ describe("CodexAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions).toHaveLength(1);
+    expect(plan.actions).toHaveLength(2);
     expect(plan.actions[0].kind).toBe("plain_markdown_write");
     if (plan.actions[0].kind === "plain_markdown_write") {
       expect(plan.actions[0].relativeTargetPath).toBe("rules/alpha.md");
       expect(plan.actions[0].destinationRoot).toBeUndefined();
+    }
+    expect(plan.actions[1].kind).toBe("markdown_managed_block_patch");
+    if (plan.actions[1].kind === "markdown_managed_block_patch") {
+      expect(plan.actions[1].relativeTargetPath).toBe("AGENTS.md");
+      expect(plan.actions[1].body).toContain("./.codex/rules/alpha.md");
     }
   });
 

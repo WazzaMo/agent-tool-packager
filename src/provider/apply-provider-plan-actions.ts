@@ -6,6 +6,7 @@ export {
   readJsonIfExists,
   mcpMergeOptionsFromProvider,
   pushJournal,
+  applyMarkdownManagedBlockPatchAction,
   applyPlainMarkdownWriteAction,
   applyRawFileCopyAction,
   applyDeleteManagedFileAction,

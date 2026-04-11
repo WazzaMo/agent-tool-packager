@@ -30,6 +30,7 @@ import {
   requireStagedSourceFile,
 } from "./provider-plan-common.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
+import { markdownManagedBlockForInstalledRule } from "./rule-project-aggregate-md.js";
 import type { AtpProvenance, ProviderAction, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
@@ -113,7 +114,7 @@ function actionsForMarkdownLikeAsset(
   const baseName = path.basename(asset.path);
   const { content: outContent, operationId } = materializeRuleLike(baseName, content);
 
-  return [
+  const actions: ProviderAction[] = [
     {
       kind: "plain_markdown_write",
       operationId,
@@ -124,6 +125,22 @@ function actionsForMarkdownLikeAsset(
       encoding: "utf-8",
     },
   ];
+
+  if (asset.type === "rule") {
+    const layerRel = relativeTargetPath.replace(/\\/g, "/");
+    actions.push(
+      markdownManagedBlockForInstalledRule({
+        agent: "codex",
+        packageName,
+        packageVersion,
+        part,
+        ruleRelativeUnderLayer: layerRel,
+        ruleBasename: baseName,
+      })
+    );
+  }
+
+  return actions;
 }
 
 function planNonSkillAsset(

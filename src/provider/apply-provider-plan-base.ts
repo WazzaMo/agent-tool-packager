@@ -10,8 +10,11 @@ import type { McpMergeOptions } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
 import type { InstallContext } from "../file-ops/install-context.js";
 
+import { applyManagedBlockToText } from "../file-ops/markdown-merge/managed-block-patch.js";
+
 import type {
   DeleteManagedFileAction,
+  MarkdownManagedBlockPatchAction,
   PlainMarkdownWriteAction,
   RawFileCopyAction,
 } from "./provider-dtos.js";
@@ -50,6 +53,28 @@ export function pushJournal(
   entry: ConfigMergeJournalEntryV1
 ): void {
   journal?.push(entry);
+}
+
+export function applyMarkdownManagedBlockPatchAction(
+  ctx: InstallContext,
+  action: MarkdownManagedBlockPatchAction,
+  onFileWritten?: (absolutePath: string) => void
+): void {
+  const root = resolveActionRoot(ctx, action.destinationRoot);
+  const dest = path.join(root, action.relativeTargetPath);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  const existing = fs.existsSync(dest) ? fs.readFileSync(dest, "utf8") : null;
+  const next = applyManagedBlockToText(
+    existing,
+    action.beginMarker,
+    action.endMarker,
+    action.body,
+    action.ifMissing
+  );
+  if (next !== existing) {
+    fs.writeFileSync(dest, next, action.encoding);
+    onFileWritten?.(dest);
+  }
 }
 
 export function applyPlainMarkdownWriteAction(

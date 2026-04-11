@@ -43,7 +43,7 @@ describe("GeminiAgentProvider", () => {
     };
   }
 
-  it("planInstall emits plain_markdown_write under rules/", () => {
+  it("planInstall emits plain_markdown_write under rules/ plus GEMINI.md managed block", () => {
     fs.writeFileSync(path.join(staging, "g.md"), "# G\n");
     const manifest = {
       name: "pkg-g",
@@ -58,10 +58,15 @@ describe("GeminiAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions).toHaveLength(1);
+    expect(plan.actions).toHaveLength(2);
     expect(plan.actions[0].kind).toBe("plain_markdown_write");
     expect(plan.actions[0].relativeTargetPath).toBe("rules/g.md");
     expect(plan.actions[0].provenance.fragmentKey).toBe("rules/g.md");
+    expect(plan.actions[1].kind).toBe("markdown_managed_block_patch");
+    if (plan.actions[1].kind === "markdown_managed_block_patch") {
+      expect(plan.actions[1].relativeTargetPath).toBe("GEMINI.md");
+      expect(plan.actions[1].body).toContain("./.gemini/rules/g.md");
+    }
   });
 
   it("places Gemini custom command .toml under commands/", () => {

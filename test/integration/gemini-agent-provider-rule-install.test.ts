@@ -115,5 +115,12 @@ describe("Integration: GeminiAgentProvider rule install", () => {
     const dest = path.join(projectDir, ".gemini", "rules", "rule-one.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe(ruleContent);
+
+    const geminiMd = path.join(projectDir, "GEMINI.md");
+    expect(fs.existsSync(geminiMd)).toBe(true);
+    const agg = fs.readFileSync(geminiMd, "utf8");
+    expect(agg).toMatch(/ATP_MGR_[a-f0-9]+_BEGIN/);
+    expect(agg).toContain("gem-cap-e2e-rules");
+    expect(agg).toContain("./.gemini/rules/rule-one.md");
   });
 });

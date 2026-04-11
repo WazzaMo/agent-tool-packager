@@ -8,6 +8,7 @@ import {
   applyDeleteManagedFileAction,
   applyHooksJsonMergeAction,
   applyJsonDocumentStrategyMergeAction,
+  applyMarkdownManagedBlockPatchAction,
   applyMcpCodexConfigTomlMergeAction,
   applyMcpJsonMergeAction,
   applyPlainMarkdownWriteAction,
@@ -36,6 +37,10 @@ export function applyProviderPlan(
   for (const action of plan.actions) {
     if (action.kind === "plain_markdown_write") {
       applyPlainMarkdownWriteAction(ctx, action, onFileWritten);
+      continue;
+    }
+    if (action.kind === "markdown_managed_block_patch") {
+      applyMarkdownManagedBlockPatchAction(ctx, action, onFileWritten);
       continue;
     }
     if (action.kind === "mcp_json_merge") {

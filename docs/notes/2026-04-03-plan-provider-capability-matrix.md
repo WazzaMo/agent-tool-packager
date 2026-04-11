@@ -446,9 +446,9 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 - [x] **4.7** Cursor `.md` rules: `materializeRuleLike` passes `.md` as op **5** (`PlainMarkdownEmit`); `.mdc` with YAML `---` uses op **2** (`RuleAssembly`) via `src/provider/rule-like-materialize.ts`.
 
-- [x] **4.8** Claude Code rules under `.claude/rules/`: same `materializeRuleLike` path for `.md` / `.mdc` in `ClaudeAgentProvider` installs.
+- [x] **4.8** Claude Code rules under `.claude/rules/`: same `materializeRuleLike` path for `.md` / `.mdc` in `ClaudeAgentProvider` installs. Non-`.toml` rule installs also append a stable managed block to project-root `CLAUDE.md` (op **4**, **6.2**).
 
-- [x] **4.9** Gemini / Codex rule installs: `GeminiAgentProvider` / `CodexAgentProvider` use `materializeRuleLike` + `plain_markdown_write` (Gemini layout per agent; Codex `.codex/rules/`). Op **4** managed-block flows (`AGENTS.md`, `GEMINI.md`) still **[ ]**.
+- [x] **4.9** Gemini / Codex rule installs: `GeminiAgentProvider` / `CodexAgentProvider` use `materializeRuleLike` + `plain_markdown_write` (Gemini layout per agent; Codex `.codex/rules/`). Non-`.toml` rules also get op **4** `markdown_managed_block_patch` to `GEMINI.md` / `AGENTS.md` (**6.2**). Cursor rule installs remain op **5** only (no project-root aggregate patch in this pass).
 
 - [x] **4.10** Package validation (**authoring time**): rules and skills with YAML front matter—either a **single** `.md` (embedded `---` front matter) or **paired** files `x.md` + `x.yaml` or `x.yml` (same basename). Integrated into `atp validate package` (and related package-dev checks) with clear errors for missing, duplicated, or inconsistent front matter (`src/package/validate-rule-skill-frontmatter.ts`). **5.5** reuses the same rule/skill checks on the staged install payload before apply.
 
@@ -468,7 +468,7 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 - [x] **6.1** Op **3** — `TreeMaterialise`: per-file `raw_file_copy` for hook scripts, skill bundles, prompts, and other non-merge assets. Full directory sync beyond per-asset copies: **[ ]**.
 
-- [ ] **6.2** Op **4** — markdown aggregate / managed-block patch (`CLAUDE.md`, `GEMINI.md`, Codex `AGENTS.md`).
+- [x] **6.2** Op **4** — markdown aggregate / managed-block patch: `markdown_managed_block_patch` in `apply-provider-plan` (`applyMarkdownManagedBlockPatchAction`), markers + `applyManagedBlockToText` (`src/file-ops/markdown-merge/`). Gemini / Claude / Codex rule installs (non-`.toml`) append a bullet + link into `GEMINI.md` / `CLAUDE.md` / `AGENTS.md` via `rule-project-aggregate-md.ts`. Uninstall does not strip aggregate blocks yet.
 
 - [x] **6.3** Op **5** — `plain_markdown_write` for `.md` rules, skills, prompts, and passthrough rule-like content (`materializeRuleLike` when not `.mdc` assembly).
 
@@ -510,6 +510,6 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 See [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
 
-**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.3–6.6**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
+**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.6**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
 
-**Still open:** op **4** aggregate (**6.2**), explicit executable `+x` (**6.7**), interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).
+**Still open:** explicit executable `+x` (**6.7**), interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).

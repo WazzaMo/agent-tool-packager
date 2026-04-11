@@ -115,5 +115,12 @@ describe("Integration: CodexAgentProvider rule install", () => {
     const dest = path.join(projectDir, ".codex", "rules", "rule-one.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe(ruleContent);
+
+    const agentsMd = path.join(projectDir, "AGENTS.md");
+    expect(fs.existsSync(agentsMd)).toBe(true);
+    const agg = fs.readFileSync(agentsMd, "utf8");
+    expect(agg).toMatch(/ATP_MGR_[a-f0-9]+_BEGIN/);
+    expect(agg).toContain("codex-cap-e2e-rules");
+    expect(agg).toContain("./.codex/rules/rule-one.md");
   });
 });

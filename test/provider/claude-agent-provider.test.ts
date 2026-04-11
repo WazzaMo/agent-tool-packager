@@ -45,7 +45,7 @@ describe("ClaudeAgentProvider", () => {
     };
   }
 
-  it("planInstall emits plain_markdown_write under rules/", () => {
+  it("planInstall emits plain_markdown_write under rules/ plus CLAUDE.md managed block", () => {
     fs.writeFileSync(path.join(staging, "c.md"), "# C\n");
     const manifest = {
       name: "pkg-c",
@@ -60,9 +60,15 @@ describe("ClaudeAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions).toHaveLength(1);
+    expect(plan.actions).toHaveLength(2);
     expect(plan.actions[0].kind).toBe("plain_markdown_write");
     expect(plan.actions[0].relativeTargetPath).toBe("rules/c.md");
+    expect(plan.actions[1].kind).toBe("markdown_managed_block_patch");
+    if (plan.actions[1].kind === "markdown_managed_block_patch") {
+      expect(plan.actions[1].relativeTargetPath).toBe("CLAUDE.md");
+      expect(plan.actions[1].destinationRoot).toBe("project");
+      expect(plan.actions[1].body).toContain("./.claude/rules/c.md");
+    }
   });
 
   it("applyPlan MCP conflict cites .mcp.json in error", () => {

@@ -29,6 +29,7 @@ import {
 } from "./provider-plan-common.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
 import { providerActionsForStagedMcpJson } from "./provider-mcp-staged-json.js";
+import { markdownManagedBlockForInstalledRule } from "./rule-project-aggregate-md.js";
 import type { AtpProvenance, ProviderAction, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
@@ -116,7 +117,7 @@ function actionsForHookAsset(
  * Materialises rule-, prompt-, or sub-agent markdown under the Claude layer (with bundle placeholder patching).
  *
  * @param src - Absolute path to staged markdown source.
- * @returns One-element plain markdown write action.
+ * @returns Plain markdown write; for **rule** markdown, also project `CLAUDE.md` managed block (op **4**).
  */
 function actionsForMarkdownLikeAsset(
   ctx: InstallContext,
@@ -134,7 +135,7 @@ function actionsForMarkdownLikeAsset(
   const baseName = path.basename(asset.path);
   const { content: outContent, operationId } = materializeRuleLike(baseName, content);
 
-  return [
+  const actions: ProviderAction[] = [
     {
       kind: "plain_markdown_write",
       operationId,
@@ -145,6 +146,22 @@ function actionsForMarkdownLikeAsset(
       encoding: "utf-8",
     },
   ];
+
+  if (asset.type === "rule") {
+    const layerRel = relativeTargetPath.replace(/\\/g, "/");
+    actions.push(
+      markdownManagedBlockForInstalledRule({
+        agent: "claude",
+        packageName,
+        packageVersion,
+        part,
+        ruleRelativeUnderLayer: layerRel,
+        ruleBasename: baseName,
+      })
+    );
+  }
+
+  return actions;
 }
 
 /**

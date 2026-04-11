@@ -115,6 +115,13 @@ describe("Integration: ClaudeAgentProvider rule install", () => {
     const dest = path.join(projectDir, ".claude", "rules", "rule-one.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe(ruleContent);
+
+    const claudeMd = path.join(projectDir, "CLAUDE.md");
+    expect(fs.existsSync(claudeMd)).toBe(true);
+    const agg = fs.readFileSync(claudeMd, "utf8");
+    expect(agg).toMatch(/ATP_MGR_[a-f0-9]+_BEGIN/);
+    expect(agg).toContain("claude-cap-e2e-rules");
+    expect(agg).toContain("./.claude/rules/rule-one.md");
   });
 
   it("atp install --station places rule under $HOME/.claude/rules/ (user layer)", () => {
@@ -145,5 +152,9 @@ describe("Integration: ClaudeAgentProvider rule install", () => {
     const dest = path.join(fakeHome, ".claude", "rules", "station-rule.md");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe(ruleContent);
+
+    const claudeMd = path.join(projectDir, "CLAUDE.md");
+    expect(fs.existsSync(claudeMd)).toBe(true);
+    expect(fs.readFileSync(claudeMd, "utf8")).toContain("claude-station-rule-pkg");
   });
 });

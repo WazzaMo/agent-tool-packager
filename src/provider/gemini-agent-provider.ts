@@ -31,6 +31,7 @@ import {
 } from "./provider-plan-common.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
 import { providerActionsForStagedMcpJson } from "./provider-mcp-staged-json.js";
+import { markdownManagedBlockForInstalledRule } from "./rule-project-aggregate-md.js";
 import type { AtpProvenance, ProviderAction, ProviderPlan } from "./provider-dtos.js";
 import type { AgentProvider, ProviderMergeOptions } from "./types.js";
 
@@ -151,7 +152,7 @@ function actionsForRuleTomlCommand(
  * Materialises Gemini markdown-like assets under `prompts/` or `rules/` with bundle placeholder patching.
  *
  * @param src - Absolute path to staged markdown source.
- * @returns One-element plain markdown write action.
+ * @returns Plain markdown write; for **rule** markdown, also a project `GEMINI.md` managed block (op **4**).
  */
 function actionsForGeminiMarkdownWrite(
   part: StagedPartInstallInput,
@@ -167,7 +168,7 @@ function actionsForGeminiMarkdownWrite(
   const relativeTargetPath = relativeMarkdownTargetForGemini(asset, baseName);
   const { content: outContent, operationId } = materializeRuleLike(baseName, content);
 
-  return [
+  const actions: ProviderAction[] = [
     {
       kind: "plain_markdown_write",
       operationId,
@@ -178,6 +179,23 @@ function actionsForGeminiMarkdownWrite(
       encoding: "utf-8",
     },
   ];
+
+  const isTomlRule = baseName.toLowerCase().endsWith(".toml");
+  if (asset.type === "rule" && !isTomlRule) {
+    const layerRel = relativeTargetPath.replace(/\\/g, "/");
+    actions.push(
+      markdownManagedBlockForInstalledRule({
+        agent: "gemini",
+        packageName,
+        packageVersion,
+        part,
+        ruleRelativeUnderLayer: layerRel,
+        ruleBasename: baseName,
+      })
+    );
+  }
+
+  return actions;
 }
 
 /**
