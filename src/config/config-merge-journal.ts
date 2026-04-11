@@ -152,6 +152,161 @@ function readConfigMergeDocumentRoot(absolutePath: string): Record<string, unkno
   return parsed as Record<string, unknown>;
 }
 
+function journalConfigRootBase(
+  entry: ConfigMergeJournalEntryV1,
+  agentLayerRoot: string,
+  projectRoot: string
+): string {
+  if (entry.configRoot === "project") {
+    return projectRoot;
+  }
+  if (entry.configRoot === "user_home") {
+    return os.homedir();
+  }
+  return agentLayerRoot;
+}
+
+function loadJournalRollbackCurrentState(
+  dest: string,
+  agentRelativePath: string,
+  warnings: string[]
+): { currentValue: unknown; currentSha: string } {
+  if (!fs.existsSync(dest)) {
+    const empty: Record<string, unknown> = {};
+    return { currentValue: empty, currentSha: sha256HexCanonicalJson(empty) };
+  }
+  try {
+    const currentValue = readConfigMergeDocumentRoot(dest);
+    return { currentValue, currentSha: sha256HexCanonicalJson(currentValue) };
+  } catch (e) {
+    warnings.push(
+      `ATP: could not parse ${agentRelativePath} during journal rollback; trying fragment removal only. ${(e as Error).message}`
+    );
+    const empty: Record<string, unknown> = {};
+    return { currentValue: empty, currentSha: "" };
+  }
+}
+
+/**
+ * @returns True when the entry was fully handled (caller should continue the loop).
+ */
+function tryExactJournalRollback(
+  entry: ConfigMergeJournalEntryV1,
+  dest: string,
+  currentSha: string,
+  warnings: string[]
+): boolean {
+  if (currentSha !== entry.after_sha256) {
+    return false;
+  }
+
+  if (entry.before_absent) {
+    if (fs.existsSync(dest)) {
+      fs.unlinkSync(dest);
+    }
+    return true;
+  }
+
+  let restored: unknown;
+  try {
+    restored = JSON.parse(entry.before_canonical) as unknown;
+  } catch {
+    warnings.push(`ATP: invalid before_canonical in journal for ${entry.agent_relative_path}; skipping.`);
+    return true;
+  }
+
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (dest.toLowerCase().endsWith(".toml")) {
+    if (restored === null || typeof restored !== "object" || Array.isArray(restored)) {
+      warnings.push(
+        `ATP: invalid before_canonical for TOML ${entry.agent_relative_path}; skipping exact restore.`
+      );
+      return true;
+    }
+    fs.writeFileSync(
+      dest,
+      stringifyCodexConfigTomlRoot(restored as Record<string, unknown>),
+      "utf8"
+    );
+    return true;
+  }
+  fs.writeFileSync(dest, formatJsonDocument(restored), "utf8");
+  return true;
+}
+
+function applyMcpFragmentRollback(
+  dest: string,
+  currentValue: unknown,
+  serverNames: string[]
+): void {
+  if (dest.toLowerCase().endsWith(".toml")) {
+    const { root, changed } = removeMcpServerNamesFromCodexTomlParsedRoot(
+      currentValue as Record<string, unknown>,
+      serverNames
+    );
+    if (changed) {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(root), "utf8");
+    }
+    return;
+  }
+  const { document, changed } = removeMcpServersByNamesFromDocument(currentValue, serverNames);
+  if (changed) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+  }
+}
+
+function applyHooksFragmentRollback(
+  dest: string,
+  currentValue: unknown,
+  hooksDelta: Record<string, unknown[]>
+): void {
+  const pkgPayload = { hooks: hooksDelta };
+  const { document, changed } = removeHookHandlersFromDocument(currentValue, pkgPayload);
+  if (changed) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
+  }
+}
+
+function applyCodexFeaturesFragmentRollback(
+  dest: string,
+  currentValue: unknown,
+  codexHooksBefore: boolean | null
+): void {
+  const { root: rolled, changed: featChanged } = applyCodexHooksFeatureRollbackToRoot(
+    currentValue as Record<string, unknown>,
+    codexHooksBefore
+  );
+  if (featChanged) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(rolled), "utf8");
+  }
+}
+
+function applyDriftFragmentRollback(
+  entry: ConfigMergeJournalEntryV1,
+  dest: string,
+  currentValue: unknown,
+  warnings: string[]
+): void {
+  warnings.push(
+    `ATP: ${entry.agent_relative_path} changed since install (expected after SHA ${entry.after_sha256.slice(0, 12)}…); applying fragment rollback only.`
+  );
+
+  const { fragments } = entry;
+  if (fragments.type === "mcp") {
+    applyMcpFragmentRollback(dest, currentValue, fragments.server_names);
+    return;
+  }
+  if (fragments.type === "hooks") {
+    applyHooksFragmentRollback(dest, currentValue, fragments.hooks_delta);
+    return;
+  }
+  applyCodexFeaturesFragmentRollback(dest, currentValue, fragments.codex_hooks_before);
+}
+
 /**
  * Roll back merged config using journal entries (reverse order).
  *
@@ -177,113 +332,14 @@ export function rollbackMergedConfigJournal(
       warnings.push(`ATP: refusing journal rollback path "${rel}" (must be relative with no ..).`);
       continue;
     }
-    const base =
-      entry.configRoot === "project"
-        ? projectRoot
-        : entry.configRoot === "user_home"
-          ? os.homedir()
-          : agentLayerRoot;
-    const dest = path.join(base, rel);
-    let currentValue: unknown = {};
-    let currentSha: string;
-    if (!fs.existsSync(dest)) {
-      currentValue = {};
-      currentSha = sha256HexCanonicalJson(currentValue);
-    } else {
-      try {
-        currentValue = readConfigMergeDocumentRoot(dest);
-        currentSha = sha256HexCanonicalJson(currentValue);
-      } catch (e) {
-        warnings.push(
-          `ATP: could not parse ${entry.agent_relative_path} during journal rollback; trying fragment removal only. ${(e as Error).message}`
-        );
-        currentValue = {};
-        currentSha = "";
-      }
-    }
+    const dest = path.join(journalConfigRootBase(entry, agentLayerRoot, projectRoot), rel);
+    const { currentValue, currentSha } = loadJournalRollbackCurrentState(dest, entry.agent_relative_path, warnings);
 
-    const exactMatch = currentSha === entry.after_sha256;
-
-    if (exactMatch) {
-      if (entry.before_absent) {
-        if (fs.existsSync(dest)) {
-          fs.unlinkSync(dest);
-        }
-      } else {
-        let restored: unknown;
-        try {
-          restored = JSON.parse(entry.before_canonical) as unknown;
-        } catch {
-          warnings.push(`ATP: invalid before_canonical in journal for ${entry.agent_relative_path}; skipping.`);
-          continue;
-        }
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        if (dest.toLowerCase().endsWith(".toml")) {
-          if (restored === null || typeof restored !== "object" || Array.isArray(restored)) {
-            warnings.push(
-              `ATP: invalid before_canonical for TOML ${entry.agent_relative_path}; skipping exact restore.`
-            );
-            continue;
-          }
-          fs.writeFileSync(
-            dest,
-            stringifyCodexConfigTomlRoot(restored as Record<string, unknown>),
-            "utf8"
-          );
-        } else {
-          fs.writeFileSync(dest, formatJsonDocument(restored), "utf8");
-        }
-      }
+    if (tryExactJournalRollback(entry, dest, currentSha, warnings)) {
       continue;
     }
 
-    warnings.push(
-      `ATP: ${entry.agent_relative_path} changed since install (expected after SHA ${entry.after_sha256.slice(0, 12)}…); applying fragment rollback only.`
-    );
-
-    if (entry.fragments.type === "mcp") {
-      if (dest.toLowerCase().endsWith(".toml")) {
-        const { root, changed } = removeMcpServerNamesFromCodexTomlParsedRoot(
-          currentValue as Record<string, unknown>,
-          entry.fragments.server_names
-        );
-        if (changed) {
-          fs.mkdirSync(path.dirname(dest), { recursive: true });
-          fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(root), "utf8");
-        }
-      } else {
-        const { document, changed } = removeMcpServersByNamesFromDocument(
-          currentValue,
-          entry.fragments.server_names
-        );
-        if (changed) {
-          fs.mkdirSync(path.dirname(dest), { recursive: true });
-          fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
-        }
-      }
-      continue;
-    }
-
-    if (entry.fragments.type === "hooks") {
-      const pkgPayload = { hooks: entry.fragments.hooks_delta };
-      const { document, changed } = removeHookHandlersFromDocument(currentValue, pkgPayload);
-      if (changed) {
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, formatJsonDocument(document), "utf8");
-      }
-      continue;
-    }
-
-    if (entry.fragments.type === "codex_features") {
-      const { root: rolled, changed: featChanged } = applyCodexHooksFeatureRollbackToRoot(
-        currentValue as Record<string, unknown>,
-        entry.fragments.codex_hooks_before
-      );
-      if (featChanged) {
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, stringifyCodexConfigTomlRoot(rolled), "utf8");
-      }
-    }
+    applyDriftFragmentRollback(entry, dest, currentValue, warnings);
   }
 
   return warnings;
