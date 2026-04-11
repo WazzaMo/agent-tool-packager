@@ -478,7 +478,7 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 - [x] **6.6** Op **8** — `mcp_json_merge` / nested `settings.json` for Gemini (`mcpServers` + hooks); Claude project `.mcp.json` / user `~/.claude.json`.
 
-- [ ] **6.7** Op **9** — `program` assets copy to configured bin dirs (`copyProgramAssetsOnly` / `copyPackageAsset`); explicit `chmod +x` in codebase **[ ]** (may follow source modes).
+- [x] **6.7** Op **9** — `program` assets copy to configured bin dirs (`copyProgramAssetsOnly` / `copyPackageAsset`); after `copyFileSync`, `chmodProgramAfterCopy` in `copy-package-asset.ts` sets `0o755` when the source is not user-executable, otherwise preserves the source `mode & 0o777`.
 
 - [ ] **6.8** Op **10** — interpolation validate / normalise for MCP and hooks (beyond markdown placeholder patching).
 
@@ -510,6 +510,6 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 See [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
 
-**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.6**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
+**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.7**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
 
-**Still open:** explicit executable `+x` (**6.7**), interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).
+**Still open:** interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).

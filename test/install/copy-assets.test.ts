@@ -188,6 +188,32 @@ describe("copyPackageAssets", () => {
     const dest = path.join(binDir, "file-patch.sh");
     expect(fs.existsSync(dest)).toBe(true);
     expect(fs.readFileSync(dest, "utf8")).toBe("#!/bin/sh\necho patching");
+    if (process.platform !== "win32") {
+      expect(fs.statSync(dest).mode & 0o777).toBe(0o755);
+    }
+  });
+
+  it("preserves restrictive executable mode from source program asset when u+x is set", () => {
+    const binDir = path.join(path.dirname(pkgDir), "bin2");
+    fs.mkdirSync(path.join(pkgDir, "tools"), { recursive: true });
+    const scriptPath = path.join(pkgDir, "tools", "secret.sh");
+    fs.writeFileSync(scriptPath, "#!/bin/sh\necho x");
+    fs.chmodSync(scriptPath, 0o700);
+    copyPackageAssets(
+      pkgDir,
+      {
+        name: "p",
+        assets: [{ path: "tools/secret.sh", type: "program", name: "secret" }],
+      },
+      agentBase,
+      undefined,
+      binDir
+    );
+    const dest = path.join(binDir, "secret.sh");
+    expect(fs.existsSync(dest)).toBe(true);
+    if (process.platform !== "win32") {
+      expect(fs.statSync(dest).mode & 0o777).toBe(0o700);
+    }
   });
 
   it("skips program assets when installBinDir not provided", () => {

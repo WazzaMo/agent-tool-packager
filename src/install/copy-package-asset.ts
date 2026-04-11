@@ -19,6 +19,15 @@ import {
 
 import type { PackageAsset } from "./types.js";
 
+/**
+ * `copyFileSync` does not reliably preserve Unix permission bits on the destination.
+ * For `program` assets, keep the source mode when the owner execute bit is set; otherwise use `0o755`.
+ */
+function chmodProgramAfterCopy(destPath: string, srcPath: string): void {
+  const srcMode = fs.statSync(srcPath).mode & 0o777;
+  fs.chmodSync(destPath, srcMode & 0o100 ? srcMode : 0o755);
+}
+
 function isCodexAgentBase(agentBase: string): boolean {
   return path.basename(path.normalize(agentBase)) === ".codex";
 }
@@ -164,6 +173,7 @@ export function copyPackageAsset(
     const baseName = path.basename(asset.path);
     const destPath = path.join(installBinDir, baseName);
     fs.copyFileSync(srcPath, destPath);
+    chmodProgramAfterCopy(destPath, srcPath);
     onFileCopied?.(destPath);
     return;
   }
