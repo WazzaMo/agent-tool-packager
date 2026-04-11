@@ -126,6 +126,14 @@ Each part `type` selects install behaviour. Common kinds:
 Exact on-disk targets depend on the agent selected in the project Safehouse; ATP maps each
 kind to provider-specific paths during install.
 
+## Skills
+
+According to the [Agent Skills Spec](https://agentskills.io/specification)
+Skills require YAML front matter and markdown body content.
+Editors, such as VS Code, provide support for each but not in the one file.
+
+When using bundle parts for a package, you can add the YAML and the Markdown in separate files.
+
 # Optional checks
 
 - `atp validate catalog-package` — sanity-check an already-published package directory (for
