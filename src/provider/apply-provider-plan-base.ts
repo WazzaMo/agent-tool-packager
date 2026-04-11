@@ -12,9 +12,13 @@ import type { InstallContext } from "../file-ops/install-context.js";
 
 import { applyManagedBlockToText } from "../file-ops/markdown-merge/managed-block-patch.js";
 
+import { getOpaquePayloadHandler } from "./opaque-payload-handlers.js";
+
 import type {
   DeleteManagedFileAction,
+  DiscoveryHintAppendAction,
   MarkdownManagedBlockPatchAction,
+  OpaquePayloadAction,
   PlainMarkdownWriteAction,
   RawFileCopyAction,
 } from "./provider-dtos.js";
@@ -115,4 +119,45 @@ export function applyDeleteManagedFileAction(
     fs.unlinkSync(dest);
     onFileWritten?.(dest);
   }
+}
+
+export function applyDiscoveryHintAppendAction(
+  ctx: InstallContext,
+  action: DiscoveryHintAppendAction,
+  onFileWritten?: (absolutePath: string) => void
+): void {
+  const root = resolveActionRoot(ctx, action.destinationRoot);
+  const dest = path.join(root, action.relativeTargetPath);
+  const bullet = action.bulletMarkdownLine.trimEnd();
+  if (!bullet) {
+    return;
+  }
+
+  if (!fs.existsSync(dest)) {
+    if (action.ifMissingFile === "skip") {
+      return;
+    }
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, `# AGENTS.md\n\n${bullet}\n`, "utf8");
+    onFileWritten?.(dest);
+    return;
+  }
+
+  const existing = fs.readFileSync(dest, "utf8");
+  if (existing.includes(bullet)) {
+    return;
+  }
+  const suffix = existing.endsWith("\n") ? "" : "\n";
+  const next = `${existing}${suffix}${bullet}\n`;
+  fs.writeFileSync(dest, next, "utf8");
+  onFileWritten?.(dest);
+}
+
+export function applyOpaquePayloadAction(
+  ctx: InstallContext,
+  action: OpaquePayloadAction,
+  onFileWritten?: (absolutePath: string) => void
+): void {
+  const fn = getOpaquePayloadHandler(action.handlerId);
+  fn(ctx, action.payload, onFileWritten);
 }

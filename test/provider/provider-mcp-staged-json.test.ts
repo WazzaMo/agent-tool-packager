@@ -28,7 +28,7 @@ describe("providerActionsForStagedMcpJson", () => {
       defaultRelativeTarget: "mcp.json",
       provenanceFragmentKey: "mcp.json",
     });
-    expect(actions).toHaveLength(1);
+    expect(actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "interpolation_policy"]);
     expect(actions[0].kind).toBe("mcp_json_merge");
     if (actions[0].kind === "mcp_json_merge") {
       expect(actions[0].payload).toEqual({ mcpServers: { a: { command: "x" } } });
@@ -53,14 +53,19 @@ describe("providerActionsForStagedMcpJson", () => {
       defaultRelativeTarget: "settings.json",
       provenanceFragmentKey: "settings.json",
     });
-    expect(actions).toHaveLength(2);
+    expect(actions.map((a) => a.kind)).toEqual([
+      "mcp_json_merge",
+      "interpolation_policy",
+      "json_document_strategy_merge",
+      "interpolation_policy",
+    ]);
     const mcp = actions[0];
     expect(mcp.kind).toBe("mcp_json_merge");
     if (mcp.kind === "mcp_json_merge") {
       expect(mcp.payload).toEqual({ mcpServers: { s: { url: "http://h" } } });
       expect("atpJsonDocumentStrategy" in (mcp.payload as object)).toBe(false);
     }
-    const st = actions[1];
+    const st = actions[2];
     expect(st.kind).toBe("json_document_strategy_merge");
     if (st.kind === "json_document_strategy_merge") {
       expect(st.strategy).toEqual({ mode: "deep_assign_paths", paths: [[]] });
@@ -84,7 +89,10 @@ describe("providerActionsForStagedMcpJson", () => {
       defaultRelativeTarget: "mcp.json",
       provenanceFragmentKey: "mcp.json",
     });
-    expect(actions).toHaveLength(1);
+    expect(actions.map((a) => a.kind)).toEqual([
+      "json_document_strategy_merge",
+      "interpolation_policy",
+    ]);
     expect(actions[0].kind).toBe("json_document_strategy_merge");
   });
 
@@ -127,11 +135,17 @@ describe("providerActionsForStagedMcpJson", () => {
       defaultRelativeTarget: ".mcp.json",
       provenanceFragmentKey: ".mcp.json",
     });
+    expect(actions.map((a) => a.kind)).toEqual([
+      "mcp_json_merge",
+      "interpolation_policy",
+      "json_document_strategy_merge",
+      "interpolation_policy",
+    ]);
     expect(actions[0].kind).toBe("mcp_json_merge");
-    expect(actions[1].kind).toBe("json_document_strategy_merge");
-    if (actions[0].kind === "mcp_json_merge" && actions[1].kind === "json_document_strategy_merge") {
+    expect(actions[2].kind).toBe("json_document_strategy_merge");
+    if (actions[0].kind === "mcp_json_merge" && actions[2].kind === "json_document_strategy_merge") {
       expect(actions[0].mergeBase).toBe("project");
-      expect(actions[1].mergeBase).toBe("project");
+      expect(actions[2].mergeBase).toBe("project");
     }
   });
 

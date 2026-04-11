@@ -6,11 +6,14 @@ import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.j
 
 import {
   applyDeleteManagedFileAction,
+  applyDiscoveryHintAppendAction,
   applyHooksJsonMergeAction,
+  applyInterpolationPolicyAction,
   applyJsonDocumentStrategyMergeAction,
   applyMarkdownManagedBlockPatchAction,
   applyMcpCodexConfigTomlMergeAction,
   applyMcpJsonMergeAction,
+  applyOpaquePayloadAction,
   applyPlainMarkdownWriteAction,
   applyRawFileCopyAction,
 } from "./apply-provider-plan-actions.js";
@@ -57,6 +60,18 @@ export function applyProviderPlan(
     }
     if (action.kind === "hooks_json_merge") {
       applyHooksJsonMergeAction(plan, action, merge, onFileWritten, configMergeJournal);
+      continue;
+    }
+    if (action.kind === "interpolation_policy") {
+      applyInterpolationPolicyAction(plan, action, merge, onFileWritten);
+      continue;
+    }
+    if (action.kind === "discovery_hint_append") {
+      applyDiscoveryHintAppendAction(ctx, action, onFileWritten);
+      continue;
+    }
+    if (action.kind === "opaque_payload") {
+      applyOpaquePayloadAction(ctx, action, onFileWritten);
       continue;
     }
     if (action.kind === "raw_file_copy") {

@@ -14,7 +14,7 @@ import {
   type SkillInstallPathOptions,
 } from "./skill/plan-skill-install.js";
 import { SkillFrontmatterError } from "./skill/normalize-skill-frontmatter.js";
-import type { AtpProvenance, ProviderPlan } from "./provider-dtos.js";
+import type { AtpProvenance, PlainMarkdownWriteAction, ProviderPlan } from "./provider-dtos.js";
 
 /**
  * Path of `absoluteFilePath` relative to `layerRoot`, POSIX-style.
@@ -92,8 +92,16 @@ export function provenanceForFragment(
   };
 }
 
+/** Optional metadata after appending skill install actions (e.g. discovery hints). */
+export interface SkillInstallAppendResult {
+  /** Primary `SKILL.md` path under the layer or project root (posix). */
+  primarySkillMdRelative?: string;
+}
+
 /**
  * Append skill install actions; wraps {@link SkillFrontmatterError} with `providerLabel:` prefix.
+ *
+ * @returns Primary skill markdown path when a `plain_markdown_write` for `SKILL.md` was queued.
  */
 export function appendSkillInstallActions(
   actions: ProviderPlan["actions"],
@@ -105,24 +113,29 @@ export function appendSkillInstallActions(
   bundlePathMap: Record<string, string> | undefined,
   providerLabel: string,
   skillPathOptions?: SkillInstallPathOptions
-): void {
+): SkillInstallAppendResult {
+  const result: SkillInstallAppendResult = {};
   try {
-    actions.push(
-      ...buildSkillInstallProviderActions(
-        { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot, projectRoot: ctx.projectRoot },
-        { partIndex: part.partIndex, partKind: part.partKind },
-        skillAssets,
-        { name: packageName, version: packageVersion },
-        bundlePathMap,
-        skillPathOptions
-      )
+    const built = buildSkillInstallProviderActions(
+      { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot, projectRoot: ctx.projectRoot },
+      { partIndex: part.partIndex, partKind: part.partKind },
+      skillAssets,
+      { name: packageName, version: packageVersion },
+      bundlePathMap,
+      skillPathOptions
     );
+    actions.push(...built);
+    const md = built.find((b): b is PlainMarkdownWriteAction => b.kind === "plain_markdown_write");
+    if (md) {
+      result.primarySkillMdRelative = md.relativeTargetPath.replace(/\\/g, "/");
+    }
   } catch (e) {
     if (e instanceof SkillFrontmatterError) {
       throw new Error(`${providerLabel}: ${e.message}`);
     }
     throw e;
   }
+  return result;
 }
 
 /**

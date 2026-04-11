@@ -29,6 +29,8 @@ import {
   relativePathFromLayerRoot,
   requireStagedSourceFile,
 } from "./provider-plan-common.js";
+import { experimentalPartOpaqueActions } from "./experimental-opaque-plan.js";
+import { interpolationPolicyAfterHooksMerge } from "./interpolation-follow-up.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
 import { providerActionsForStagedMcpJson } from "./provider-mcp-staged-json.js";
 import { markdownManagedBlockForInstalledRule } from "./rule-project-aggregate-md.js";
@@ -98,14 +100,21 @@ function actionsForHookAsset(
   const baseName = path.basename(asset.path);
   if (baseName === "hooks.json") {
     const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
+    const hookMerge = {
+      kind: "hooks_json_merge" as const,
+      operationId: OperationIds.HookJsonGraph,
+      provenance: provenanceForFragment(packageName, packageVersion, part, SETTINGS_JSON),
+      relativeTargetPath: SETTINGS_JSON,
+      payload,
+    };
     return [
-      {
-        kind: "hooks_json_merge",
-        operationId: OperationIds.HookJsonGraph,
-        provenance: provenanceForFragment(packageName, packageVersion, part, SETTINGS_JSON),
-        relativeTargetPath: SETTINGS_JSON,
-        payload,
-      },
+      hookMerge,
+      interpolationPolicyAfterHooksMerge({
+        part,
+        packageName,
+        packageVersion,
+        hooksAction: hookMerge,
+      }),
     ];
   }
   const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
@@ -290,6 +299,17 @@ export class GeminiAgentProvider implements AgentProvider {
   ): ProviderPlan {
     const packageName = this.manifest.name;
     const packageVersion = this.manifest.version;
+
+    if (part.partKind === "Experimental") {
+      return installPlanForPart(
+        ctx,
+        part,
+        packageName,
+        packageVersion,
+        experimentalPartOpaqueActions(this.manifest, part, packageName, packageVersion)
+      );
+    }
+
     const { skillAssets, nonSkillAssets } = partitionPartNonProgramAssets(this.manifest, part);
     const actions: ProviderPlan["actions"] = [];
 

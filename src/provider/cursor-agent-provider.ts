@@ -25,6 +25,8 @@ import {
   relativePathFromLayerRoot,
   requireStagedSourceFile,
 } from "./provider-plan-common.js";
+import { experimentalPartOpaqueActions } from "./experimental-opaque-plan.js";
+import { interpolationPolicyAfterHooksMerge } from "./interpolation-follow-up.js";
 import { buildRemoveManagedFilePlan } from "./provider-plan-remove.js";
 import { providerActionsForStagedMcpJson } from "./provider-mcp-staged-json.js";
 import type { AtpProvenance, ProviderAction, ProviderPlan } from "./provider-dtos.js";
@@ -78,14 +80,21 @@ function actionsForHookAsset(
   const baseName = path.basename(asset.path);
   if (baseName === HOOKS_JSON) {
     const payload = readStagedJsonFile(PROVIDER_LABEL, asset.path, src);
+    const hookMerge = {
+      kind: "hooks_json_merge" as const,
+      operationId: OperationIds.HookJsonGraph,
+      provenance: provenanceForFragment(packageName, packageVersion, part, HOOKS_JSON),
+      relativeTargetPath: HOOKS_JSON,
+      payload,
+    };
     return [
-      {
-        kind: "hooks_json_merge",
-        operationId: OperationIds.HookJsonGraph,
-        provenance: provenanceForFragment(packageName, packageVersion, part, HOOKS_JSON),
-        relativeTargetPath: HOOKS_JSON,
-        payload,
-      },
+      hookMerge,
+      interpolationPolicyAfterHooksMerge({
+        part,
+        packageName,
+        packageVersion,
+        hooksAction: hookMerge,
+      }),
     ];
   }
   const { filePath } = agentDestinationForAsset(ctx.layerRoot, asset);
@@ -210,11 +219,22 @@ export class CursorAgentProvider implements AgentProvider {
   ): ProviderPlan {
     const packageName = this.manifest.name;
     const packageVersion = this.manifest.version;
+
+    if (part.partKind === "Experimental") {
+      return installPlanForPart(
+        ctx,
+        part,
+        packageName,
+        packageVersion,
+        experimentalPartOpaqueActions(this.manifest, part, packageName, packageVersion)
+      );
+    }
+
     const { skillAssets, nonSkillAssets } = partitionPartNonProgramAssets(this.manifest, part);
     const actions: ProviderPlan["actions"] = [];
 
     if (skillAssets.length > 0) {
-      appendSkillInstallActions(
+      const { primarySkillMdRelative } = appendSkillInstallActions(
         actions,
         ctx,
         part,
@@ -224,6 +244,23 @@ export class CursorAgentProvider implements AgentProvider {
         this.bundlePathMap,
         PROVIDER_LABEL
       );
+      if (primarySkillMdRelative) {
+        const pkg = packageName ?? "package";
+        actions.push({
+          kind: "discovery_hint_append",
+          operationId: OperationIds.DiscoveryHint,
+          provenance: provenanceForFragment(
+            packageName,
+            packageVersion,
+            part,
+            `discovery:AGENTS.md:${primarySkillMdRelative}`
+          ),
+          relativeTargetPath: "AGENTS.md",
+          destinationRoot: "project",
+          bulletMarkdownLine: `- **${pkg}** (ATP): Cursor skill — [\`SKILL.md\`](./.cursor/${primarySkillMdRelative})`,
+          ifMissingFile: "create_minimal",
+        });
+      }
     }
 
     for (const asset of nonSkillAssets) {

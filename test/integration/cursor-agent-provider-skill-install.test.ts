@@ -83,5 +83,11 @@ describe("Integration: CursorAgentProvider skill layout", () => {
 
     const helper = path.join(projectDir, ".cursor", "skills", "pdf-kit", "helper.py");
     expect(fs.readFileSync(helper, "utf8")).toBe("# py\n");
+
+    const agentsMd = path.join(projectDir, "AGENTS.md");
+    expect(fs.existsSync(agentsMd)).toBe(true);
+    const agentsText = fs.readFileSync(agentsMd, "utf8");
+    expect(agentsText).toContain("cap-skill-bundle");
+    expect(agentsText).toContain(".cursor/skills/pdf-kit/SKILL.md");
   });
 });

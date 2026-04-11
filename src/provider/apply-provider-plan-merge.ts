@@ -20,6 +20,10 @@ import {
 } from "../file-ops/mcp-merge/mcp-codex-toml-merge.js";
 import { mergeMcpJsonDocument } from "../file-ops/mcp-merge/mcp-json-merge.js";
 import { mergeJsonDocumentWithStrategy } from "../file-ops/json-merge/json-document-merge-strategies.js";
+import {
+  collectInterpolationIssuesInJson,
+  normalizeWorkspaceVariablesInJson,
+} from "../file-ops/interpolation/config-interpolation.js";
 
 import {
   mcpMergeOptionsFromProvider,
@@ -29,6 +33,7 @@ import {
 
 import type {
   HooksJsonMergeAction,
+  InterpolationPolicyAction,
   JsonDocumentStrategyMergeAction,
   McpCodexConfigTomlMergeAction,
   McpJsonMergeAction,
@@ -276,4 +281,41 @@ export function applyHooksJsonMergeAction(
     fragments: { type: "hooks", hooks_delta: hooksDelta },
     before_canonical: beforeCanonical,
   });
+}
+
+export function applyInterpolationPolicyAction(
+  plan: ProviderPlan,
+  action: InterpolationPolicyAction,
+  merge: ProviderMergeOptions,
+  onFileWritten?: (absolutePath: string) => void
+): void {
+  if (merge.skipConfig) {
+    return;
+  }
+  const rel = assertSafeAgentRelativePath(action.relativeTargetPath, "interpolation_policy");
+  const baseRoot = mcpMergeBaseRoot(plan, action.mergeBase);
+  const dest = path.join(baseRoot, rel);
+  if (!fs.existsSync(dest)) {
+    return;
+  }
+  const existing = readJsonIfExists(dest);
+  if (existing === null || existing === undefined) {
+    return;
+  }
+
+  if (action.policy === "validate_only") {
+    const issues = collectInterpolationIssuesInJson(existing);
+    if (issues.length > 0) {
+      throw new Error(`interpolation_policy validate_only on ${rel}: ${issues.join("; ")}`);
+    }
+    return;
+  }
+
+  const { doc, changed } = normalizeWorkspaceVariablesInJson(existing);
+  if (!changed) {
+    return;
+  }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, formatJsonDocument(doc), "utf8");
+  onFileWritten?.(dest);
 }

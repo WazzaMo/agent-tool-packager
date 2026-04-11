@@ -196,7 +196,12 @@ describe("ClaudeAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions).toHaveLength(2);
+    expect(plan.actions.map((a) => a.kind)).toEqual([
+      "mcp_json_merge",
+      "interpolation_policy",
+      "hooks_json_merge",
+      "interpolation_policy",
+    ]);
     provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     const mcpDoc = JSON.parse(fs.readFileSync(path.join(projectRoot, ".mcp.json"), "utf8")) as {
       mcpServers: Record<string, unknown>;
@@ -231,7 +236,12 @@ describe("ClaudeAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "json_document_strategy_merge"]);
+    expect(plan.actions.map((a) => a.kind)).toEqual([
+      "mcp_json_merge",
+      "interpolation_policy",
+      "json_document_strategy_merge",
+      "interpolation_policy",
+    ]);
     provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     const dest = path.join(projectRoot, ".mcp.json");
     const doc = JSON.parse(fs.readFileSync(dest, "utf8")) as Record<string, unknown>;

@@ -9,6 +9,7 @@ import type { JsonMergeStrategy } from "../file-ops/json-merge/json-document-mer
 import type { StagedPartInstallInput } from "../file-ops/part-install-input.js";
 
 import { provenanceForFragment } from "./provider-plan-common.js";
+import { withInterpolationAfterJsonMerges } from "./interpolation-follow-up.js";
 import type { ProviderAction } from "./provider-dtos.js";
 
 const STRATEGY_KEY = "atpJsonDocumentStrategy";
@@ -125,5 +126,5 @@ export function providerActionsForStagedMcpJson(options: {
     );
   }
 
-  return actions;
+  return withInterpolationAfterJsonMerges(actions, part, packageName, packageVersion);
 }

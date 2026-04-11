@@ -480,11 +480,11 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 - [x] **6.7** Op **9** — `program` assets copy to configured bin dirs (`copyProgramAssetsOnly` / `copyPackageAsset`); after `copyFileSync`, `chmodProgramAfterCopy` in `copy-package-asset.ts` sets `0o755` when the source is not user-executable, otherwise preserves the source `mode & 0o777`.
 
-- [ ] **6.8** Op **10** — interpolation validate / normalise for MCP and hooks (beyond markdown placeholder patching).
+- [x] **6.8** Op **10** — `interpolation_policy` action: after each `mcp_json_merge` / `json_document_strategy_merge` (via `withInterpolationAfterJsonMerges`) and after `hooks_json_merge`, `normalize_workspace_paths` rewrites `${workspaceRoot}` → `${workspaceFolder}` in JSON string leaves (`config-interpolation.ts`, `applyInterpolationPolicyAction`). `validate_only` supported; **Codex `config.toml` MCP** not scanned (JSON targets only). Respects `skipConfig` (no read/write when skipped).
 
-- [ ] **6.9** Op **11** — discovery hints (`AGENTS.md` bullets, etc.).
+- [x] **6.9** Op **11** — `discovery_hint_append`: after Cursor skill install, append a bullet to project-root `AGENTS.md` linking `./.cursor/.../SKILL.md` (`create_minimal` when missing). Other agents: not wired (Codex/Gemini/Claude use managed blocks for rules where applicable).
 
-- [ ] **6.10** Op **12** — experimental / opaque drops (`delete_managed_file` exists for `planRemove`; general op **12** coverage **[ ]**).
+- [x] **6.10** Op **12** — `opaque_payload` + `atp.opaque.staged_raw_copy` handler (`opaque-payload-handlers.ts`); **Experimental** parts use `experimentalPartOpaqueActions` → files under `{layer}/experimental/<staged path>` (all four providers). Extensible via handler registry; `delete_managed_file` still used for `planRemove`.
 
 ### 7 User control on the CLI
 
@@ -510,6 +510,6 @@ Cursor **MD+YAML → `.mdc`** (**4.1–4.6**) is done; **4.7–4.9** extend inst
 
 See [2026-04-03-plan-installer-provider-file-operations](./2026-04-03-plan-installer-provider-file-operations.md).
 
-**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.7**, CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
+**Done in-repo:** MCP JSON merge (**3**), Codex MCP TOML merge (**3.9**), Cursor MD+YAML → `.mdc` (**4.1–4.6**), package validation for rules/skills YAML (**4.10**), pre-install rule/skill validation (**5.5**), provider wire-up for catalog `atp install` (**5**), matrix ops **6.1** (partial), **6.2** (op **4** aggregate for Gemini / Claude / Codex rule installs), **6.3–6.10** (interpolation, Cursor `AGENTS.md` discovery hint, Experimental opaque drop), CLI `--force-config` / `--skip-config` (**7**), safehouse merge rollback (**8**).
 
-**Still open:** interpolation validate (**6.8**), discovery hints (**6.9**), broader op **12** (**6.10**), non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**).
+**Still open:** non-goals doc (**9**), Codex `[features]` / hooks-enablement (**3.10**); optional: more `opaque_payload` handlers, discovery hints for non-Cursor agents, TOML interpolation.

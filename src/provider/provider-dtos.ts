@@ -7,8 +7,10 @@ import type { JsonMergeStrategy } from "../file-ops/json-merge/json-document-mer
 import type { PartKind } from "../file-ops/part-install-input.js";
 import type {
   ConfigMergeOperationId,
+  DiscoveryHintOperationId,
   ExperimentalDropOperationId,
   HookJsonGraphOperationId,
+  InterpolationValidateOperationId,
   MarkdownAggregateOperationId,
   PlainMarkdownEmitOperationId,
   RuleAssemblyOperationId,
@@ -154,6 +156,37 @@ export interface DeleteManagedFileAction {
   destinationRoot?: "layer" | "project";
 }
 
+/** Validate or normalise `${…}` placeholders in a JSON config file after merge (op **10**). */
+export interface InterpolationPolicyAction {
+  kind: "interpolation_policy";
+  operationId: InterpolationValidateOperationId;
+  provenance: AtpProvenance;
+  /** Same roots as {@link McpJsonMergeAction.mergeBase}; hooks always use default `layer`. */
+  mergeBase?: "layer" | "project" | "user_home";
+  relativeTargetPath: string;
+  policy: "validate_only" | "normalize_workspace_paths";
+}
+
+/** Append one markdown bullet line to an index file (op **11**). */
+export interface DiscoveryHintAppendAction {
+  kind: "discovery_hint_append";
+  operationId: DiscoveryHintOperationId;
+  provenance: AtpProvenance;
+  relativeTargetPath: string;
+  destinationRoot?: "layer" | "project";
+  bulletMarkdownLine: string;
+  ifMissingFile: "skip" | "create_minimal";
+}
+
+/** Registry-driven install for Experimental parts (op **12**). */
+export interface OpaquePayloadAction {
+  kind: "opaque_payload";
+  operationId: ExperimentalDropOperationId;
+  provenance: AtpProvenance;
+  handlerId: string;
+  payload: unknown;
+}
+
 /** Actions the Cursor provider executor can apply. */
 export type ProviderAction =
   | PlainMarkdownWriteAction
@@ -162,6 +195,9 @@ export type ProviderAction =
   | JsonDocumentStrategyMergeAction
   | McpCodexConfigTomlMergeAction
   | HooksJsonMergeAction
+  | InterpolationPolicyAction
+  | DiscoveryHintAppendAction
+  | OpaquePayloadAction
   | RawFileCopyAction
   | DeleteManagedFileAction;
 

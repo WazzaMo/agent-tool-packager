@@ -118,11 +118,16 @@ describe("CursorAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions.map((a) => a.kind)).toEqual(["plain_markdown_write", "discovery_hint_append"]);
     expect(plan.actions[0].relativeTargetPath).toBe("skills/s/SKILL.md");
     expect(plan.actions[0].provenance.fragmentKey).toBe("skills/s/SKILL.md");
     expect(plan.actions[0].kind).toBe("plain_markdown_write");
     expect(plan.actions[0].content).toContain("# S");
     expect(plan.actions[0].content).toContain("name: s");
+    if (plan.actions[1].kind === "discovery_hint_append") {
+      expect(plan.actions[1].relativeTargetPath).toBe("AGENTS.md");
+      expect(plan.actions[1].bulletMarkdownLine).toContain("./.cursor/skills/s/SKILL.md");
+    }
   });
 
   it("planInstall wraps invalid skill frontmatter as CursorAgentProvider error (tamper / spec guard)", () => {
@@ -188,6 +193,55 @@ describe("CursorAgentProvider", () => {
     expect(plan.actions[0].content.trimEnd().endsWith("# Hi")).toBe(true);
   });
 
+  it("normalizes ${workspaceRoot} to ${workspaceFolder} in mcp.json after merge (op 10)", () => {
+    fs.writeFileSync(
+      path.join(staging, "mcp.json"),
+      JSON.stringify({
+        mcpServers: { srv: { command: "sh", args: ["-c", "echo ${workspaceRoot}/x"] } },
+      })
+    );
+    const manifest = {
+      name: "interp",
+      assets: [{ path: "mcp.json", type: "mcp" as const, name: "m" }],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Mcp",
+      stagingRelPaths: ["mcp.json"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const raw = fs.readFileSync(path.join(layerRoot, "mcp.json"), "utf8");
+    expect(raw).toContain("${workspaceFolder}");
+    expect(raw).not.toContain("${workspaceRoot}");
+  });
+
+  it("planInstall for Experimental part copies staged files via opaque_payload under experimental/", () => {
+    fs.mkdirSync(path.join(staging, "part_1_Experimental"), { recursive: true });
+    fs.writeFileSync(path.join(staging, "part_1_Experimental", "note.txt"), "payload\n");
+    const manifest = {
+      name: "exp-pkg",
+      assets: [
+        { path: "part_1_Experimental/note.txt", type: "rule" as const, name: "note" },
+      ],
+    };
+    const provider = createCursorAgentProvider(manifest);
+    const part = new StagedPartInstallInput({
+      partIndex: 1,
+      partKind: "Experimental",
+      stagingRelPaths: ["part_1_Experimental/note.txt"],
+      stagingDir: staging,
+    });
+    const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
+    expect(plan.actions).toHaveLength(1);
+    expect(plan.actions[0].kind).toBe("opaque_payload");
+    provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
+    const dest = path.join(layerRoot, "experimental", "part_1_Experimental", "note.txt");
+    expect(fs.readFileSync(dest, "utf8")).toBe("payload\n");
+  });
+
   it("merges mcp.json from staged MCP asset", () => {
     fs.writeFileSync(
       path.join(staging, "mcp.json"),
@@ -235,7 +289,12 @@ describe("CursorAgentProvider", () => {
       stagingDir: staging,
     });
     const plan = provider.planInstall(installCtx(), part, { forceConfig: false, skipConfig: false });
-    expect(plan.actions.map((a) => a.kind)).toEqual(["mcp_json_merge", "json_document_strategy_merge"]);
+    expect(plan.actions.map((a) => a.kind)).toEqual([
+      "mcp_json_merge",
+      "interpolation_policy",
+      "json_document_strategy_merge",
+      "interpolation_policy",
+    ]);
     provider.applyPlan(plan, { forceConfig: false, skipConfig: false });
     const doc = JSON.parse(fs.readFileSync(path.join(layerRoot, "mcp.json"), "utf8")) as {
       mcpServers: Record<string, unknown>;

@@ -102,3 +102,9 @@ export type MarkdownAggregateOperationId = typeof OperationIds.MarkdownAggregate
 
 /** Literal id for {@link OperationIds.ExperimentalDrop}. */
 export type ExperimentalDropOperationId = typeof OperationIds.ExperimentalDrop;
+
+/** Literal id for {@link OperationIds.InterpolationValidate}. */
+export type InterpolationValidateOperationId = typeof OperationIds.InterpolationValidate;
+
+/** Literal id for {@link OperationIds.DiscoveryHint}. */
+export type DiscoveryHintOperationId = typeof OperationIds.DiscoveryHint;

@@ -10,6 +10,8 @@ export {
   applyPlainMarkdownWriteAction,
   applyRawFileCopyAction,
   applyDeleteManagedFileAction,
+  applyDiscoveryHintAppendAction,
+  applyOpaquePayloadAction,
 } from "./apply-provider-plan-base.js";
 
 export {
@@ -17,4 +19,5 @@ export {
   applyJsonDocumentStrategyMergeAction,
   applyMcpCodexConfigTomlMergeAction,
   applyHooksJsonMergeAction,
+  applyInterpolationPolicyAction,
 } from "./apply-provider-plan-merge.js";
