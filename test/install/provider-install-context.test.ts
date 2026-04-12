@@ -7,6 +7,7 @@ import os from "node:os";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import type * as LoadModule from "../../src/config/load.js";
+import { SafehouseAgentNotAssignedError } from "../../src/config/safehouse-agent.js";
 import { DEFAULT_AGENT_PATHS, type StationConfig } from "../../src/config/station-config.js";
 import { buildProviderInstallContext, type CatalogInstallContext } from "../../src/install/install.js";
 
@@ -94,6 +95,28 @@ describe("buildProviderInstallContext", () => {
     expect(ic.agent).toBe("gemini");
     expect(ic.layer).toBe("user");
     expect(ic.layerRoot).toBe(path.normalize(path.join(os.homedir(), ".gemini")));
+  });
+
+  it("throws when safehouse agent is null", () => {
+    mockLoad.loadSafehouseConfig.mockReturnValue({
+      agent: null,
+      station_path: "/station",
+      agent_path: null,
+    });
+    mockLoad.loadStationConfig.mockReturnValue(stationWithPaths(DEFAULT_AGENT_PATHS));
+
+    const ctx: CatalogInstallContext = {
+      pkgDir,
+      manifest: { name: "p" },
+      agentBase,
+      bundlePathMap: undefined,
+      installBinDir: undefined,
+      catalogPkg: { name: "p", version: "1.0.0" },
+      opts: { promptScope: "project", binaryScope: "user-bin", dependencies: false },
+      projectBase,
+    };
+
+    expect(() => buildProviderInstallContext(ctx)).toThrow(SafehouseAgentNotAssignedError);
   });
 
   it("throws when safehouse agent is not a supported AgentId", () => {

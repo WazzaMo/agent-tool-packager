@@ -8,6 +8,10 @@ import path from "node:path";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
+  assignedSafehouseAgentName,
+  formatSafehouseAgentNotAssignedMessage,
+} from "../config/safehouse-agent.js";
+import {
   safehouseExists,
   loadSafehouseConfig,
   loadStationConfig,
@@ -81,7 +85,11 @@ export function removeSafehousePackage(
   const safehousePath = getSafehousePath(cwd);
   const stationConfig = loadStationConfig();
   const shConfig = loadSafehouseConfig(cwd);
-  const agentName = shConfig?.agent ?? "cursor";
+  const agentName = assignedSafehouseAgentName(shConfig);
+  if (!agentName) {
+    console.error(formatSafehouseAgentNotAssignedMessage());
+    process.exit(1);
+  }
   const agentBaseForJournal = path.join(cwd, resolveAgentProjectPath(agentName, stationConfig));
 
   let skipMcpHooksFragmentStrip = false;

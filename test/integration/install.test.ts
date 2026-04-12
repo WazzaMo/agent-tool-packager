@@ -3,7 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import yaml from "js-yaml";
-import { runAtp, runAtpExpectExit, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
+import {
+  runAtp,
+  runAtpExpectExit,
+  FIXTURE_PKG,
+  makeStationCatalogYaml,
+} from "./test-helpers.js";
 
 describe("Integration: install and list", () => {
   let stationDir: string;
@@ -45,6 +50,27 @@ describe("Integration: install and list", () => {
       fs.rmSync(projectDir, { recursive: true });
     } catch {
       /* ignore */
+    }
+  });
+
+  it("atp install fails when Safehouse agent is not assigned", () => {
+    const bareProject = path.join(os.tmpdir(), `atp-inst-no-agent-${Date.now()}`);
+    fs.mkdirSync(path.join(bareProject, ".git"), { recursive: true });
+    try {
+      runAtp(["safehouse", "init"], { cwd: bareProject, env: { STATION_PATH: stationDir } });
+      const res = runAtpExpectExit(["install", "test-package"], 1, {
+        cwd: bareProject,
+        env: { STATION_PATH: stationDir },
+      });
+      const errText = res.stdout + res.stderr;
+      expect(errText).toMatch(/No agent is assigned/i);
+      expect(errText).toMatch(/atp agent/i);
+    } finally {
+      try {
+        fs.rmSync(bareProject, { recursive: true });
+      } catch {
+        /* ignore */
+      }
     }
   });
 

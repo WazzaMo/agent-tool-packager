@@ -5,6 +5,7 @@
 
 import path from "node:path";
 
+import { SafehouseAgentNotAssignedError } from "../config/safehouse-agent.js";
 import { safehouseExists } from "../config/load.js";
 import { expandHome, findProjectBase } from "../config/paths.js";
 
@@ -124,7 +125,16 @@ export async function installPackage(
     }
   }
 
-  const agentBase = getAgentBasePath(projectBase);
+  let agentBase: string;
+  try {
+    agentBase = getAgentBasePath(projectBase);
+  } catch (e) {
+    if (e instanceof SafehouseAgentNotAssignedError) {
+      console.error(e.message);
+      process.exit(1);
+    }
+    throw e;
+  }
   const bundlePathMap = buildBundleInstallPathMap(
     manifest,
     opts.binaryScope,

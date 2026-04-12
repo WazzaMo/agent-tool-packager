@@ -6,6 +6,10 @@ import path from "node:path";
 
 import { resolveAgentHomePath } from "../config/agent-path.js";
 import {
+  assignedSafehouseAgentName,
+  SafehouseAgentNotAssignedError,
+} from "../config/safehouse-agent.js";
+import {
   loadSafehouseConfig,
   loadStationConfig,
 } from "../config/load.js";
@@ -64,7 +68,10 @@ export function prepareCatalogInstallPartInputs(
 export function buildProviderInstallContext(ctx: CatalogInstallContext): InstallContext {
   const stationConfig = loadStationConfig();
   const safehouse = loadSafehouseConfig(ctx.projectBase);
-  const agentName = safehouse?.agent ?? "cursor";
+  const agentName = assignedSafehouseAgentName(safehouse);
+  if (!agentName) {
+    throw new SafehouseAgentNotAssignedError();
+  }
   const agent = normaliseAgentId(agentName);
 
   const projectRoot = path.resolve(ctx.projectBase);

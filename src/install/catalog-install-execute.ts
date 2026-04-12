@@ -7,6 +7,10 @@ import path from "node:path";
 
 import { resolveAgentProjectPath } from "../config/agent-path.js";
 import {
+  assignedSafehouseAgentName,
+  SafehouseAgentNotAssignedError,
+} from "../config/safehouse-agent.js";
+import {
   loadSafehouseConfig,
   loadStationConfig,
 } from "../config/load.js";
@@ -77,7 +81,10 @@ export function checkDependencies(
 export function getAgentBasePath(projectBase: string): string {
   const config = loadSafehouseConfig(projectBase);
   const stationConfig = loadStationConfig();
-  const agentName = config?.agent ?? "cursor";
+  const agentName = assignedSafehouseAgentName(config);
+  if (!agentName) {
+    throw new SafehouseAgentNotAssignedError();
+  }
   const projectPath = resolveAgentProjectPath(agentName, stationConfig);
   return path.join(projectBase, projectPath);
 }
