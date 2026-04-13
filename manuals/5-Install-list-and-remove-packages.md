@@ -77,6 +77,15 @@ atp catalog list
 atp catalog list --verbose
 ```
 
+Remove a **user** catalog package (the rows ATP adds under `packages.user` and the
+matching `user_packages/<name>/` tree under the Station). Standard catalog entries are
+not removed by this command; edit `atp-catalog.yaml` (or your standard catalog source) if
+you need to change those.
+
+```bash
+atp catalog remove <package-name>
+```
+
 Verbose catalog listing may read each package’s `atp-package.yaml` for type display; YAML
 errors on that path can yield a non-zero exit.
 

@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { runAtp, runAtpSpawn, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
+import {
+  runAtp,
+  runAtpSpawn,
+  runAtpExpectExit,
+  FIXTURE_PKG,
+  makeStationCatalogYaml,
+} from "./test-helpers.js";
 
 describe("Integration: catalog list", () => {
   let stationDir: string;
@@ -58,6 +64,41 @@ describe("Integration: catalog list", () => {
       env: { STATION_PATH: stationDir },
     });
     expect(out).toMatch(/test-package[\s\S]*\(/);
+  });
+
+  it("atp catalog remove deletes user row and drops name from catalog list", () => {
+    const outBefore = runAtp(["catalog", "list"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(outBefore).toContain("doc-guide");
+
+    runAtp(["catalog", "remove", "doc-guide"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const outAfter = runAtp(["catalog", "list"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(outAfter).not.toContain("doc-guide");
+    expect(outAfter).toContain("test-package");
+  });
+
+  it("atp catalog remove exits 1 for standard-only package", () => {
+    fs.writeFileSync(
+      path.join(stationDir, "atp-catalog.yaml"),
+      makeStationCatalogYaml(
+        [],
+        [{ name: "std-pkg", version: "1.0.0", location: "file:///x" }]
+      )
+    );
+    const r = runAtpExpectExit(["catalog", "remove", "std-pkg"], 1, {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(r.stderr + r.stdout).toMatch(/standard catalog/i);
   });
 
   it("atp catalog list --verbose exits 2 on invalid package yaml", () => {

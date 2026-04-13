@@ -1,5 +1,5 @@
 /**
- * Catalog subcommands: `atp catalog list`, `atp catalog add package`.
+ * Catalog subcommands: `atp catalog list`, `atp catalog add package`, `atp catalog remove`.
  */
 
 import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
@@ -9,6 +9,7 @@ import {
 } from "../catalog/package-type-summary.js";
 import { resolvePackagePath } from "../install/resolve.js";
 import { catalogAddPackage } from "../package/catalog-add.js";
+import { catalogRemovePackageCli } from "../package/catalog-remove.js";
 
 import type { CatalogPackage } from "../catalog/types.js";
 import type { Command } from "commander";
@@ -88,5 +89,14 @@ export function registerCatalogCommands(program: Command): void {
     .description("Add current package to Station catalog (run from package directory)")
     .action(() => {
       catalogAddPackage(process.cwd());
+    });
+
+  catalog
+    .command("remove <package>")
+    .description(
+      "Remove a user catalog package from the Station (atp-catalog.yaml and user_packages/)"
+    )
+    .action((packageName: string) => {
+      catalogRemovePackageCli(packageName);
     });
 }
