@@ -1,5 +1,7 @@
 # Plan: Align `PartInstallInput` (staged and resolved) with the install pipeline
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 
@@ -99,38 +101,23 @@ Today, multi-part installs use **`CatalogInstallContext`** and a manifest whose
 
 # Resolved questions
 
-- Should **`PartInstallInput`** / **`StagedPartInstallInput`** / **`ResolvedInstallInput`**
-  live next to **`PackageManifest`** or under **`src/file-ops/`** to avoid
-  install↔provider cycles?
+#### Should `PartInstallInput` types live next to `PackageManifest` or under `src/file-ops/`?
 
-ANSWER: **`PartInstallInput`** is an interface that represents a progressive data
-        transformation pipeline from staged paths coming from the Package structure
-        and being resolved by the AgentProvider implementation to absolute paths,
-        so that the installation is fully informed.
-        The types relating to this are part of the file-ops namespace
-        because they provide input data as part of the file-operation DTOs and therefore must live
-        under **`src/file-ops/`**, alongside merge engines, rule assembly, and
-        **`operation-ids.ts`**. The **`AgentProvider`** contracts and per-agent
-        implementations are intended for **`src/provider/`**.
+**`PartInstallInput`** is an interface for a progressive transformation from staged paths in the package structure to absolute paths resolved by the **`AgentProvider`**, so installation is fully informed.
 
-- Do we pass **pre-resolved absolute paths** for some files instead of only
-  **`stagingRelPaths`** to reduce path bugs in providers?
+Those types belong in the file-ops namespace (input to file-operation DTOs), so they live under **`src/file-ops/`**, alongside merge engines, rule assembly, and **`operation-ids.ts`**. **`AgentProvider`** contracts and per-agent implementations stay in **`src/provider/`**.
 
-ANSWER: The AgentProvider instance should pass pre-resolved, absolute paths.
+#### Do we pass pre-resolved absolute paths for some files instead of only `stagingRelPaths`?
 
-DONE:   We need to strengthen the conceptual separation between AgentProviders
-        and file operations. This has been done by refactoring what WAS `src/provider`
-        to `src/file-ops`.
+Yes. The **`AgentProvider`** instance should pass pre-resolved absolute paths.
 
-- How do **legacy** single-part manifests (no **`parts`**) map to a synthetic
-  **`partIndex`** and **`partKind`** for **`planInstall`**?
+**Done:** The split between AgentProviders and file operations was strengthened by moving what was **`src/provider`** into **`src/file-ops`**.
 
-ANSWER: Assuming file-ops functions do not depend on different behaviour for legacy
-        packages, compared to the new format, then a legacy, single-part package
-        can pass the same values that a modern, multi-part package with only one part
-        would provide. That is, the partIndex = 1 for legacy, single-type packages;
-        the partKind = the package's type.
-        NOTE: partIndex is 1-based everywhere, for all packages.
+#### How do legacy single-part manifests (no `parts`) map to `partIndex` and `partKind` for `planInstall`?
+
+If file-ops does not treat legacy packages differently from the new format, a legacy single-part package uses the same values as a modern multi-part package with one part: **`partIndex` = 1**; **`partKind`** = the package root **`type`**.
+
+**`partIndex`** is 1-based everywhere, for all packages.
 
 # Definition of done
 
@@ -155,6 +142,4 @@ ANSWER: Assuming file-ops functions do not depend on different behaviour for leg
 | Install orchestration                     | `src/install/install.ts`, **`CatalogInstallContext`** |
 | Manifest types                            | `src/install/types.ts` (**`parts`** today) |
 | File operations checklist                 | [2026-04-03-plan-provider-capability-matrix](./2026-04-03-plan-provider-capability-matrix.md#implementation-checklist) |
-| File-operation engines                    | `src/file-ops/`  |
-
-1. File-operation engines (`operation-ids`, merge, rule assembly)
+| File-operation engines                    | `src/file-ops/` (`operation-ids`, merge, rule assembly) |

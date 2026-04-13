@@ -1,5 +1,7 @@
 # Test note: Codex hooks feature merge, journal `codex_features`, recursive `raw_file_copy`
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

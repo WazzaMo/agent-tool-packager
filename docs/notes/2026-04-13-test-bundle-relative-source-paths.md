@@ -1,5 +1,7 @@
 # Test note: bundle source paths outside the package (`..`, peers)
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 
@@ -17,20 +19,21 @@ trees). It pairs with the
 
 ## Behaviour under test
 
-- **Resolution** matches **components**: relative paths resolve from the package working
-  directory; absolute paths are normalised.
+### Source path resolution
 
-- **`bundleManifestPath`**: in-package bundles keep a **relative** manifest `path`;
-  directories **outside** the package use the directory **basename** (flat staging key,
-  analogous to external components).
+Same rules as **components**: relative paths resolve from the package working directory; absolute paths are normalised.
 
-- **Legacy root `bundleAdd`**: a peer directory reached via `path.relative(pkgDir, peerDir)`
-  is accepted; manifest records **`path: <basename>`** and **`stage.tar`** is created or
-  updated.
+### Manifest `path` for external bundles
 
-- **Multi-type `package part … bundle add`**: integration flow with a **sibling** bundle
-  directory, relative path from the package cwd, **`validate package`** succeeds, and
-  YAML contains the expected **`path:`** line.
+**`bundleManifestPath`**: in-package bundles keep a **relative** manifest **`path`**; directories **outside** the package use the directory **basename** (flat staging key, analogous to external components).
+
+### Legacy root `bundleAdd`
+
+A peer directory reached via **`path.relative(pkgDir, peerDir)`** is accepted; the manifest records **`path: <basename>`** and **`stage.tar`** is created or updated.
+
+### Multi-type `package part … bundle add`
+
+Integration flow with a **sibling** bundle directory and a relative path from the package cwd; **`validate package`** succeeds and YAML contains the expected **`path:`** line.
 
 ## Tests
 

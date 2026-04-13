@@ -55,11 +55,27 @@ Hook handler for event "beforeSubmit" (id:atp-force-hook) conflicts with existin
 
 # Implementation status (shipped)
 
-- **§1** — **`McpMergeAmbiguousError`** and **`HooksMergeAmbiguousError`** messages follow the **what / where / action** sentence shape; both classes expose **`mergeTargetLabel`** for tests and verbose output.
-- **§2** — **`src/install/format-install-user-failure.ts`**: **`formatInstallUserFailureLines`**, **`MERGE_CONFIG_AMBIGUITY_HINT`**; **`installPackage`** prints returned lines on failure.
-- **§3** — **`atp install --verbose`**; equivalent when **`mergeAmbiguityVerboseRequested`** is true via **`DEBUG`** and **`atp`** token.
-- **Install path** — **`executeCatalogInstall`** rethrows ambiguity errors so the hint and verbose lines apply; generic wrap only for other failures.
-- **Tests** — Unit expectations on exact messages in **`test/file-ops/mcp-json-merge.test.ts`**, **`hooks-json-merge.test.ts`**, **`test/install/format-install-user-failure.test.ts`**, **`test/provider/gemini-agent-provider.test.ts`**; integration coverage in **`install-force-config-conflicts.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`** (including **`--verbose`** JSON), **`install-cli-config-flags-help.test.ts`**.
+## Recommendation 1 (canonical error line)
+
+**`McpMergeAmbiguousError`** and **`HooksMergeAmbiguousError`** messages follow the **what / where / action** sentence shape; both classes expose **`mergeTargetLabel`** for tests and verbose output.
+
+## Recommendation 2 (hint line on stderr)
+
+**`src/install/format-install-user-failure.ts`** defines **`formatInstallUserFailureLines`** and **`MERGE_CONFIG_AMBIGUITY_HINT`**; **`installPackage`** prints the returned lines on failure.
+
+## Recommendation 3 (verbose and DEBUG)
+
+**`atp install --verbose`** and the same behaviour when **`mergeAmbiguityVerboseRequested`** is true via **`DEBUG`** containing the **`atp`** token.
+
+## Install orchestration
+
+**`executeCatalogInstall`** rethrows ambiguity errors so the hint and verbose lines apply; other failures still get the generic **`Install copy or manifest update failed`** wrapper.
+
+## Test coverage
+
+Unit expectations on exact messages in **`test/file-ops/mcp-json-merge.test.ts`**, **`hooks-json-merge.test.ts`**, **`test/install/format-install-user-failure.test.ts`**, and **`test/provider/gemini-agent-provider.test.ts`**.
+
+Integration coverage in **`install-force-config-conflicts.test.ts`**, **`install-force-config-conflicts-gemini.test.ts`** (including **`--verbose`** JSON), and **`install-cli-config-flags-help.test.ts`**.
 
 # AgentProvider implementations
 
@@ -117,12 +133,12 @@ When **MCP** and **hooks** both target **`settings.json`**, failures are **per a
 
 # Implementation checklist (suggested order)
 
-1. [x] Unify **MCP** and **hooks** ambiguity strings to the **sentence shape** in §1 (tweak wording for consistency).
+1. [x] Unify **MCP** and **hooks** ambiguity strings to the **sentence shape** in recommendation 1 (tweak wording for consistency).
 2. [x] **AgentProvider** contributor guide: [contributor-guide-agent-providers.md](../contributor-guide-agent-providers.md) (w **`applyProviderPlan`** / **`mergeTargetLabel`**); Feature 5 links to it from the merge-policy section.
-3. [x] Add **`formatInstallUserFailureLines`** + **hint** line via **`install.ts`** for merge ambiguity errors (§2); helper lives in **`format-install-user-failure.ts`**.
+3. [x] Add **`formatInstallUserFailureLines`** + **hint** line via **`install.ts`** for merge ambiguity errors (recommendation 2); helper lives in **`format-install-user-failure.ts`**.
 4. [x] Document merge policy in **Feature 5**, **`docs/configuration.md`**, and **README** (see **Merge policy and troubleshooting for atp install**; **Catalog install and merged agent JSON**).
-5. [x] Add **`--verbose`** logging for structured merge errors (§3); **`DEBUG`** with **`atp`** supported.
-6. [ ] Revisit **§6** only after UX feedback on Gemini multi-merge.
+5. [x] Add **`--verbose`** logging for structured merge errors (recommendation 3); **`DEBUG`** with **`atp`** supported.
+6. [ ] Revisit **recommendation 6** (same-file double merge on Gemini) only after UX feedback on Gemini multi-merge.
 
 # References
 

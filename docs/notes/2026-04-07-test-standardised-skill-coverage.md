@@ -25,40 +25,87 @@ This note summarises automated tests for **Agent Skills** install logic under **
 
 # Skill standard coverage (unit)
 
-**`test/provider/skill/skill-standard.test.ts`** exercises:
+**`test/provider/skill/skill-standard.test.ts`** exercises the areas below.
 
-- **Path / bundle:** `resolveSkillBundleRoot`, `longestCommonPathPrefix`, `relativeToSkillBundle`.
-- **YAML validation:** required **`name`** / **`description`**; max lengths (**64** / **1024** / **500** for compatibility); **`metadata`** string map (valid + invalid); strip **`allowed-tools`**; non-string **`compatibility`**.
-- **Assembly:** `assembleSkillMdFromPartials`; `trySplitSkillFrontmatter`.
-- **Basenames:** partial **`skill.md`** vs assembled **`SKILL.md`**; **`skill.yml`** alias via **`isSkillYamlBasename`**.
-- **`resolvePrimarySkillSource`:** happy paths (**`skill.yaml` + `skill.md`**, **`skill.yml` + `skill.md`**); error paths (yaml-only, partial-only, mix with **`SKILL.md`**, duplicate YAML docs, ambiguous multiple **`.md`**, no markdown/yaml sources, two **`SKILL.md`** trees).
-- **Finalise / safety:** `finalizeSkillMdContent` (synthesised frontmatter, path-segment **`name`**); **`assertSafeSkillDirectoryName`**.
-- **Placeholders:** `{skill_scripts}/` → **`scripts/`**.
-- **Planner:** `buildSkillInstallProviderActions` ( **`SKILL.md` + `raw_file_copy`** ); install-time rejection of oversized **`description`** in staged **`SKILL.md`**.
+## Path and bundle helpers
+
+**`resolveSkillBundleRoot`**, **`longestCommonPathPrefix`**, **`relativeToSkillBundle`**.
+
+## YAML validation
+
+Required **`name`** and **`description`**; max lengths (**64** / **1024** / **500** for compatibility); **`metadata`** string map (valid and invalid); strip **`allowed-tools`**; reject non-string **`compatibility`**.
+
+## Assembly
+
+**`assembleSkillMdFromPartials`** and **`trySplitSkillFrontmatter`**.
+
+## Basenames and partial aliases
+
+Partial **`skill.md`** vs assembled **`SKILL.md`**; **`skill.yml`** alias via **`isSkillYamlBasename`**.
+
+## Primary source resolution
+
+**`resolvePrimarySkillSource`** happy paths (**`skill.yaml` + `skill.md`**, **`skill.yml` + `skill.md`**) and error paths (yaml-only, partial-only, mix with **`SKILL.md`**, duplicate YAML docs, ambiguous multiple **`.md`**, no markdown or yaml sources, two **`SKILL.md`** trees).
+
+## Finalise and safety
+
+**`finalizeSkillMdContent`** (synthesised frontmatter, path-segment **`name`**); **`assertSafeSkillDirectoryName`**.
+
+## Placeholders
+
+**`{skill_scripts}/`** maps to **`scripts/`**.
+
+## Planner output
+
+**`buildSkillInstallProviderActions`** (**`SKILL.md`** plus **`raw_file_copy`**); install-time rejection of oversized **`description`** in staged **`SKILL.md`**.
 
 # Cursor provider coverage (unit)
 
-**`test/provider/cursor-agent-provider.test.ts`** adds skill-specific checks:
+**`test/provider/cursor-agent-provider.test.ts`** adds skill-specific checks in the following areas.
 
-- Skill layout **`skills/{name}/SKILL.md`** for a minimal body-only file.
-- **Tamper / spec guard:** invalid frontmatter (**`description`** too long) surfaces as **`CursorAgentProvider:`** + underlying message.
-- **Path escape:** **`name`** containing **`/`** rejected with **`CursorAgentProvider:`** and **path segments** wording.
+## Skill directory layout
 
-Other tests in the same file continue to cover rules, **`bundlePathMap`**, **`.mdc`**, **`mcp.json`**, **`hooks.json`**, **`planRemove`**.
+**`skills/{name}/SKILL.md`** for a minimal body-only file.
+
+## Invalid frontmatter (spec guard)
+
+Invalid frontmatter (**`description`** too long) surfaces as **`CursorAgentProvider:`** plus the underlying message.
+
+## Unsafe skill names
+
+**`name`** containing **`/`** is rejected with **`CursorAgentProvider:`** and **path segments** wording.
+
+Other tests in the same file continue to cover rules, **`bundlePathMap`**, **`.mdc`**, **`mcp.json`**, **`hooks.json`**, and **`planRemove`**.
 
 # Integration and install pipeline
 
-- **`cursor-agent-provider-skill-install.test.ts`:** **`atp install`** with **`skill.yaml` + `skill.md`**, extra component file, **`{skill_scripts}`** in body, assert tree under **`.cursor/skills/{name}/`**.
-- **`install.test.ts` / `feature3-package-install-process.test.ts`:** project install paths and bundle placeholder behaviour after the **Agent Skills** directory layout change.
-- **`install-package-assets.test.ts`:** **`installPackageAssetsForCatalogContext`** with a skill asset through **`CursorAgentProvider`**.
+## Cursor skill install end-to-end
+
+**`cursor-agent-provider-skill-install.test.ts`** — **`atp install`** with **`skill.yaml`**, **`skill.md`**, an extra component file, and **`{skill_scripts}`** in the body; asserts the tree under **`.cursor/skills/{name}/`**.
+
+## General install and Feature 3
+
+**`install.test.ts`** and **`feature3-package-install-process.test.ts`** — project install paths and bundle placeholder behaviour after the **Agent Skills** directory layout change.
+
+## Catalog install through the provider
+
+**`install-package-assets.test.ts`** — **`installPackageAssetsForCatalogContext`** with a skill asset through **`CursorAgentProvider`**.
 
 CLI integration tests require **`npm run build`** so **`dist/atp.js`** matches **`src/`** (same expectation as **`ci:test`**).
 
 # Intentionally not covered here
 
-- **Authoring-time** skill validation from [2026-04-06-plan-standardised-skill-support](./2026-04-06-plan-standardised-skill-support.md) (partials only in bundles, markdown references must exist on disk) — not implemented in **`atp validate`**, so no tests yet.
-- **Install ambiguity / collision** policy (Feature 5) for skill directories — no dedicated skill tests.
-- **`copy-assets.test.ts`** still documents the **legacy** flat **`skills/<file>`** behaviour for **`copyPackageAssets`**; that path is separate from **`CursorAgentProvider` + `src/provider/skill/`**.
+## Authoring-time skill validation
+
+From [2026-04-06-plan-standardised-skill-support](./2026-04-06-plan-standardised-skill-support.md): partials only in bundles, markdown references must exist on disk. Not implemented in **`atp validate`**, so no tests yet.
+
+## Install ambiguity for skill trees
+
+Feature 5 install ambiguity / collision policy for skill directories — no dedicated skill tests.
+
+## Legacy flat skill copy path
+
+**`copy-assets.test.ts`** still documents legacy flat **`skills/<file>`** behaviour for **`copyPackageAssets`**; that path is separate from **`CursorAgentProvider`** and **`src/provider/skill/`**.
 
 # Commands
 

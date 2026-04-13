@@ -1,5 +1,7 @@
 # Coding note: Codex hooks TOML, recursive tree copy, journal refactor
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

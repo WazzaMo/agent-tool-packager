@@ -1,5 +1,7 @@
 # Coding note: bundle `--skip-exec` for data-only trees
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

@@ -1,5 +1,7 @@
 # ATP non-goals and deferred layers (step 1)
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

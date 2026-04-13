@@ -1,5 +1,7 @@
 # Test note: Safehouse agent required for install and remove
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 
@@ -16,17 +18,21 @@ missing, or blank.
 
 ## Behaviour under test
 
-- **`assignedSafehouseAgentName`**: returns a trimmed non-empty string, or `null` for
-  missing config, `agent: null`, empty string, or whitespace-only values.
+### `assignedSafehouseAgentName`
 
-- **`SafehouseAgentNotAssignedError`**: message matches **`formatSafehouseAgentNotAssignedMessage()`**
-  and **`name`** is set for stable identification.
+Returns a trimmed non-empty string, or **`null`** for missing config, **`agent: null`**, empty string, or whitespace-only values.
 
-- **`buildProviderInstallContext`**: when mocked Safehouse has **`agent: null`**, throws
-  **`SafehouseAgentNotAssignedError`** (provider install context must align with assigned agent).
+### `SafehouseAgentNotAssignedError`
 
-- **CLI `atp install`**: after **`safehouse init`** without **`atp agent <name>`**, install exits
-  **non-zero** and stderr mentions **no agent assigned** and **`atp agent`**.
+Message matches **`formatSafehouseAgentNotAssignedMessage()`**; **`name`** is set for stable identification.
+
+### `buildProviderInstallContext` with null agent
+
+When mocked Safehouse has **`agent: null`**, throws **`SafehouseAgentNotAssignedError`** (provider install context must align with an assigned agent).
+
+### CLI install without `atp agent`
+
+After **`safehouse init`** without **`atp agent <name>`**, **`atp install`** exits **non-zero** and stderr mentions **no agent assigned** and **`atp agent`**.
 
 ## Tests
 

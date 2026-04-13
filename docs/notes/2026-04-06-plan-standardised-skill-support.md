@@ -37,8 +37,9 @@ or `.yaml` and syntax highlighting will be disabled for YAML frontmatter in a ma
 Similarly, markdown highlighting will work better in a separate markdown file, with `.md` extension.
 
 The YAML and Markdown should be written to:
-1.  skill.yaml; and
-2.  skill.md
+
+1. **`skill.yaml`**
+2. **`skill.md`**
 
 Upon assembly during installation, this will be turned into SKILL.md with the YAML frontmatter, the `---`
 divider and the Markdown body. Validation of the part can check the skill frontmatter for correct fields
@@ -55,32 +56,25 @@ agent provider logic in one place, that all AgentProvider implementations can us
 
 ## A few points to consider
 
-1. Scope of shared logic is to handle installation of skills for all agent types:
+1. Scope of shared logic is installation of skills for all agent types:
 
-    -   Validate and normalize the SKILL.md content from bundle files `skill.yaml` and `skill.md`
+   - Validate and normalise **`SKILL.md`** content from bundle files **`skill.yaml`** and **`skill.md`**.
+   - Handle optional directories as they appear in the bundle (**`scripts/`**, **`references/`**, **`assets/`**) as part of the skill install.
+   - Extend ATP package validation during authoring so paths mentioned in **`skill.md`** exist in the bundle.
 
-    -   Handle the optional directories as they appear in the bundle
-        (scripts/, references/, assets/) as part of the skill install.
+2. Validation strictness — name and description should be validated against Skill spec numbers:
 
-    -   the standardised provider logic should extend ATP package validation during authoring
-        to confirm that any directories mentioned in the `skill.md` also appear in the bundle.
+| Field           | Details        |
+|-----------------|----------------|
+| name            | 64 chars max   |
+| description     | 1024 chars max |
+| compatibility   | 500 chars (a)  |
+| metadata        | object (b)     |
+| allowed-tools   | list (c)       |
 
-2. Validation strictness - name and description should be validated against Skill spec numbers:
+(a) Optional natural-language list of dependencies or environment limits (for example “Designed for Claude Code”).
 
- | Field        | Details       |
- |--------------|---------------|
- | name         |   64 chars    |
- | description  | 1024 chars    |
- | compatibility|  500 chars (a)|
- | metadata     | object see (b)|
- | allowed-tools| list   see (c)|
- 
-(a) Optional, natural language list of dependencies or environment limits e.g. "Designed for Claude Code"
-
-(b) A YAML object adding additional metadata. Per the Agent Skills specification, keys are strings
-    and values are strings. ATP standard skill provider functions validate that shape when `metadata`
-    is present (arbitrary keys allowed, not a fixed set).
-
+(b) A YAML object for extra metadata. Per the Agent Skills specification, keys and values are strings. ATP standard skill provider functions validate that shape when **`metadata`** is present (arbitrary keys allowed, not a fixed set).
 
 ```yaml
 metadata:
@@ -88,19 +82,11 @@ metadata:
   version: "1.0"
 ```
 
-(c) A space-delimited list of tools that are pre-approved for use. This is an experimental field
-    in the spec. ATP will strip this from YAML frontmatter for now and may be supported in the future.
+(c) A space-delimited list of tools that are pre-approved for use. This is an experimental field in the spec. ATP strips it from YAML frontmatter for now; support may be added later.
 
+3. File location — because skill install is standardised, give skill its own sub-namespace. The shared implementation should live under **`src/provider/skill/`** so multiple files can keep the code clean.
 
-3.  File location - because it's standardised, we should give skill it's own sub-namespace
-    so the directory for the common source code should be `src/provider/skill/` and this allows
-    for multiple files to keep the code clean.
- 
-4.  Up until now, skills were intended to be pass-through but this deviates from Rule which
-    share the YAML front matter and Markdown body pattern, so this is an inconsistency but more
-    importantly the bundle format supports the possibilities of skills so much better. This means we
-    want skills to be authored in a bundle with `SKILL.md` assembled from `skill.yaml` and `skill.md`
-    as files inside that skill bundle. So it will share the normalize/reassemble logic from `.mdc` files.
+4. Skills were previously pass-through; that diverges from Rule’s YAML front matter plus Markdown body pattern, but bundles fit skills much better. Author skills in a bundle with **`SKILL.md`** assembled from **`skill.yaml`** and **`skill.md`**, reusing the same normalise / reassemble ideas as **`.mdc`** rule assembly where appropriate.
 
 
 ## Implications and analysis
@@ -214,27 +200,23 @@ The process is to:
 
 ### Script installation
 
-For scripts in skills, we should meet the specification for skills because this avoids surprising the end
-user and that means that scripts are installed in with the skill, as documented by the Skills specification. The implication of this is that we cannot make this bundle a UNIX compliant structure upon
-install. It also means the scripts do not need to be in the general PATH environment variable for the user.
+For scripts in skills, follow the Skills specification so end users are not surprised: scripts live with the skill as documented there.
 
-This means these scripts are not treated as system executables and are for the agent's predominantly.
-There is nothing but inconvenience stopping a user from running them.
+That implies the installed tree is not forced into a UNIX FHS-style layout. Scripts do not need to appear on the user’s general **`PATH`**.
+
+They are not treated as system executables; they are mainly for the agent. A user can still run them if they choose.
 
 ### Script path patching in SKILL.md files
 
-Is path patching needed? Most likely this will not be needed because there is a standard
-and agents have implemented it.
+Path patching is probably unnecessary when agents follow the standard layout, but authors can opt in with a placeholder in the Markdown body, for example:
 
-We can give the user the option to employ path patching by using the variable in their markdown body.
 ```markdown
 ## Extract content from PDF
+
 Execute {skill_scripts}/extract.py to extract text from the PDF.
 ```
 
-The variable will be very specific `{skill_scripts}` and will be expected to have `/` follow it.
-Meaning a string replace can be performed after the SKILL.md file is written, replacing the variable
-with relative paths from the skill root directory.
+Use the literal token **`{skill_scripts}`** (typically followed by **`/`**). After **`SKILL.md`** is written, replace that token with paths relative to the skill root.
 
 ### Skill validation
 
@@ -242,13 +224,11 @@ The validation of the skill bundle should be performed at authoring time because
 time for the author to take corrective action. They must be told what is wrong and given clues and
 suggestions for corrections.
 
-Authoring error cause cases (incomplete list):
+Authoring error cases (incomplete list):
 
-    - SKILL.md or ((skill.yaml or skill.yml) + skill.md) file missing
-
-    - YAML frontmatter violations - field names or lengths outside the Skill specification.
-
-    - Markdown body mentions a script file, reference or asset file and the files are missing.
+- **`SKILL.md`** missing, or the partial pair (**`skill.yaml`** or **`skill.yml`**) + **`skill.md`** incomplete.
+- YAML frontmatter violations (field names or lengths outside the Skill specification).
+- Markdown body references a script, reference, or asset file that is not present on disk.
 
 These are all things the author should be told at authoring time, so they can fix their package.
 The package authoring process should fail with error messages and stop until fixed.
@@ -262,10 +242,6 @@ or file path collisions should lead to an error message. Installation ambiguitie
 in [Feature 5 spec section: Configuration files (JSON and TOML)](../features/5-installer-providers-for-known-agents.md#configuration-files-json-and-toml)
 where an install would appear to overwrite an existing directory or file.
 
-The installation validation logic is different from authoring validation because:
-
-    1.  the problems are different; and
-
-    2.  the actions to correct the problems are different.
+Install-time validation differs from authoring validation because the failure modes differ and the corrective actions differ.
 
 That said, the installation validation is additive to the package validation.

@@ -1,5 +1,7 @@
 # Coding note: require Safehouse agent before install and remove
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

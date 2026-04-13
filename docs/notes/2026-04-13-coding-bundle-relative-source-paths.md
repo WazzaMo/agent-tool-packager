@@ -1,5 +1,7 @@
 # Coding note: bundle sources outside the package (resolution + staging)
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 

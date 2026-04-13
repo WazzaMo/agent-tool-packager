@@ -1,5 +1,7 @@
 # Coding plan: skill bundle catalog asset enrichment
 
+## Copyright
+
 (c) Copyright 2026 Warwick Molloy.
 Contribution to this project is supported and contributors will be recognised.
 
@@ -46,11 +48,13 @@ rows unless the path is a declared **program** or already seen (components or pr
 
 ## Validation and install (unchanged contract)
 
-- **Authoring** validation still requires staged trees to match **`components`** and
-**`bundles`** declarations; enrichment does not relax disk checks.
-- **Install-time** skill rules (**`resolvePrimarySkillSource`**) are unchanged: invalid
-combinations (for example multiple ambiguous **`.md`** files without **`SKILL.md`** or
-**`skill.yaml` + `skill.md`**) still **throw** during provider planning.
+### Authoring validation
+
+Staged trees must still match **`components`** and **`bundles`** declarations; enrichment does not relax disk checks.
+
+### Install-time skill rules
+
+**`resolvePrimarySkillSource`** behaviour is unchanged: invalid combinations (for example multiple ambiguous **`.md`** files without **`SKILL.md`** or **`skill.yaml` + `skill.md`**) still **throw** during provider planning.
 
 ## Limitations and caveats
 
