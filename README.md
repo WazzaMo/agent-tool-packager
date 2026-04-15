@@ -67,6 +67,37 @@ End-to-end narrative index (same pages, with short blurbs):
 
 [manuals/agent-tools-packager.md](manuals/agent-tools-packager.md)
 
+
+## See the example skill pack
+
+THIS IS THE FASTEST WAY TO LEARN HOW TO MAKE USE OF THIS...
+
+Take a look at [./example-skills-pack](./example-skills-pack/)
+and the scripted packaging commands in [pack.sh](./example-skills-pack/pack.sh)
+which uses the two directories to create two different skills, treating each directory
+as a bundle. NOTE: the two different skill.(yaml|md) file pairs are assembled into
+a single SKILL.md file upon installation.
+
+If you run `pack.sh` from the `./example-skills-pack/` directory, it will create and add the package
+to your user catalog in the ATP Station.
+
+To try this out.
+
+1. Install ATP see above for how to do that.
+2. Create the Station `atp station init`
+3. Go to the example skills pack directory and run `pack.sh`
+    > `atp catalog list` should list the package.
+4. Go to another directory where you might want to try this package out with your cursor, claude, codex or gemini agent.
+5. In that directory make sure you have a local git repo or create one if you do not.
+    > run `ls -a` and if you see a `.git` directory you have one; if not, then run `git init` to create one.
+6. Create a Safehouse in this project directory `atp safehouse init`
+7. Configure the safehouse for your agent, let's assume it's Gemini CLI
+    > `atp agent gemini`
+8. Now install the package: `atp install "Example skills pack"`
+
+You will it worked when you check the `.gemini` directory for content and find a `skills/` directory.
+When you run Gemini and ask it to write a markdown document, it will ask permission to use the skill.
+
 ## Minimal command sequence
 
 ```bash
