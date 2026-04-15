@@ -5,6 +5,9 @@ on:
 
 permissions:
   contents: read
+  # Required so GitHub Actions can mint an OIDC token for npm trusted publishing.
+  # See https://docs.github.com/en/actions/concepts/security/openid-connect
+  id-token: write
 
 jobs:
   publish:
@@ -35,6 +38,5 @@ jobs:
         run: npm run test:run
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # OIDC trusted publishing: configure on npmjs.com (workflow file publish-npm.yml).
         run: npm publish --access public

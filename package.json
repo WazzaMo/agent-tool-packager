@@ -1,9 +1,13 @@
 {
+  "publishConfig": {
+    "access": "public"
+  },
   "name": "@wazzamo-agent-tools/packager",
   "version": "0.2.3",
   "description": "CLI for agentic software development workflows",
   "type": "module",
   "main": "dist/atp.js",
+  "repository.url": "https://github.com/WazzaMo/agent-tool-packager",
   "bin": {
     "atp": "bin/atp"
   },
