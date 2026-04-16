@@ -20,6 +20,8 @@ export interface StationConfig {
     version: string;
     "agent-paths": AgentPaths;
     "standard-catalog": StandardCatalogConfig;
+    /** Optional HTTPS npm registry API origin for CLI update checks (default: public npm). */
+    "npm-registry-base-url"?: string;
   };
 }
 

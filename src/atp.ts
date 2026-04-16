@@ -13,6 +13,8 @@ import { registerRemoveCommands } from "./commands/remove.js";
 import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
 import { registerValidateCommands } from "./commands/validate.js";
+import { isStandaloneLatestArgv } from "./cli/standalone-latest-argv.js";
+import { maybePrintUpdateNotice, printLatestVersusCurrent } from "./cli/update-notice.js";
 import { atp_version } from "./version.js";
 
 const greetingMessage = `
@@ -36,7 +38,11 @@ const program = new Command();
 program
   .name("atp")
   .description(greetingMessage)
-  .version( atp_version() );
+  .version(atp_version())
+  .option(
+    "--latest",
+    "Show latest published package version vs current, then exit"
+  );
 
 registerStationCommands(program);
 registerSafehouseCommands(program);
@@ -48,8 +54,22 @@ registerCreateCommands(program);
 registerPackageCommands(program);
 registerValidateCommands(program);
 
+program.hook("preAction", async () => {
+  await maybePrintUpdateNotice();
+});
+
 /**
  * Parse argv and run the matching subcommand (Commander).
  */
-program.parse();
+async function main(): Promise<void> {
+  if (isStandaloneLatestArgv(process.argv)) {
+    const code = await printLatestVersusCurrent();
+    process.exit(code);
+  }
+  await program.parseAsync(process.argv);
+}
 
+main().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});

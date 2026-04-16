@@ -33,7 +33,9 @@ No registry calls exist today; all installs are local catalog / `file://` flows.
 
 ## Registry contract (public package)
 
-- **URL:** `https://registry.npmjs.org/@wazzamo-agent-tools%2Fpackager`
+- **URL:** `{registry_base}/@wazzamo-agent-tools%2Fpackager` where **`registry_base`** is
+  read from **Station config** (see Configuration surface); default **`registry_base`** is
+  **`https://registry.npmjs.org`** (npm registry API shape unchanged).
 - **Response:** JSON document; read **`dist-tags.latest`** as the published version
   string to compare (npm docs: [registry API](https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md)).
 - **Auth:** not required for this public scoped package.
@@ -90,36 +92,64 @@ those to stay instant and machine-parsable.
 |-----------|------|
 | **`ATP_SKIP_UPDATE_CHECK`** | Disable check entirely |
 | **Throttle file in Station** | Limit frequency; survives restarts |
-| **Optional future:** `atp-config.yaml` flag | Org-wide opt-out without env vars |
+| **`atp-config.yaml` in the Station** | HTTPS registry **base URL**; default public npm when omitted; mirrors via Station only (no env-based registry URL) |
 
 ## Security and supply chain
 
-- Use **HTTPS** only to **`registry.npmjs.org`** (hardcode host for this feature, or read
-  **`npm_config_registry`** only if you explicitly decide to support mirrors—mirrors must
-  still serve the same package name).
+- Use **HTTPS** only; the registry **host** comes from **Station** `atp-config.yaml` (with
+  a safe default to the public npm registry). Reject non-HTTPS bases; mirrors must still
+  serve the same package name.
 - No shell execution of **`npm view`** required; **`fetch`** (Node 18+) keeps the surface
   small and testable.
 - Log nothing that includes full registry response bodies in normal operation.
 
 ## Implementation sketch (modules)
 
-1. **`registry/npm-latest-version.ts`** — `getNpmDistTagVersion(name, tag, opts)` with
-   timeout + AbortController.
-2. **`cli/update-notice.ts`** — `maybePrintUpdateNotice()` reads `atp_version()`, throttle
-   file, env, TTY; compares with `semver.lt(current, latest)`; updates throttle on success.
-3. **`src/atp.ts`** — call `maybePrintUpdateNotice()` once at the right point in the
-   Commander lifecycle (e.g. `preAction` hook on the root program, or immediately after
-   `program.parse()` if using async parse—Commander v12+ supports async; verify current
-   API in this repo).
-4. **Tests** — mock global `fetch` or inject a test double; cover: newer available, up to
-  date, offline (no throw), throttle skips second call, `ATP_SKIP_UPDATE_CHECK`, dev
-  version skip.
+1. **Dependency: `semver`** — add as a runtime dependency; use it for ordering and
+   comparisons between `atp_version()` and the registry tag string (same rules as npm
+   ordering; keep prerelease / dev-skip policy next to the call sites).
 
-## Open questions
+2. **`registry/npm-latest-version.ts`** — `getNpmDistTagVersion(name, tag, opts)` with
+   timeout + AbortController. Resolve the registry **base URL** from **Station**
+   **`atp-config.yaml`** (loaded from **`STATION_PATH`** / default Station location); if
+   the key is absent, use the **default public npm registry** URL. Require **HTTPS**,
+   normalize trailing slash, then append the encoded package path (e.g. `/@scope%2Fname`);
+   if the configured base is missing or not usable, **silent skip** for the background
+   notice path and a **non-throwing** error path for **`--latest`**.
 
-- Should **`atp --version`** trigger a check? (Recommendation: **no**.)
-- Whether to read **`npm_config_registry`** for corporate mirrors (adds complexity;
-  default **no** for v1).
+3. **`cli/update-notice.ts`** — shared logic: read throttle file under Station, honour
+   **`ATP_SKIP_UPDATE_CHECK`**, TTY / stderr rules, dev-version skip; compare with **`semver`**
+   (e.g. `semver.lt(current, latest)` when both parse); update throttle on a successful
+   registry read. Expose at least:
+   - **`maybePrintUpdateNotice()`** — background path: no-op for **`atp --version`** /
+     **`atp -V`** / **`atp help`**; otherwise run once per process when throttle allows.
+   - **`printLatestVersusCurrent()`** (or similar) — **`atp --latest`**: always perform a
+     check (subject to skip env and Station registry URL validity), print latest vs current
+     for the user, and do not rely on “silent skip” for a bad response (still must not
+     throw out of the CLI).
+
+4. **`src/atp.ts`** — register a root **`--latest`** flag (or equivalent) that runs the
+   explicit path and exits without running a normal subcommand. Wire **`maybePrintUpdateNotice()`**
+   at the right point in the Commander lifecycle for all other invocations (e.g.
+   `preAction` on the root program, or **`parseAsync`** after parse—Commander v12+; verify
+   in this repo). Ensure **`program.version()`** handling never triggers the background
+   check.
+
+5. **Tests** — mock global **`fetch`** or inject a test double; point **Station**
+   **`atp-config.yaml`** (or the in-memory config loader used in tests) at a fixed HTTPS
+   registry base. Cover: newer available, up to date, offline (no throw),
+   throttle skips second background call, **`ATP_SKIP_UPDATE_CHECK`**, dev version skip,
+   **`--version` / `-V` / `help`** do not hit the network, **`--latest`** forces a check and
+   prints expected output (and still no throw on failure—document expected stderr/exit).
+
+## Considerations
+
+- Using the `semver` javascript package as a dependency is a good idea for version comparison.
+- Performing **`atp --version`** will not trigger a check and merely reports current version.
+- New command `atp --latest` will trigger a check and report the latest versus current.
+
+- Registry **base URL** for the check comes from **Station** **`atp-config.yaml`** only;
+  default to the public npm registry when unset (no env-based registry URL).
 - Internationalisation: English-only message for v1 is acceptable.
 
 ## Success criteria

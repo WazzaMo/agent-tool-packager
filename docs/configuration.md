@@ -108,6 +108,11 @@ configuration:
       commands: "commands/"
       skills: "skills/"
 
+  # Optional HTTPS origin for the npm registry API when the CLI checks for newer ATP
+  # releases (`atp --latest` and the background notice). Omit to use the public npm
+  # registry (https://registry.npmjs.org). Must be https:.
+  # npm-registry-base-url: "https://registry.npmjs.org"
+
   # The standard catalog URL provides the default source for package updates.
   standard-catalog:
     url: "https://agent-tool-packager.example.com/packages/0.1.0/"
