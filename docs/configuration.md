@@ -251,10 +251,10 @@ The Part layout:
 
 Types are defined in the section **Package Types** from 
 [Feature 2](./features/2-package-developer-support.md) and the text type names
-are all valid values for `type` in the Part object. Different parts should normally
-have different types because a rule can have many markdown components, so all those
-files can be packaged in a single part. If types are repeated, a warning should be
-printed for the user to see but it is not a fatal error.
+are all valid values for `type` in the Part object. Often each part has a distinct
+`type` because, for example, a single Rule part can carry many markdown files; the same
+`type` may still appear on more than one part when authors want several logical slices
+(e.g. two Skill parts), and that is valid Multi layout without special diagnostics.
 
 Editing **parts** (including removing a part or a part’s component or bundle) is an **authoring-time**
 workflow in the package directory via `atp package …` commands. Once a package is catalogued and

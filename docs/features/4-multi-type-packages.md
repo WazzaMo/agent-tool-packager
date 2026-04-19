@@ -466,7 +466,7 @@ removal should work as planned (see **Authoring vs installed packages (removal)*
 | Multi, no parts           | Fatal: need ≥1 part     | 2       |
 | Part missing usage        | List index and field    | 1–2 (1) |
 | Legacy type + parts       | Reject mix              | 1       |
-| Duplicate part types      | Warn stderr             | 0       |
+| Duplicate part types      | Valid (no extra stderr) | 0       |
 | Ambiguous part target     | Error: index            | 1       |
 | Invalid part index        | Part not found          | 1       |
 | Bad or empty `stage.tar`  | Like Feature 2 validate | 1–2 (2) |
@@ -685,7 +685,6 @@ if not an error message must be shown.
 1. **Multi:** at least one part; each part has **type**, **usage**, and required **components** / **bundles** per type expectations in Feature 2 (e.g. Rule, Prompt, and Skill expect markdown components; Hook expects hook files such as `hooks.json` and scripts; Mcp typically expects bundles).
 2. **Legacy:** root-level mandatory fields and staging as in Feature 2.
 3. Lists missing items by **part index** for Multi.
-4. Emits **warnings** for duplicate part types; does not fail unless strict mode is specified later.
 
 ### Exit codes
 
@@ -837,7 +836,7 @@ Rule → rules dir, Prompt → prompts dir, Skill → skills, Hook → `hooks.js
 
 1. **STATION_PATH** test station; `atp station init`.
 2. Create Multi package with two parts (Skill + Mcp); stage files; `atp validate package` → **0**.
-3. Duplicate part types → validate **0** with warning on stderr.
+3. Duplicate part types → validate **0** (no stderr warning for repeating a part `type`).
 4. Empty `parts` with `type: multi` → validate **non-zero**.
 5. Legacy manifest with `parts` present → command or validate **non-zero** per policy.
 6. `atp catalog add package` → user catalog lists package; `package.tar.gz` present.

@@ -158,15 +158,6 @@ function appendBundleStagingGaps(
 }
 
 /**
- * @param parts - Declared parts.
- * @returns True when two or more parts share the same normalised type string.
- */
-export function hasDuplicatePartTypes(parts: PackagePart[]): boolean {
-  const types = parts.map((p) => String(p.type ?? "").trim().toLowerCase());
-  return new Set(types).size !== types.length;
-}
-
-/**
  * @param m - A single missing-field label.
  * @returns True when this label should block staging checks (fatal structural gap).
  */
@@ -233,9 +224,6 @@ export function validateMultiTypePackage(
   }
 
   if (missing.length === 0) {
-    if (hasDuplicatePartTypes(parts)) {
-      console.warn("Warning: duplicate part types in this package (allowed, but unusual).");
-    }
     return {
       ok: true,
       exitCode: 0,

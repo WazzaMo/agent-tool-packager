@@ -36,10 +36,6 @@ export function packageNewpart(cwd: string, keyword: string): void {
   exitIfIncompletePriorParts(cwd, m);
 
   const parts = m.parts ?? [];
-  const dup = parts.some((p) => String(p.type).toLowerCase() === canonical.toLowerCase());
-  if (dup) {
-    console.warn(`Warning: another part already uses type ${canonical}.`);
-  }
   parts.push({ type: canonical, usage: [], components: [], bundles: [] });
   m.parts = parts;
   saveDevManifest(cwd, m);

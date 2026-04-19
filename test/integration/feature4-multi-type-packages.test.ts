@@ -103,7 +103,7 @@ describe("Integration: Feature 4 multi-type packages", () => {
     expect((r.stdout + r.stderr).toLowerCase()).toMatch(/multi/);
   });
 
-  it("duplicate part types: validate succeeds and stderr warns", () => {
+  it("duplicate part types: validate succeeds without duplicate-type stderr", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
     runAtp(["create", "package"], o);
@@ -119,7 +119,7 @@ describe("Integration: Feature 4 multi-type packages", () => {
     runAtp(["package", "part", "2", "component", "b.md"], o);
     const r = runAtpSpawn(["validate", "package"], o);
     expect(r.status).toBe(0);
-    expect(r.stderr.toLowerCase()).toMatch(/duplicate/);
+    expect(r.stderr.toLowerCase()).not.toMatch(/duplicate part types/);
   });
 
   it("part bundle add same path twice is idempotent (exit 0)", () => {

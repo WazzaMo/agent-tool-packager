@@ -19,7 +19,6 @@ import { loadPackageManifest } from "../install/resolve.js";
 import type { PackageManifest } from "../install/types.js";
 
 import {
-  hasDuplicatePartTypes,
   isFatalMultiFieldMissing,
   collectDuplicateComponentBasenameGaps,
   collectMultiPartStructureGaps,
@@ -263,9 +262,6 @@ function validateCatalogInstallMulti(
   }
 
   if (missing.length === 0) {
-    if (hasDuplicatePartTypes(parts)) {
-      console.warn("Warning: duplicate part types in this package (allowed, but unusual).");
-    }
     return {
       ok: true,
       exitCode: 0,
