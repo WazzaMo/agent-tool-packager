@@ -15,4 +15,4 @@ atp package part 1 usage "render markdown images"
 atp package part 1 bundle add mermaid --exec-filter mermaid/script/run-mermaid.sh
 
 atp package summary
-#atp catalog add package
+atp catalog add package
