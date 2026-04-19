@@ -146,6 +146,11 @@ export interface RawFileCopyAction {
   sourceAbsolutePath: string;
   /** When true, copy a directory tree; throws if the source is not a directory. */
   recursiveDirectorySource?: boolean;
+  /**
+   * After copying a single file, apply the same executable-bit policy as `program` installs
+   * (`chmodProgramAfterCopy` in `copy-package-asset.ts`).
+   */
+  applyProgramExecutableMode?: boolean;
 }
 
 /**

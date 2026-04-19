@@ -11,6 +11,7 @@ import {
   agentDestinationForAsset,
   agentProviderRemovalDestination,
   copyPackageAssets,
+  copyProgramAssetsOnly,
   patchMarkdownBundlePlaceholders,
 } from "../../src/install/copy-assets.js";
 
@@ -361,6 +362,48 @@ Use {my_util} to process files.
       const patched = fs.readFileSync(path.join(agentBase, "skills", "SKILL.md"), "utf8");
       expect(patched).toBe("Tool A: /path/a, Tool B: /path/b");
     });
+  });
+});
+
+describe("copyProgramAssetsOnly", () => {
+  let pkgDir: string;
+  let binDir: string;
+
+  beforeEach(() => {
+    const base = createTempDir();
+    pkgDir = path.join(base, "pkg");
+    binDir = path.join(base, "outbin");
+    fs.mkdirSync(pkgDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    try {
+      fs.rmSync(path.dirname(pkgDir), { recursive: true });
+    } catch {
+      /* ignore */
+    }
+  });
+
+  it("skips program paths listed in skipProgramPaths (skill-adjacent already under scripts/)", () => {
+    fs.mkdirSync(path.join(pkgDir, "b"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "b", "x.sh"), "#!/bin/sh\n");
+    fs.mkdirSync(path.join(pkgDir, "c"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "c", "y.sh"), "#!/bin/sh\n");
+    copyProgramAssetsOnly(
+      pkgDir,
+      {
+        name: "t",
+        assets: [
+          { path: "b/x.sh", type: "program", name: "x" },
+          { path: "c/y.sh", type: "program", name: "y" },
+        ],
+      },
+      binDir,
+      undefined,
+      new Set(["b/x.sh"])
+    );
+    expect(fs.existsSync(path.join(binDir, "x.sh"))).toBe(false);
+    expect(fs.existsSync(path.join(binDir, "y.sh"))).toBe(true);
   });
 });
 

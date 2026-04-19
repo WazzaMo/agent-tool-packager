@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { runAtp, runAtpExpectExit } from "./test-helpers.js";
 import {
@@ -119,6 +120,13 @@ Being able to install this, means success.
     expect(res.stdout + res.stderr).toMatch(/No Safehouse|safehouse init/i);
   });
 
+  /**
+   * `run.sh` lives under bundle `my_tool/` while the only skill asset is root `SKILL.md`. That layout is
+   * not skill-adjacent (no skill files under `my_tool/`), so the program still installs to Safehouse
+   * exec `bin/` and `{my_tool}` patches to that path. Contrast: when a program is co-located with the
+   * same skill bundle tree, it is installed under `.cursor/skills/.../scripts/` only and must not
+   * appear in Safehouse or user `bin/` (see the following test).
+   */
   it("package with bundle installs executables to .atp_safehouse/pkg-exec/bin (Feature 3 step 4)", () => {
     const skillContent = "Run {my_tool}/run.sh";
     fs.writeFileSync(path.join(pkgDir, "SKILL.md"), skillContent);
@@ -149,6 +157,56 @@ Being able to install this, means success.
     const patched = fs.readFileSync(skillPath, "utf8");
     expect(patched).toContain(execBin);
     expect(patched).not.toContain("{my_tool}");
+  });
+
+  it("skill-adjacent bundle program is installed under scripts/ only, not Safehouse or user bin", () => {
+    const bundleDir = path.join(pkgDir, "sbundle");
+    fs.mkdirSync(path.join(bundleDir, "bin"), { recursive: true });
+    fs.writeFileSync(
+      path.join(bundleDir, "skill.yaml"),
+      "name: f3-skill-script\ndescription: Skill script layout\n"
+    );
+    fs.writeFileSync(
+      path.join(bundleDir, "skill.md"),
+      "## Run\n\nInvoke {skill_scripts}/helper.sh.\n"
+    );
+    const helperPath = path.join(bundleDir, "bin", "helper.sh");
+    fs.writeFileSync(helperPath, "#!/bin/sh\necho helper\n");
+    if (process.platform !== "win32") {
+      fs.chmodSync(helperPath, 0o755);
+    }
+
+    initPackage(pkgDir, stationDir, {
+      type: "skill",
+      name: "f3-skill-adjacent",
+      version: "0.2.0",
+      usage: "Skill script vs bin split",
+      bundles: [{ path: "sbundle", execFilter: "sbundle/bin/helper.sh" }],
+      catalogAdd: true,
+    });
+
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["install", "f3-skill-adjacent", "--project", "--project-bin"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const scriptDest = path.join(
+      projectDir,
+      ".cursor",
+      "skills",
+      "f3-skill-script",
+      "scripts",
+      "helper.sh"
+    );
+    expect(fs.existsSync(scriptDest)).toBe(true);
+
+    const safehouseBin = path.join(projectDir, ".atp_safehouse", "f3-skill-adjacent-exec", "bin");
+    expect(fs.existsSync(path.join(safehouseBin, "helper.sh"))).toBe(false);
+
+    const userBinHelper = path.join(os.homedir(), ".local", "bin", "helper.sh");
+    expect(fs.existsSync(userBinHelper)).toBe(false);
   });
 
   it("atp safehouse list shows installed package after install", () => {

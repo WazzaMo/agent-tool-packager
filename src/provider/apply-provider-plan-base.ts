@@ -8,6 +8,8 @@ import path from "node:path";
 import type { ConfigMergeJournalEntryV1 } from "../config/config-merge-journal.js";
 import type { McpMergeOptions } from "../file-ops/mcp-merge/mcp-json-merge.js";
 
+import { chmodProgramAfterCopy } from "../install/copy-package-asset.js";
+
 import type { InstallContext } from "../file-ops/install-context.js";
 
 import { applyManagedBlockToText } from "../file-ops/markdown-merge/managed-block-patch.js";
@@ -140,6 +142,9 @@ export function applyRawFileCopyAction(
   }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.copyFileSync(action.sourceAbsolutePath, dest);
+  if (action.applyProgramExecutableMode) {
+    chmodProgramAfterCopy(dest, action.sourceAbsolutePath);
+  }
   onFileWritten?.(dest);
 }
 

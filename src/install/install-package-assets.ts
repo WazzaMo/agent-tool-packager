@@ -2,6 +2,8 @@
  * Install catalog package file assets via Cursor, Gemini, Claude, Codex provider or legacy copy.
  */
 
+import { collectSkillAdjacentProgramPathsForInstall } from "../provider/skill/skill-adjacent-programs.js";
+
 import {
   copyPackageAssets,
   copyProgramAssetsOnly,
@@ -54,6 +56,11 @@ export function installPackageAssetsForCatalogContext(
     skipConfig: mergeOpts.skipConfig,
   };
 
+  const skipSkillAdjacentPrograms = collectSkillAdjacentProgramPathsForInstall(
+    ctx.manifest,
+    stagedParts
+  );
+
   // Gemini: layerRoot is project `.gemini/` only (not `.agents/`); provider paths are relative to it.
   if (usesGeminiAgentProviderProjectInstall(providerCtx, ctx.manifest, ctx.opts)) {
     const provider = createGeminiAgentProvider(ctx.manifest, ctx.bundlePathMap);
@@ -61,7 +68,13 @@ export function installPackageAssetsForCatalogContext(
       const plan = provider.planInstall(providerCtx, part, mergeOpts);
       provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);
     }
-    copyProgramAssetsOnly(ctx.pkgDir, ctx.manifest, ctx.installBinDir, onFileCopied);
+    copyProgramAssetsOnly(
+      ctx.pkgDir,
+      ctx.manifest,
+      ctx.installBinDir,
+      onFileCopied,
+      skipSkillAdjacentPrograms
+    );
     return;
   }
 
@@ -71,7 +84,13 @@ export function installPackageAssetsForCatalogContext(
       const plan = provider.planInstall(providerCtx, part, mergeOpts);
       provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);
     }
-    copyProgramAssetsOnly(ctx.pkgDir, ctx.manifest, ctx.installBinDir, onFileCopied);
+    copyProgramAssetsOnly(
+      ctx.pkgDir,
+      ctx.manifest,
+      ctx.installBinDir,
+      onFileCopied,
+      skipSkillAdjacentPrograms
+    );
     return;
   }
 
@@ -81,7 +100,13 @@ export function installPackageAssetsForCatalogContext(
       const plan = provider.planInstall(providerCtx, part, mergeOpts);
       provider.applyPlan(plan, mergeOpts, onFileCopied, configMergeJournalOut);
     }
-    copyProgramAssetsOnly(ctx.pkgDir, ctx.manifest, ctx.installBinDir, onFileCopied);
+    copyProgramAssetsOnly(
+      ctx.pkgDir,
+      ctx.manifest,
+      ctx.installBinDir,
+      onFileCopied,
+      skipSkillAdjacentPrograms
+    );
     return;
   }
 
@@ -95,7 +120,8 @@ export function installPackageAssetsForCatalogContext(
       ctx.pkgDir,
       ctx.manifest,
       ctx.installBinDir,
-      onFileCopied
+      onFileCopied,
+      skipSkillAdjacentPrograms
     );
     return;
   }

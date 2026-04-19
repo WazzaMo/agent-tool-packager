@@ -13,6 +13,7 @@ import {
   buildSkillInstallProviderActions,
   type SkillInstallPathOptions,
 } from "./skill/plan-skill-install.js";
+import { collectSkillAdjacentPrograms } from "./skill/skill-adjacent-programs.js";
 import { SkillFrontmatterError } from "./skill/normalize-skill-frontmatter.js";
 import type { AtpProvenance, PlainMarkdownWriteAction, ProviderPlan } from "./provider-dtos.js";
 
@@ -108,13 +109,15 @@ export function appendSkillInstallActions(
   ctx: InstallContext,
   part: StagedPartInstallInput,
   skillAssets: PackageAsset[],
-  packageName: string | undefined,
-  packageVersion: string | undefined,
+  manifest: PackageManifest,
   bundlePathMap: Record<string, string> | undefined,
   providerLabel: string,
   skillPathOptions?: SkillInstallPathOptions
 ): SkillInstallAppendResult {
   const result: SkillInstallAppendResult = {};
+  const packageName = manifest.name;
+  const packageVersion = manifest.version;
+  const skillAdjacentPrograms = collectSkillAdjacentPrograms(manifest, part, skillAssets);
   try {
     const built = buildSkillInstallProviderActions(
       { stagingDir: ctx.stagingDir, layerRoot: ctx.layerRoot, projectRoot: ctx.projectRoot },
@@ -122,7 +125,8 @@ export function appendSkillInstallActions(
       skillAssets,
       { name: packageName, version: packageVersion },
       bundlePathMap,
-      skillPathOptions
+      skillPathOptions,
+      skillAdjacentPrograms
     );
     actions.push(...built);
     const md = built.find((b): b is PlainMarkdownWriteAction => b.kind === "plain_markdown_write");

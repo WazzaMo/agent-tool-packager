@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { runAtp } from "./test-helpers.js";
@@ -89,5 +90,59 @@ describe("Integration: CursorAgentProvider skill layout", () => {
     const agentsText = fs.readFileSync(agentsMd, "utf8");
     expect(agentsText).toContain("cap-skill-bundle");
     expect(agentsText).toContain(".cursor/skills/pdf-kit/SKILL.md");
+  });
+
+  it("installs bundle program under .cursor/skills/{name}/scripts/ and not into user bin", () => {
+    const bundleDir = path.join(pkgDir, "mybundle");
+    fs.mkdirSync(path.join(bundleDir, "bin"), { recursive: true });
+    fs.writeFileSync(
+      path.join(bundleDir, "skill.yaml"),
+      "name: script-runner\ndescription: Runs helper script\n"
+    );
+    fs.writeFileSync(
+      path.join(bundleDir, "skill.md"),
+      "## Run\n\nInvoke {skill_scripts}/helper.sh.\n"
+    );
+    const helperPath = path.join(bundleDir, "bin", "helper.sh");
+    fs.writeFileSync(helperPath, "#!/bin/sh\necho helper\n");
+    if (process.platform !== "win32") {
+      fs.chmodSync(helperPath, 0o755);
+    }
+
+    initPackage(pkgDir, stationDir, {
+      type: "skill",
+      name: "skill-with-bin-exec",
+      version: "0.5.0",
+      usage: "Skill bundle exec integration",
+      bundles: [{ path: "mybundle", execFilter: "mybundle/bin/helper.sh" }],
+      catalogAdd: true,
+    });
+
+    runAtp(["safehouse", "init"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+    runAtp(["agent", "cursor"], { cwd: projectDir, env: { STATION_PATH: stationDir } });
+
+    const out = runAtp(["install", "skill-with-bin-exec", "--project"], {
+      cwd: projectDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(out).toContain("Installed skill-with-bin-exec");
+
+    const scriptDest = path.join(
+      projectDir,
+      ".cursor",
+      "skills",
+      "script-runner",
+      "scripts",
+      "helper.sh"
+    );
+    expect(fs.existsSync(scriptDest)).toBe(true);
+    expect(fs.readFileSync(scriptDest, "utf8")).toContain("echo helper");
+
+    const skillMd = path.join(projectDir, ".cursor", "skills", "script-runner", "SKILL.md");
+    const mdText = fs.readFileSync(skillMd, "utf8");
+    expect(mdText).toContain("scripts/helper.sh");
+
+    const userBinHelper = path.join(os.homedir(), ".local", "bin", "helper.sh");
+    expect(fs.existsSync(userBinHelper)).toBe(false);
   });
 });

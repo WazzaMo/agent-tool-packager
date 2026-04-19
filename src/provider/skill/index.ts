@@ -29,4 +29,9 @@ export {
   resolvePrimarySkillSource,
 } from "./resolve-primary-skill-source.js";
 export { longestCommonPathPrefix, resolveSkillBundleRoot, relativeToSkillBundle, toPosixPath } from "./skill-bundle-root.js";
+export {
+  collectSkillAdjacentPrograms,
+  collectSkillAdjacentProgramPathsForInstall,
+  isProgramPathUnderSkillBundle,
+} from "./skill-adjacent-programs.js";
 export { trySplitSkillFrontmatter } from "./split-skill-md.js";

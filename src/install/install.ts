@@ -84,13 +84,13 @@ export async function installPackage(
   const projectBase = findProjectBase(cwd);
   if (!projectBase || !safehouseExists(projectBase)) {
     console.error(SAFEHOUSE_REQUIRED_MSG);
-    process.exit(1);
+    process.exit(2);
   }
 
   const catalogPkg = resolvePackage(packageName, projectBase);
   if (!catalogPkg) {
     console.error(`Package not found in catalog: ${packageName}`);
-    process.exit(1);
+    process.exit(2);
   }
 
   const pkgDir = resolvePackagePath(catalogPkg.location, projectBase);
@@ -98,7 +98,7 @@ export async function installPackage(
     console.error(
       `Package location not supported (file:// only): ${catalogPkg.location ?? "(none)"}`
     );
-    process.exit(1);
+    process.exit(2);
   }
 
   const manifest = loadPackageManifest(pkgDir);
@@ -106,7 +106,7 @@ export async function installPackage(
     console.error(
       `No manifest (atp-package.yaml or package.yaml) found in ${pkgDir}`
     );
-    process.exit(1);
+    process.exit(2);
   }
 
   const missing = checkDependencies(manifest, projectBase);
@@ -118,7 +118,7 @@ export async function installPackage(
       console.error(
         "Install with --dependencies to install them first, or add them to your catalog."
       );
-      process.exit(1);
+      process.exit(2);
     }
     for (const dep of missing) {
       await installPackage(dep, opts, projectBase);
@@ -131,7 +131,7 @@ export async function installPackage(
   } catch (e) {
     if (e instanceof SafehouseAgentNotAssignedError) {
       console.error(e.message);
-      process.exit(1);
+      process.exit(2);
     }
     throw e;
   }
@@ -175,6 +175,6 @@ export async function installPackage(
     for (const line of lines) {
       console.error(line);
     }
-    process.exit(1);
+    process.exit(2);
   }
 }

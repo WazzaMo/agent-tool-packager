@@ -241,8 +241,7 @@ export class CursorAgentProvider implements AgentProvider {
         ctx,
         part,
         skillAssets,
-        packageName,
-        packageVersion,
+        this.manifest,
         this.bundlePathMap,
         PROVIDER_LABEL
       );

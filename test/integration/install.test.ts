@@ -58,7 +58,7 @@ describe("Integration: install and list", () => {
     fs.mkdirSync(path.join(bareProject, ".git"), { recursive: true });
     try {
       runAtp(["safehouse", "init"], { cwd: bareProject, env: { STATION_PATH: stationDir } });
-      const res = runAtpExpectExit(["install", "test-package"], 1, {
+      const res = runAtpExpectExit(["install", "test-package"], 2, {
         cwd: bareProject,
         env: { STATION_PATH: stationDir },
       });
@@ -159,7 +159,7 @@ assets:
     };
     fs.writeFileSync(catalogPath, yaml.dump(doc, { lineWidth: 120 }));
     try {
-      const result = runAtpExpectExit(["install", "pkg-with-deps"], 1, {
+      const result = runAtpExpectExit(["install", "pkg-with-deps"], 2, {
         cwd: projectDir,
         env: { STATION_PATH: stationDir },
       });

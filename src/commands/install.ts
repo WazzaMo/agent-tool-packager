@@ -101,7 +101,7 @@ export function registerInstallCommand(program: Command): void {
           installOpts = installOptionsFromCliFlags(opts);
         } catch (e) {
           console.error((e as Error).message);
-          process.exit(1);
+          process.exit(2);
           return;
         }
         await installPackage(pkgName, installOpts, process.cwd());

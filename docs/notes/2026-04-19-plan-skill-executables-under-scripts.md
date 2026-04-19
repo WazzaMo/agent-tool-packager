@@ -12,6 +12,18 @@ sequenced approach to change install behaviour so skill-related executables matc
 [Agent Skills specification](https://agentskills.io/specification) layout (`scripts/` next to
 `SKILL.md`).
 
+We should be guided by the specification telling us where binary or executable code
+should be located because this is where agents will expect it. Where skills are concerned
+the path that matters is where the agent expects to find the script and code to run
+as instructed by the skill.
+
+When authoring or installations must fail to protect integrity, do so by:
+
+1. giving a useful error message with enough context that the user understands cause and
+   what can be done to correct it.
+
+2. Use program exits with Exit code 2 to signal abnormal termination.
+
 # Context
 
 The specification places optional executable code under `scripts/` beside `SKILL.md`, with
@@ -228,7 +240,8 @@ Longer detail: cover planner output, collision detection, and a package similar 
 
 - Tests and remove paths cover the new layout.
 
-# Open questions
+# Future Considerations
+
 
 #### Dual install to `bin`
 

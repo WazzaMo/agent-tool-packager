@@ -396,6 +396,119 @@ describe("buildSkillInstallProviderActions", () => {
     fs.rmSync(tmp, { recursive: true });
   });
 
+  it("emits raw_file_copy for skill-adjacent program under scripts/ with executable mode flag", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-prog-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "skill.yaml"),
+      "name: with-script\ndescription: Has a program\n"
+    );
+    fs.writeFileSync(path.join(tmp, "skill.md"), "Run {skill_scripts}/run.sh\n");
+    fs.mkdirSync(path.join(tmp, "bin"), { recursive: true });
+    const scriptPath = path.join(tmp, "bin", "run.sh");
+    fs.writeFileSync(scriptPath, "#!/bin/sh\necho hi\n");
+    if (process.platform !== "win32") {
+      fs.chmodSync(scriptPath, 0o755);
+    }
+
+    const layerRoot = path.join(tmp, "layer");
+    fs.mkdirSync(layerRoot, { recursive: true });
+
+    const actions = buildSkillInstallProviderActions(
+      { stagingDir: tmp, layerRoot },
+      { partIndex: 1, partKind: "Skill" },
+      [
+        { path: "skill.yaml", type: "skill", name: "skill" },
+        { path: "skill.md", type: "skill", name: "skill" },
+      ],
+      { name: "pkg", version: "1.0.0" },
+      undefined,
+      undefined,
+      [{ path: "bin/run.sh", type: "program", name: "run" }]
+    );
+
+    const rawCopies = actions.filter((a) => a.kind === "raw_file_copy");
+    expect(rawCopies).toHaveLength(1);
+    const copy = rawCopies[0];
+    expect(copy.kind).toBe("raw_file_copy");
+    if (copy.kind === "raw_file_copy") {
+      expect(copy.relativeTargetPath).toBe("skills/with-script/scripts/run.sh");
+      expect(copy.applyProgramExecutableMode).toBe(true);
+    }
+
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("throws when two skill-adjacent programs share the same basename", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-dup-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "skill.yaml"),
+      "name: dup\ndescription: D\n"
+    );
+    fs.writeFileSync(path.join(tmp, "skill.md"), "# X\n");
+    fs.mkdirSync(path.join(tmp, "bin"), { recursive: true });
+    fs.mkdirSync(path.join(tmp, "tools"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "bin", "tool.sh"), "#!/bin/sh\n");
+    fs.writeFileSync(path.join(tmp, "tools", "tool.sh"), "#!/bin/sh\n");
+    const layerRoot = path.join(tmp, "layer");
+    fs.mkdirSync(layerRoot, { recursive: true });
+
+    expect(() =>
+      buildSkillInstallProviderActions(
+        { stagingDir: tmp, layerRoot },
+        { partIndex: 1, partKind: "Skill" },
+        [
+          { path: "skill.yaml", type: "skill", name: "skill" },
+          { path: "skill.md", type: "skill", name: "skill" },
+        ],
+        { name: "pkg", version: "1.0.0" },
+        undefined,
+        undefined,
+        [
+          { path: "bin/tool.sh", type: "program", name: "a" },
+          { path: "tools/tool.sh", type: "program", name: "b" },
+        ]
+      )
+    ).toThrow(/multiple bundle programs map to scripts\/tool\.sh/i);
+
+    fs.rmSync(tmp, { recursive: true });
+  });
+
+  it("throws when skill-adjacent program destination collides with an authored scripts/ file", () => {
+    const tmp = path.join(os.tmpdir(), `atp-skill-clash-${Date.now()}`);
+    fs.mkdirSync(tmp, { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "skill.yaml"),
+      "name: clash-skill\ndescription: D\n"
+    );
+    fs.writeFileSync(path.join(tmp, "skill.md"), "# X\n");
+    fs.mkdirSync(path.join(tmp, "scripts"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "scripts", "run.sh"), "# authored\n");
+    fs.mkdirSync(path.join(tmp, "bin"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "bin", "run.sh"), "#!/bin/sh\n");
+    const layerRoot = path.join(tmp, "layer");
+    fs.mkdirSync(layerRoot, { recursive: true });
+
+    expect(() =>
+      buildSkillInstallProviderActions(
+        { stagingDir: tmp, layerRoot },
+        { partIndex: 1, partKind: "Skill" },
+        [
+          { path: "skill.yaml", type: "skill", name: "skill" },
+          { path: "skill.md", type: "skill", name: "skill" },
+          { path: "scripts/run.sh", type: "skill", name: "s" },
+        ],
+        { name: "pkg", version: "1.0.0" },
+        undefined,
+        undefined,
+        [{ path: "bin/run.sh", type: "program", name: "p" }]
+      )
+    ).toThrow(/conflicts with another skill file or program/i);
+
+    fs.rmSync(tmp, { recursive: true });
+  });
+
   it("throws when assembled SKILL.md frontmatter exceeds spec (install-time guard)", () => {
     const tmp = path.join(os.tmpdir(), `atp-skill-inv-${Date.now()}`);
     fs.mkdirSync(tmp, { recursive: true });

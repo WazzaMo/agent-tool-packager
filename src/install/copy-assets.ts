@@ -57,6 +57,10 @@ export function copyPackageAssets(
   }
 }
 
+function posixAssetPath(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
 /**
  * Copy only `program` assets from the manifest (used after {@link CursorAgentProvider} handles the rest).
  *
@@ -64,16 +68,21 @@ export function copyPackageAssets(
  * @param manifest - Catalog manifest with `assets`.
  * @param installBinDir - Destination for executables.
  * @param onFileCopied - Optional rollback hook.
+ * @param skipProgramPaths - Staged paths (POSIX) already installed under skill `scripts/`; omitted from `bin/`.
  */
 export function copyProgramAssetsOnly(
   pkgDir: string,
   manifest: PackageManifest,
   installBinDir: string | undefined,
-  onFileCopied?: (destAbsolute: string) => void
+  onFileCopied?: (destAbsolute: string) => void,
+  skipProgramPaths?: ReadonlySet<string>
 ): void {
   const assets = manifest.assets ?? [];
   for (const asset of assets) {
     if (asset.type === "program") {
+      if (skipProgramPaths?.has(posixAssetPath(asset.path))) {
+        continue;
+      }
       copyPackageAsset(pkgDir, "", asset, undefined, installBinDir, onFileCopied);
     }
   }
