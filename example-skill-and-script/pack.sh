@@ -4,7 +4,7 @@
 
 atp create package skeleton
 
-atp package name "Ex mermaid markdown"
+atp package name "Ex-mermaid-markdown"
 atp package developer "Warwick Molloy"
 atp package license "Apache 2.0"
 atp package version 0.1.0

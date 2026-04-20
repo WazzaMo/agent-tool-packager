@@ -18,7 +18,7 @@ then
     then
         npx -p @mermaid-js/mermaid-cli mmdc -i ${infile} -o ${outfile}
     else
-        test -f $infile || echo "Input file ${infile} is missing" > &2
+        test -f $infile || echo "Input file ${infile} is missing" >&2
     fi
 else
     infile="no-input"
