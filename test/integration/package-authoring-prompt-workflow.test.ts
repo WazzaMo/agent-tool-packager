@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { escapeRegExp } from "node:util";
 import yaml from "js-yaml";
 import { runAtp, runAtpExpectExit, PROJECT_ROOT } from "./test-helpers.js";
 import { atpCwd, listStageTar } from "./package-developer-helpers.js";
@@ -105,7 +106,7 @@ describe("Integration: package authoring — Prompt part with doc-guide and clea
     const summaryOut = runAtp(["package", "summary"], o);
     const combined = summaryOut.toLowerCase();
     expect(combined).toMatch(/package summary/);
-    expect(summaryOut).toMatch(new RegExp(pkgName.replace(/-/g, "\\-")));
+    expect(summaryOut).toMatch(new RegExp(escapeRegExp(pkgName)));
     expect(combined).toMatch(/multi/);
     expect(summaryOut).toContain(developer);
     expect(summaryOut).toContain(version);
