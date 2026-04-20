@@ -23,5 +23,5 @@ then
 else
     infile="no-input"
     outfile="no-output"
-    echo "Error! Need two arguments INFILE and OUTFILE" > @2
+    echo "Error! Need two arguments INFILE and OUTFILE" >&2
 fi
