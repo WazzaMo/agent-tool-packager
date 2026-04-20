@@ -26,6 +26,14 @@ export default defineConfig({
         banner: '#!/usr/bin/env node\n',
         inlineDynamicImports: true,
       },
+      // @iarna/toml's generated parser uses eval(); expected for that dependency. Node CLI bundle only.
+      onwarn(warning, defaultHandler) {
+        const msg = String(warning.message ?? '');
+        if (msg.includes('@iarna/toml') && msg.toLowerCase().includes('eval')) {
+          return;
+        }
+        defaultHandler(warning);
+      },
     },
     outDir: 'dist',
     emptyOutDir: true,

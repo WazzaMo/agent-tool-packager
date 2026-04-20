@@ -1,6 +1,11 @@
 name: test-package
 version: 1.0.0
+type: Rule
 description: Test package for ATP acceptance criteria
+usage:
+  - Integration test fixture
+components:
+  - skills/test-skill.md
 assets:
   - path: skills/test-skill.md
     type: skill

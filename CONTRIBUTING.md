@@ -76,6 +76,13 @@ Documentation is a first-class citizen in Agent Tool Packager. All Markdown file
 - Keep table rows under 60 characters; use headings and paragraphs for longer descriptions.
 - Use Mermaid for diagrams, with all text labels quoted.
 
+## Agent provider contributions
+
+When adding or changing **`AgentProvider`** wiring (a new agent, merge targets,
+install gates, or Safehouse removal paths), follow
+[docs/contributor-guide-agent-providers.md](docs/contributor-guide-agent-providers.md)
+alongside [Feature 5 — Installer providers](docs/features/5-installer-providers-for-known-agents.md).
+
 ## Notes
 
 If your contribution involves a new feature or architectural change, create an implementation plan in `docs/notes/` prefixed with the date (e.g., `2026-02-15-my-feature.md`). Review it against the project goals in [docs/goals.md](docs/goals.md) and requirements in [docs/requirements.md](docs/requirements.md).
@@ -87,7 +94,7 @@ Contributions of all kinds are welcome:
 - Bug fixes
 
 - New features or tool improvements
-    - New rules, skills
+    - New rules, prompts, skills, hooks
     - extending the type, or number, of agents supported.
 
 - Test coverage improvements

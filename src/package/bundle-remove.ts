@@ -7,9 +7,13 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
+
 import { loadDevManifest } from "./load-manifest.js";
+import { bundleManifestPath, resolveBundleSourcePath } from "./resolve-bundle-source.js";
+import { exitIfMultiDevManifestForLegacyRemove } from "./root-staging-guard.js";
 import { saveDevManifest } from "./save-manifest.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 const STAGE_TAR = "stage.tar";
 
@@ -131,13 +135,15 @@ function removeBundleFromManifest(cwd: string, manifest: DevPackageManifest, exe
  */
 export function bundleRemove(cwd: string, execBase: string): void {
   const pkgRoot = path.resolve(cwd);
-  const relBase = path.relative(pkgRoot, path.resolve(cwd, execBase));
+  const bundleAbs = resolveBundleSourcePath(pkgRoot, execBase);
+  const manifestPath = bundleManifestPath(pkgRoot, bundleAbs);
 
   const manifest = loadManifestOrExit(cwd);
-  assertBundleInManifest(manifest, relBase);
+  exitIfMultiDevManifestForLegacyRemove(manifest);
+  assertBundleInManifest(manifest, manifestPath);
   const tarPath = assertStageTarExists(cwd);
-  assertBundleInTar(tarPath, relBase, pkgRoot);
+  assertBundleInTar(tarPath, manifestPath, pkgRoot);
 
-  recreateTarWithoutBundle(tarPath, relBase, pkgRoot);
-  removeBundleFromManifest(cwd, manifest, relBase);
+  recreateTarWithoutBundle(tarPath, manifestPath, pkgRoot);
+  removeBundleFromManifest(cwd, manifest, manifestPath);
 }

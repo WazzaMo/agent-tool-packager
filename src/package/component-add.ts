@@ -6,23 +6,22 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
+
 import { loadDevManifest } from "./load-manifest.js";
+import { resolveComponentSourcePath } from "./resolve-component-source.js";
+import { exitIfMultiUsesRootStaging } from "./root-staging-guard.js";
 import { saveDevManifest } from "./save-manifest.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 const STAGE_TAR = "stage.tar";
 
-/** Exit if path is outside pkg root or is absolute. */
-function assertValidComponentPath(filePath: string, pkgRoot: string): void {
-  const resolved = path.resolve(pkgRoot, filePath);
-  const rel = path.relative(pkgRoot, resolved);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) {
-    console.error(`Invalid path to component given: ${filePath}`);
-    process.exit(1);
-  }
-}
-
-/** Exit if path does not exist or is not a file. */
+/**
+ * Exit if path does not exist or is not a file.
+ *
+ * @param resolved - Absolute path to the nominated file.
+ * @param filePath - Original user path (for error messages).
+ */
 function assertComponentExistsAndIsFile(resolved: string, filePath: string): void {
   if (!fs.existsSync(resolved)) {
     console.error("Nominated path or file does not exist.");
@@ -34,7 +33,10 @@ function assertComponentExistsAndIsFile(resolved: string, filePath: string): voi
   }
 }
 
-/** Load manifest or exit. */
+/**
+ * @param cwd - Package root directory.
+ * @returns Loaded manifest or exits when missing.
+ */
 function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
@@ -44,7 +46,14 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
   return manifest;
 }
 
-/** Append or create tar with component file. */
+/**
+ * Append one file to `stage.tar`, creating the archive when needed.
+ *
+ * @param pkgRoot - Package root (tar cwd).
+ * @param tarPath - Path to `stage.tar`.
+ * @param fileDir - Directory containing the file (`tar -C` target).
+ * @param baseName - File name only.
+ */
 function appendComponentToTar(
   pkgRoot: string,
   tarPath: string,
@@ -69,16 +78,16 @@ function appendComponentToTar(
  * Validates path and manifest; updates manifest and tar (flat layout).
  *
  * @param cwd - Package root directory
- * @param filePath - Path to file (relative to cwd)
+ * @param filePath - Source file: relative to {@link cwd} (including `..`) or absolute
  */
 export function componentAdd(cwd: string, filePath: string): void {
   const pkgRoot = path.resolve(cwd);
-  const resolved = path.resolve(cwd, filePath);
+  const resolved = resolveComponentSourcePath(pkgRoot, filePath);
 
-  assertValidComponentPath(filePath, pkgRoot);
   assertComponentExistsAndIsFile(resolved, filePath);
 
   const manifest = loadManifestOrExit(cwd);
+  exitIfMultiUsesRootStaging(manifest, "component <path>");
   const baseName = path.basename(resolved);
   const components = manifest.components ?? [];
 

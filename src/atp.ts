@@ -1,9 +1,9 @@
 /**
- * Agent Tools Packager(ATP) CLI - entry point
- * CLI for agentic dev workflows: installs prompts, MCP servers, skills.
+ * Agent Tool Packager (ATP) CLI entry: registers subcommands and parses `process.argv`.
  */
 
 import { Command } from "commander";
+
 import { registerAgentCommands } from "./commands/agent.js";
 import { registerCatalogCommands } from "./commands/catalog.js";
 import { registerCreateCommands } from "./commands/create.js";
@@ -13,6 +13,9 @@ import { registerRemoveCommands } from "./commands/remove.js";
 import { registerSafehouseCommands } from "./commands/safehouse.js";
 import { registerStationCommands } from "./commands/station.js";
 import { registerValidateCommands } from "./commands/validate.js";
+import { isStandaloneLatestArgv } from "./cli/standalone-latest-argv.js";
+import { maybePrintUpdateNotice, printLatestVersusCurrent } from "./cli/update-notice.js";
+import { atp_version } from "./version.js";
 
 const greetingMessage = `
     AA      GGGGG    EEEEEEE  NN    NN  TTTTTTTT      TTTTTTTT     OOOO        OOOO     LL         SSSS
@@ -35,7 +38,11 @@ const program = new Command();
 program
   .name("atp")
   .description(greetingMessage)
-  .version(process.env.ATP_VERSION || "0.0.0-dev");
+  .version(atp_version())
+  .option(
+    "--latest",
+    "Show latest published package version vs current, then exit"
+  );
 
 registerStationCommands(program);
 registerSafehouseCommands(program);
@@ -47,5 +54,22 @@ registerCreateCommands(program);
 registerPackageCommands(program);
 registerValidateCommands(program);
 
-program.parse();
+program.hook("preAction", async () => {
+  await maybePrintUpdateNotice();
+});
 
+/**
+ * Parse argv and run the matching subcommand (Commander).
+ */
+async function main(): Promise<void> {
+  if (isStandaloneLatestArgv(process.argv)) {
+    const code = await printLatestVersusCurrent();
+    process.exit(code);
+  }
+  await program.parseAsync(process.argv);
+}
+
+main().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});

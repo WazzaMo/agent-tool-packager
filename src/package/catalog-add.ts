@@ -3,25 +3,34 @@
  * See docs/features/2-package-developer-support.md.
  */
 
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import zlib from "node:zlib";
+
 import yaml from "js-yaml";
+
+import { parseCatalogPackagesField } from "../catalog/load.js";
 import { getStationPath } from "../config/paths.js";
 import { DEFAULT_CATALOG } from "../config/station-config.js";
-import { parseCatalogPackagesField } from "../catalog/load.js";
-import type { CatalogPackage } from "../catalog/types.js";
+
+import { enrichCatalogPackageManifestAssets } from "./catalog-asset-enrichment.js";
 import { loadDevManifest } from "./load-manifest.js";
 import { validatePackage } from "./validate.js";
+
 import type { DevPackageManifest } from "./types.js";
+import type { CatalogPackage } from "../catalog/types.js";
+
 
 const USER_PACKAGES_DIR = "user_packages";
 const STAGE_TAR = "stage.tar";
 const PACKAGE_FILE = "atp-package.yaml";
 const CATALOG_FILE = "atp-catalog.yaml";
 
-/** Load manifest or exit. */
+/**
+ * @param cwd - Package root directory.
+ * @returns Loaded manifest or exits when `atp-package.yaml` is missing.
+ */
 function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
@@ -31,8 +40,11 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
   return manifest;
 }
 
-/** Validate package or exit with validation errors. */
-function validateOrExit(cwd: string): void {
+/**
+ * @param cwd - Package root directory.
+ * Exits when {@link validatePackage} fails.
+ */
+function validatePackageOrExit(cwd: string): void {
   const validation = validatePackage(cwd);
   if (!validation.ok) {
     console.error("Package definition is not yet complete, so it does not pass validation.");
@@ -47,8 +59,11 @@ function validateOrExit(cwd: string): void {
   }
 }
 
-/** Ensure stage.tar exists and is non-empty, or exit. */
-function ensureStageTarExists(cwd: string): string {
+/**
+ * @param cwd - Package root directory.
+ * @returns Absolute path to a non-empty `stage.tar`, or exits.
+ */
+function requireNonEmptyStageTarPath(cwd: string): string {
   const stagePath = path.join(cwd, STAGE_TAR);
   if (!fs.existsSync(stagePath) || fs.statSync(stagePath).size === 0) {
     console.error("stage.tar is missing or empty. Add components or bundles.");
@@ -57,12 +72,15 @@ function ensureStageTarExists(cwd: string): string {
   return stagePath;
 }
 
-/** Create package dir, copy manifest, gzip stage.tar, extract. Returns pkgDir. */
-function createPackageDir(
-  cwd: string,
-  stagePath: string,
-  name: string
-): string {
+/**
+ * Create `user_packages/<name>/`, copy manifest, gzip and extract `stage.tar`.
+ *
+ * @param cwd - Developer package root.
+ * @param stagePath - Path to `stage.tar` under `cwd`.
+ * @param name - Package name (directory name under `user_packages`).
+ * @returns Absolute path to the created catalog package directory.
+ */
+function createCatalogPackageDirectory(cwd: string, stagePath: string, name: string): string {
   const stationPath = getStationPath();
   const userPkgsPath = path.join(stationPath, USER_PACKAGES_DIR);
   const pkgDir = path.join(userPkgsPath, name);
@@ -90,57 +108,33 @@ function createPackageDir(
   return pkgDir;
 }
 
-/** Derive assets from components and bundles, write enriched manifest. */
-function enrichManifestWithAssets(
+/**
+ * Merge installer `assets` into the copied manifest on disk.
+ *
+ * @param pkgDir - Extracted catalog package directory.
+ * @param manifestDest - Path to `atp-package.yaml` inside `pkgDir`.
+ * @param manifest - Parsed developer manifest (for multi-type layout).
+ */
+function writeEnrichedManifestWithAssets(
   pkgDir: string,
   manifestDest: string,
   manifest: DevPackageManifest
 ): void {
   const outManifest = yaml.load(fs.readFileSync(manifestDest, "utf8")) as Record<string, unknown>;
-  const type = (manifest.type ?? "Rule").toLowerCase();
-  const assetType = type === "rule" ? "rule" : type === "skill" ? "skill" : "rule";
-  const components = (outManifest.components as string[]) ?? [];
-  const assets: { path: string; type: string; name: string }[] = components.map((p) => ({
-    path: p,
-    type: assetType,
-    name: path.basename(p, path.extname(p)),
-  }));
-
-  const bundles = (outManifest.bundles as (string | { path: string; "exec-filter"?: string })[]) ?? [];
-  for (const bundle of bundles) {
-    const bundlePath = typeof bundle === "string" ? bundle : bundle.path;
-    const execFilter = typeof bundle === "string" ? undefined : bundle["exec-filter"];
-
-    if (execFilter) {
-      // If there's an exec-filter, use it to find binaries
-      // The filter is a glob relative to the bundle
-      try {
-        const binFiles = execSync(`ls -d ${execFilter}`, { cwd: pkgDir, encoding: "utf8", stdio: "pipe" });
-        for (const file of binFiles.split("\n").map(f => f.trim()).filter(Boolean)) {
-          assets.push({ path: file, type: "program", name: path.basename(file) });
-        }
-      } catch {
-        /* no matches */
-      }
-    } else {
-      // Default to bin/ directory for UNIX conformant bundles
-      const binDir = path.join(pkgDir, bundlePath, "bin");
-      if (fs.existsSync(binDir) && fs.statSync(binDir).isDirectory()) {
-        for (const entry of fs.readdirSync(binDir)) {
-          const fullPath = path.join(binDir, entry);
-          if (fs.statSync(fullPath).isFile()) {
-            assets.push({ path: path.join(bundlePath, "bin", entry), type: "program", name: entry });
-          }
-        }
-      }
-    }
-  }
+  const assets = enrichCatalogPackageManifestAssets(pkgDir, outManifest, manifest);
   outManifest.assets = assets;
   fs.writeFileSync(manifestDest, yaml.dump(outManifest, { lineWidth: 120 }), "utf8");
 }
 
-/** Add or update package entry in atp-catalog.yaml under packages.user. */
-function addToCatalog(
+/**
+ * Add or update a user catalog entry pointing at `pkgDir`.
+ *
+ * @param name - Package name.
+ * @param version - Semantic version string.
+ * @param pkgDir - `file://` target for the entry.
+ * @param manifest - Used for default description from usage.
+ */
+function upsertUserCatalogEntry(
   name: string,
   version: string,
   pkgDir: string,
@@ -200,8 +194,12 @@ function addToCatalog(
   fs.writeFileSync(catalogPath, yaml.dump(root, { lineWidth: 120 }), "utf8");
 }
 
-/** Remove stage.tar from cwd (cleanup per Feature 2). */
-function removeStageTar(stagePath: string): void {
+/**
+ * Best-effort removal of `stage.tar` from the developer tree (Feature 2 cleanup).
+ *
+ * @param stagePath - Absolute path to `stage.tar`.
+ */
+function removeStageTarIfPresent(stagePath: string): void {
   try {
     fs.unlinkSync(stagePath);
   } catch {
@@ -210,15 +208,14 @@ function removeStageTar(stagePath: string): void {
 }
 
 /**
- * Add package to Station's user catalog.
- * Validates, creates package dir, gzips stage.tar, enriches manifest with assets,
- * updates catalog, and removes stage.tar from cwd.
+ * Add package to Station's user catalog: validate, materialise under `user_packages/`,
+ * enrich `assets`, update `atp-catalog.yaml`, remove local `stage.tar`.
  *
- * @param cwd - Package root directory
+ * @param cwd - Package root directory.
  */
 export function catalogAddPackage(cwd: string): void {
   const manifest = loadManifestOrExit(cwd);
-  validateOrExit(cwd);
+  validatePackageOrExit(cwd);
 
   const name = manifest.name;
   if (!name) {
@@ -226,13 +223,13 @@ export function catalogAddPackage(cwd: string): void {
     process.exit(1);
   }
 
-  const stagePath = ensureStageTarExists(cwd);
-  const pkgDir = createPackageDir(cwd, stagePath, name);
+  const stagePath = requireNonEmptyStageTarPath(cwd);
+  const pkgDir = createCatalogPackageDirectory(cwd, stagePath, name);
   const manifestDest = path.join(pkgDir, PACKAGE_FILE);
 
-  enrichManifestWithAssets(pkgDir, manifestDest, manifest);
-  addToCatalog(name, manifest.version ?? "0.0.0", pkgDir, manifest);
-  removeStageTar(stagePath);
+  writeEnrichedManifestWithAssets(pkgDir, manifestDest, manifest);
+  upsertUserCatalogEntry(name, manifest.version ?? "0.0.0", pkgDir, manifest);
+  removeStageTarIfPresent(stagePath);
 
   console.log(`Package ${name} added to user package catalog.`);
   console.log("It can now be installed at either the Station or into a project's Safehouse.");

@@ -24,7 +24,8 @@ and only made "nicer" to read when rendered as HTML or other manner.
 
 3. Use Mermaid for images where they add value
 
-4. Use headings instead of **highlight**.
+4. Prefer structural headings over **bold** used as pseudo-headings for labels.
+   Bold in normal prose is fine; the anti-pattern is bold labels that should be subheadings.
 
 5. Try to format the table so it looks clear in the markdown text file.
 
@@ -40,20 +41,33 @@ and only made "nicer" to read when rendered as HTML or other manner.
 |----------|----------------------|
 | Note 1   | make it easy to read |
 
-... and...
+When it comes to markdown tables, align the vertical bars and set the table
+width to be consistent for each row. When a cell is too long, find a way
+to continue that long-form text outside the table, afterwards.
+
+| Category   | Description                                  |
+|------------|----------------------------------------------|
+| Long Note  | ~ 10 char on why and then refer to (1) below |
+| Short Note | make it easy to read                         |
+
+(1) Long note discussion continues. Now the table is easy to read even
+just in the text file, without needing to render it. It's beautiful!
 
 # Long Form text
 
 Using a level 4 heading gives more room for lengthier answers.
 
-
-... is better than
+That pattern is better than:
 
 # Labelled line
 
 List of labelled infos:
 
 1. **Note1:** Not easy to read as a text file.
+
+Do not use this format. Instead, make it the next lower heading type - if parent heading were level 3 (###) then
+format this line as `#### Note 1: much easier to read` because this will be more effective than a bullet
+point with highlight that gets squashed in the noise.
 
 # Purposeful Markdown
 
@@ -65,11 +79,10 @@ Notes can have one of the following kinds...
 
 1. plan - ideas, concerns and risks for implementing a feature, epic or a user story.
 2. coding - a summary of what code changes were recently made.
-3. bug - a bug that was found that needs to be addressed, the root cause and acceptance criteria
-4. todo - a deferred thought or path for exploration
-5. concern - a question that explores a possible limitation and may result in a plan or coding change.
-6. test - unit or integration tests that were added with a summary of coverage and pass rate.
-7. other - when nothing else fits
+3. todo - a deferred thought or path for exploration
+4. concern - a question that explores a possible limitation and may result in a plan or coding change.
+5. test - unit or integration tests that were added with a summary of coverage and pass rate.
+6. other - when nothing else fits
 
 
 Notes are held in the `docs/notes` directory and follow this document guide for formatting.
@@ -88,7 +101,7 @@ Release notes are held in `docs/release-notes` and follow the formatting rules i
 guide. Their naming convention is {semver}-Release-{date}.md where "semver" means semantic versioning
 with Major.Minor.Revision numbers and date is in YYYY-MM-DD format.
 
-Describe what new features was added in the commits that resulted in this release.
+Describe what new features were added in the commits that resulted in this release.
 
 Release notes can collect information from a sequence of notes (docs/notes) where there are
 notes of kinds in a series:
@@ -104,7 +117,12 @@ For product-led engineering, features can be described and documented
 in a way to focus on consistent definitions with use cases
 and acceptance criteria that gives intent around user impact.
 
-They will be found in `docs/features`
+They will be found in `docs/features`.
+
+When documentation lists **package** or **part** types, use the same canonical set as
+[Feature 2 — Package developer support](./features/2-package-developer-support.md):
+Rule, Prompt, Skill, Hook, Mcp, Command, and Experimental (plus the Multi root type for
+multi-part packages in Feature 4). Keep those lists aligned when adding or renaming types.
 
 ## Epics and Stories
 
@@ -114,6 +132,7 @@ features into smaller, buildable components.
 These are to be written into `docs/stories/`
 
 Write requirements to docs/stories/{epic|story}-{feature-name}-{component}-{description}.md
+(for example `docs/stories/story-package-install-cli-flags.md` or `docs/stories/epic-catalog-multi-source-sync.md`).
 
 Stories should be used to take the intention written in a feature
 and turn it into a set of epics and stories that should be used
@@ -125,7 +144,9 @@ which is part of the final system.
 Some sub agents are directed to find bugs during unit and integration
 testing and work to validate that the bugs are repeatable.
 
-When bugs are found, write it up in a bugs note (see kind above) docs/notes/{YYYY-MM-DD-id}-bug-{short-description}.md
+When bugs are found, write them up at docs/bugs/{YYYY-MM-DD}-bug-{bug-id:DDDDD}-{short-description}.md
+
+`bug-id` is a 5 digit value that would be assigned as an Issue in GitHub.
 
 It should cover:
 

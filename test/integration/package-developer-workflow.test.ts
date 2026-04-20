@@ -1,5 +1,5 @@
 /**
- * Integration tests for package developer workflow (Rule, Skill, Command, Experimental, Bundle).
+ * Integration tests for package developer workflow (Rule, Prompt, Skill, Hook, Command, Experimental, Bundle).
  * See docs/features/2-package-developer-support.md Test Approach.
  */
 
@@ -23,18 +23,16 @@ describe("Integration: package developer workflow (Rule type)", () => {
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-pkgdev");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("builds a Rule package and adds it to the station catalog", () => {
@@ -60,23 +58,21 @@ describe("Integration: package developer - validate fails when incomplete", () =
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-pkgval");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("atp validate package exits non-zero when only type is set", () => {
     const o = atpCwd(pkgDir, stationDir);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
 
     const result = runAtpExpectExit(["validate", "package"], 2, o);
@@ -190,7 +186,6 @@ describe("Integration: package developer workflow - bundle with executable", () 
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
   const EXPECTED_MESSAGE = "ATP bundle test success";
 
   beforeEach(() => {
@@ -198,11 +193,10 @@ describe("Integration: package developer workflow - bundle with executable", () 
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("builds a Command package with a bundle containing an executable shell script and script outputs expected message", () => {

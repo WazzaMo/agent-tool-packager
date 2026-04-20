@@ -1,0 +1,2 @@
+name: render-mermaid
+description: replaces markdown mermaid text with a reference to a rendered mermaid image.

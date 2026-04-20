@@ -1,13 +1,28 @@
 /**
- * Safehouse subcommands: atp safehouse init, atp safehouse list, etc.
+ * Safehouse subcommands: `atp safehouse init`, `atp safehouse list`.
  */
 
-import type { Command } from "commander";
+import { findProjectBase } from "../config/paths.js";
 import { safehouseInit } from "../init/safehouse-init.js";
 import { safehouseList } from "../safehouse/list.js";
 
-import { findProjectBase } from "../config/paths.js";
+import type { Command } from "commander";
 
+/**
+ * Resolve project base for Safehouse list (fallback to cwd when markers missing).
+ *
+ * @param cwd - Current working directory.
+ * @returns Directory passed to {@link safehouseList}.
+ */
+function projectBaseForSafehouseList(cwd: string): string {
+  return findProjectBase(cwd) || cwd;
+}
+
+/**
+ * Register Safehouse-related commands on the program.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerSafehouseCommands(program: Command): void {
   const safehouse = program
     .command("safehouse")
@@ -25,9 +40,13 @@ export function registerSafehouseCommands(program: Command): void {
   safehouse
     .command("list")
     .description("List packages installed in the project Safehouse")
-    .action(() => {
+    .option(
+      "--extended",
+      "Append types from catalog package atp-package.yaml (parse errors exit 2)"
+    )
+    .action(function (this: Command) {
       const cwd = process.cwd();
-      const projectBase = findProjectBase(cwd) || cwd;
-      safehouseList(projectBase);
+      const o = this.opts() as { extended?: boolean };
+      safehouseList(projectBaseForSafehouseList(cwd), { extended: o.extended });
     });
 }

@@ -54,8 +54,10 @@ The product types are:
 
 | Package Type  | Description                               |
 | ------------  | ------------                              |
-| Rule          | Markdown as a prompt file.                |
+| Rule          | Markdown as a prompt file (rules area).   |
+| Prompt        | Markdown or text prompts (prompts area).  |
 | Skill         | SKILL.md file                             |
+| Hook          | hooks.json + hook scripts (agent hooks).   |
 | MCP servers   | in any language, packed as a tar.gz file  |
 | Command       | Shell scripts or programs as support tools |
 | Experimental  | Payloads that are yet to be defined by industry |
@@ -65,9 +67,15 @@ be installed at the user level or at the project level.
 
 ### Terminology (aligned with package-metadata)
 
-- **Rules**: Product type for prompt markdown files. In
+- **Rules**: Product type for prompt markdown files installed as rules. In
   [package-metadata](../notes/2026-02-25-plan-package-metadata-and-catalog.md) and
-  code, these are "assets" or "prompts."
+  code, file components use an install-time kind such as `rule`, `prompt`, `skill`, or `hook`.
+
+- **Prompts**: Product type for reusable prompt templates installed under the agent
+  prompts directory (see Feature 2).
+
+- **Hooks**: Product type for agent hook configuration and scripts (see Feature 2 and
+  [Cursor Hooks](https://cursor.com/docs/hooks) for Cursor’s layout).
 
 - **Station**: Main config area at `~/.atp_station` (or `STATION_PATH`); see
   [configuration](../configuration.md).
@@ -75,7 +83,7 @@ be installed at the user level or at the project level.
 ## 2. Installation
 
 Utility programs (executables) are installed to the user home directory by default to allow reuse across many projects. 
-Prompt materials (skills, rules) are installed based on the selected scope (`--project` or `--station`).
+Prompt materials and hooks (skills, rules, prompts, hook configs) are installed based on the selected scope (`--project` or `--station`).
 The default for a package installation is the project space for skills and user home for programs (`--user-bin`).
 This ensures the agent can use the skills immediately in the project while keeping the system clean.
 
@@ -141,6 +149,24 @@ atp install vecfs-ts --project --dependencies
 
 The dependencies flag acts as a pre-approval to installed dependencies.
 Without this, lacking dependencies will cause installation to fail.
+
+### Developer and install-time validation
+
+- **`atp validate package`** (developer / authoring) checks the package **working tree**: `atp-package.yaml` plus a non-empty **`stage.tar`**. The archive is the staging source of truth while you author; validation also covers Multi vs legacy layout, part structure, duplicate component basenames across parts, membership of declared components and bundles inside the tar, and rule/skill YAML pairing (**embedded `---` vs sidecar `.yaml` / `.yml`**).
+
+- **`atp catalog add package`** requires developer validation to pass before ATP materialises the package under the Station (typically `user_packages/<name>/`: gzip of `stage.tar`, extracted files, and an enriched manifest including **`assets`**).
+
+- **`atp install`** and **reinstall** run **`validateCatalogInstallPackage`** on that **catalog extract directory** immediately before `installPackageAssetsForCatalogContext` copies or merges into the agent project. This is the **install-time integration** with the same validation *intent* as `atp validate package`, scoped to **what install will actually use**:
+
+  - Manifest shape and mandatory fields (name, version, type, usage, components/bundles or Multi `parts`, layout conflicts).
+  - **On-disk staging** instead of `stage.tar`: every declared component and bundle path must exist under the package root; if **`assets`** is present, every listed path must exist (installers and rule/skill checks rely on those rows).
+  - The same **rule/skill YAML** rules as authoring, applied to files on disk.
+
+- **Scope matches install intention**: checks run only on the **catalog package directory** and **manifest** that feed the provider plan. They do not inspect the target project’s existing agent files (that is merge-time behaviour, e.g. `--force-config` / ambiguity errors). Failures block install **before** any agent tree mutation.
+
+- **Deliberate representation difference**: authoring requires **`stage.tar`**; the catalog copy uses **extracted files** at the package root (and may retain `package.tar.gz`). Logical payload is the same; only the checked medium differs.
+
+- **CLI:** `atp validate catalog-package [dir]` runs **`validateCatalogInstallPackage`** on `dir` (default: current directory). Use this on `user_packages/<name>/` (or any catalog extract) before install to confirm the same gate `atp install` applies.
 
 ### Package metadata in general
 
@@ -324,6 +350,10 @@ template, to support re-installation or handover to another agent.
 ## Removing packages
 
 The proper word for the opposite of installing, is removing, not uninstall.
+
+**Scope:** `atp remove station` and `atp remove safehouse` always remove the **whole** catalog
+package. Per-part or per-artifact removal exists only during **package authoring** (`atp package …`
+in the source tree), not for installed copies. See [Feature 4](4-multi-type-packages.md).
 
 Packages can be removed from the Station (user's central location) or from 
 the project's Safehouse. Removing a package from a Station can be done with

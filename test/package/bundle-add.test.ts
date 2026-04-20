@@ -87,6 +87,45 @@ usage:
     expect(manifest).toMatch(/scripts-util/);
   });
 
+  it("adds data-only bundle with skipExec (no bin/, no exec-filter)", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Command
+name: test-pkg
+version: 0.1.0
+usage:
+  - test
+`
+    );
+    fs.mkdirSync(path.join(pkgDir, "data-only"), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, "data-only", "config.json"), "{}");
+
+    bundleAdd(pkgDir, "data-only", { skipExec: true });
+
+    const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+    expect(manifest).toMatch(/skip-exec:\s*true/);
+    expect(manifest).not.toMatch(/exec-filter:/);
+  });
+
+  it("exits 1 when skipExec and execFilter together", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Command
+name: test-pkg
+version: 0.1.0
+usage:
+  - test
+`
+    );
+    fs.mkdirSync(path.join(pkgDir, "bx"), { recursive: true });
+    expect(() =>
+      bundleAdd(pkgDir, "bx", { skipExec: true, execFilter: "bx/*" })
+    ).toThrow("exit:1");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Cannot use --skip-exec together with --exec-filter."
+    );
+  });
+
   it("exits 1 when no manifest", () => {
     fs.mkdirSync(path.join(pkgDir, "my-bundle", "bin"), { recursive: true });
     expect(() => bundleAdd(pkgDir, "my-bundle")).toThrow("exit:1");
@@ -95,12 +134,30 @@ usage:
     );
   });
 
-  it("exits 1 when path is invalid (outside pkg)", () => {
-    fs.writeFileSync(path.join(pkgDir, "atp-package.yaml"), "type: Rule\nname: x\nversion: 0.1.0\nusage: [x]\n");
-    expect(() => bundleAdd(pkgDir, "../other")).toThrow("exit:1");
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Invalid path")
+  it("adds bundle outside package via relative path; manifest stores basename", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Command
+name: test-pkg
+version: 0.1.0
+usage:
+  - test
+`
     );
+    const peerDir = path.join(os.tmpdir(), `atp-peer-bundle-${Date.now()}`);
+    fs.mkdirSync(path.join(peerDir, "bin"), { recursive: true });
+    fs.writeFileSync(path.join(peerDir, "bin", "run"), "#!/bin/sh\n", "utf8");
+    fs.chmodSync(path.join(peerDir, "bin", "run"), 0o755);
+    try {
+      const relFromPkg = path.relative(pkgDir, peerDir);
+      bundleAdd(pkgDir, relFromPkg);
+      const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      const base = path.basename(peerDir);
+      expect(manifest).toContain(`path: ${base}`);
+      expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
+    } finally {
+      fs.rmSync(peerDir, { recursive: true, force: true });
+    }
   });
 
   it("exits 1 when bundle path does not exist", () => {

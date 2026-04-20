@@ -4,6 +4,7 @@
  */
 
 import { expect } from "vitest";
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -50,7 +51,7 @@ export function initPackage(
 ): { stationDir: string; pkgDir: string } {
   const o = atpCwd(pkgDir, stationDir);
   runAtp(["station", "init"], o);
-  runAtp(["create", "package", "skeleton"], o);
+  runAtp(["create", "package", "skeleton", "--legacy"], o);
   runAtp(["package", "type", opts.type], o);
   runAtp(["package", "name", opts.name], o);
   runAtp(["package", "version", opts.version ?? "0.1.0"], o);
@@ -75,29 +76,27 @@ export function initPackage(
   return { stationDir, pkgDir };
 }
 
-/** Create temp dirs and set STATION_PATH. Clean up in afterEach with rmSync(base). */
+/**
+ * Create unique temp dirs for an integration test. Does **not** mutate `process.env.STATION_PATH` so
+ * parallel Vitest workers (or concurrent files) cannot cross-contaminate; pass `STATION_PATH` only via
+ * `runAtp(..., { env: { STATION_PATH: stationDir } })` or {@link atpCwd}.
+ */
 export function createTempPackageEnv(prefix: string): {
   base: string;
   stationDir: string;
   pkgDir: string;
-  origStationPath: string | undefined;
 } {
-  const base = path.join(os.tmpdir(), `${prefix}-${Date.now()}`);
+  const unique = `${process.pid}-${Date.now()}-${randomBytes(4).toString("hex")}`;
+  const base = path.join(os.tmpdir(), `${prefix}-${unique}`);
   fs.mkdirSync(base, { recursive: true });
   const stationDir = path.join(base, "station");
   const pkgDir = path.join(base, "pkg");
   fs.mkdirSync(pkgDir, { recursive: true });
-  const origStationPath = process.env.STATION_PATH;
-  process.env.STATION_PATH = stationDir;
-  return { base, stationDir, pkgDir, origStationPath };
+  return { base, stationDir, pkgDir };
 }
 
-/** Restore STATION_PATH and optionally remove base dir. */
-export function cleanupTempPackageEnv(
-  base: string,
-  origStationPath: string | undefined
-): void {
-  process.env.STATION_PATH = origStationPath;
+/** Remove temp tree created by {@link createTempPackageEnv}. */
+export function cleanupTempPackageEnv(base: string): void {
   try {
     fs.rmSync(base, { recursive: true });
   } catch {

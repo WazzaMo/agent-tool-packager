@@ -1,10 +1,50 @@
 /**
- * Install command: atp install <package> [--project|--station] [--user-bin|--project-bin] [--dependencies]
+ * Install command: `atp install <package>` with project/station and bin scope flags.
  */
 
-import type { Command } from "commander";
-import { installPackage } from "../install/install.js";
+import {
+  installPackage,
+  type InstallOptions,
+} from "../install/install.js";
 
+import type { Command } from "commander";
+
+/**
+ * Map Commander flags to {@link InstallOptions}.
+ *
+ * @param opts - Parsed CLI options.
+ * @returns Options for {@link installPackage}.
+ */
+function installOptionsFromCliFlags(opts: {
+  project?: boolean;
+  station?: boolean;
+  userBin?: boolean;
+  projectBin?: boolean;
+  dependencies?: boolean;
+  forceConfig?: boolean;
+  skipConfig?: boolean;
+  verbose?: boolean;
+}): InstallOptions {
+  if (opts.forceConfig && opts.skipConfig) {
+    throw new Error("Cannot use --force-config together with --skip-config.");
+  }
+  const promptScope = opts.station ? "station" : "project";
+  const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
+  return {
+    promptScope,
+    binaryScope,
+    dependencies: opts.dependencies ?? false,
+    forceConfig: opts.forceConfig ?? false,
+    skipConfig: opts.skipConfig ?? false,
+    verbose: opts.verbose ?? false,
+  };
+}
+
+/**
+ * Register `install` and delegate to {@link installPackage}.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerInstallCommand(program: Command): void {
   program
     .command("install")
@@ -30,6 +70,18 @@ export function registerInstallCommand(program: Command): void {
       "--dependencies",
       "Install package dependencies first; without it, fail with clear message if deps missing"
     )
+    .option(
+      "--force-config",
+      "When merging agent JSON config, replace an existing MCP server or hook handler if it conflicts with the package (targets e.g. .cursor/mcp.json, .cursor/hooks.json, or Gemini .gemini/settings.json for mcpServers/hooks slices)"
+    )
+    .option(
+      "--skip-config",
+      "Skip MCP and hooks JSON merges: no read/write of merged config files (e.g. .cursor/mcp.json, .cursor/hooks.json, or Gemini .gemini/settings.json)"
+    )
+    .option(
+      "--verbose",
+      "On MCP/hooks merge ambiguity, print an extra JSON line with error code and target (also when DEBUG includes atp)"
+    )
     .action(
       async (
         pkgName: string,
@@ -39,19 +91,20 @@ export function registerInstallCommand(program: Command): void {
           userBin?: boolean;
           projectBin?: boolean;
           dependencies?: boolean;
+          forceConfig?: boolean;
+          skipConfig?: boolean;
+          verbose?: boolean;
         }
       ) => {
-        const promptScope = opts.station ? "station" : "project";
-        const binaryScope = opts.projectBin ? "project-bin" : "user-bin";
-        await installPackage(
-          pkgName,
-          {
-            promptScope,
-            binaryScope,
-            dependencies: opts.dependencies ?? false,
-          },
-          process.cwd()
-        );
+        let installOpts: InstallOptions;
+        try {
+          installOpts = installOptionsFromCliFlags(opts);
+        } catch (e) {
+          console.error((e as Error).message);
+          process.exit(2);
+          return;
+        }
+        await installPackage(pkgName, installOpts, process.cwd());
       }
     );
 }

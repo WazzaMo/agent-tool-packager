@@ -1,13 +1,28 @@
 /**
- * Remove command group: atp remove safehouse <pkg>, atp remove station <pkg> [--exfiltrate].
+ * Remove command group: `atp remove safehouse <pkg>`, `atp remove station <pkg> [--exfiltrate]`.
  */
 
-import type { Command } from "commander";
+import { findProjectBase } from "../config/paths.js";
 import { removeSafehousePackage } from "../remove/remove-safehouse.js";
 import { removeStationPackage } from "../remove/remove-station.js";
 
-import { findProjectBase } from "../config/paths.js";
+import type { Command } from "commander";
 
+/**
+ * Resolve project base for Safehouse remove (fallback to cwd).
+ *
+ * @param cwd - Current working directory.
+ * @returns Project root for manifest paths.
+ */
+function projectBaseForSafehouseRemove(cwd: string): string {
+  return findProjectBase(cwd) || cwd;
+}
+
+/**
+ * Register remove subcommands.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerRemoveCommands(program: Command): void {
   const remove = program
     .command("remove")
@@ -18,8 +33,7 @@ export function registerRemoveCommands(program: Command): void {
     .description("Remove package from current project's Safehouse")
     .action(async (pkgName: string) => {
       const cwd = process.cwd();
-      const projectBase = findProjectBase(cwd) || cwd;
-      removeSafehousePackage(pkgName, projectBase);
+      removeSafehousePackage(pkgName, projectBaseForSafehouseRemove(cwd));
     });
 
   remove

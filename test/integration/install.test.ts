@@ -3,7 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import yaml from "js-yaml";
-import { runAtp, runAtpExpectExit, FIXTURE_PKG, makeStationCatalogYaml } from "./test-helpers.js";
+import {
+  runAtp,
+  runAtpExpectExit,
+  FIXTURE_PKG,
+  makeStationCatalogYaml,
+} from "./test-helpers.js";
 
 describe("Integration: install and list", () => {
   let stationDir: string;
@@ -48,6 +53,27 @@ describe("Integration: install and list", () => {
     }
   });
 
+  it("atp install fails when Safehouse agent is not assigned", () => {
+    const bareProject = path.join(os.tmpdir(), `atp-inst-no-agent-${Date.now()}`);
+    fs.mkdirSync(path.join(bareProject, ".git"), { recursive: true });
+    try {
+      runAtp(["safehouse", "init"], { cwd: bareProject, env: { STATION_PATH: stationDir } });
+      const res = runAtpExpectExit(["install", "test-package"], 2, {
+        cwd: bareProject,
+        env: { STATION_PATH: stationDir },
+      });
+      const errText = res.stdout + res.stderr;
+      expect(errText).toMatch(/No agent is assigned/i);
+      expect(errText).toMatch(/atp agent/i);
+    } finally {
+      try {
+        fs.rmSync(bareProject, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+
   it("atp install test-package defaults to project scope (Feature 1)", () => {
     const out = runAtp(["install", "test-package"], {
       cwd: projectDir,
@@ -55,7 +81,7 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project");
-    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill", "SKILL.md");
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
@@ -66,7 +92,7 @@ describe("Integration: install and list", () => {
     });
     expect(out).toContain("Installed test-package");
     expect(out).toContain("(prompts:project, bin:user-bin)");
-    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill.md");
+    const skillPath = path.join(projectDir, ".cursor", "skills", "test-skill", "SKILL.md");
     expect(fs.existsSync(skillPath)).toBe(true);
   });
 
@@ -133,7 +159,7 @@ assets:
     };
     fs.writeFileSync(catalogPath, yaml.dump(doc, { lineWidth: 120 }));
     try {
-      const result = runAtpExpectExit(["install", "pkg-with-deps"], 1, {
+      const result = runAtpExpectExit(["install", "pkg-with-deps"], 2, {
         cwd: projectDir,
         env: { STATION_PATH: stationDir },
       });

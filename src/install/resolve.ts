@@ -5,19 +5,22 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
+
 import { loadStationCatalog, effectiveStationCatalogPackages } from "../catalog/load.js";
 
-import type { CatalogPackage } from "../catalog/types.js";
 import type { PackageManifest } from "./types.js";
+import type { CatalogPackage } from "../catalog/types.js";
 
 const MANIFEST_NAMES = ["atp-package.yaml", "package.yaml"];
 
 /**
- * Resolve package by name from the Station catalog.
+ * Resolve package by name from the effective Station catalog (user overrides standard).
+ *
  * @param name - Package name.
- * @param _cwd - Reserved for callers; catalog is Station-only.
- * @returns Catalog package or null if not found.
+ * @param _cwd - Reserved for future cwd-relative catalog; catalog is Station-only today.
+ * @returns Catalog row, or `null` if not listed.
  */
 export function resolvePackage(
   name: string,
@@ -30,9 +33,10 @@ export function resolvePackage(
 }
 
 /**
- * Parse file:// URL to filesystem path.
- * @param location - URL string (e.g. file:///path/to/pkg).
- * @returns Absolute path or null if not a file URL.
+ * Parse `file://` URL to a filesystem path string (may still be relative).
+ *
+ * @param location - URL string (e.g. `file:///path/to/pkg`).
+ * @returns Path after the `file://` prefix, or `null` if not a `file` URL.
  */
 function parseFileUrl(location: string): string | null {
   if (!location.startsWith("file://")) {
@@ -46,9 +50,10 @@ function parseFileUrl(location: string): string | null {
 }
 
 /**
- * Load package manifest from package directory.
+ * Load the first existing `atp-package.yaml` or `package.yaml` under `pkgDir`.
+ *
  * @param pkgDir - Package directory path.
- * @returns Package manifest or null if not found.
+ * @returns Parsed manifest with a string `name`, or `null` if none valid.
  */
 export function loadPackageManifest(pkgDir: string): PackageManifest | null {
   for (const name of MANIFEST_NAMES) {
@@ -65,10 +70,11 @@ export function loadPackageManifest(pkgDir: string): PackageManifest | null {
 }
 
 /**
- * Resolve package location to absolute path.
- * @param location - File URL (file://) or path.
- * @param cwd - Project base for relative paths. Defaults to process.cwd().
- * @returns Absolute path or null for non-file locations.
+ * Resolve a catalog `location` to an existing package directory (`file://` only).
+ *
+ * @param location - File URL or path fragment from the catalog.
+ * @param cwd - Project base for relative paths. Defaults to `process.cwd()`.
+ * @returns Absolute directory path, or `null` when missing or not a directory.
  */
 export function resolvePackagePath(
   location: string | undefined,

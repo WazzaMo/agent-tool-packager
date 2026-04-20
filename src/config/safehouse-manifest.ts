@@ -4,12 +4,20 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
 
+import {
+  configJournalRelativePath,
+  deletePackageConfigJournalFile,
+  writePackageConfigJournalFile,
+  type ConfigMergeJournalEntryV1,
+} from "./config-merge-journal.js";
 import { getSafehousePath, pathExists } from "./paths.js";
 
 import type {
   SafehouseManifest,
+  SafehouseManifestPackage,
   PackageSource,
   BinaryScope,
 } from "./types.js";
@@ -19,6 +27,12 @@ const SAFEHOUSE_MANIFEST_FILE = "manifest.yaml";
 /** Top-level key in manifest.yaml per docs/features/3-package-install-process.md */
 const SAFEHOUSE_MANIFEST_KEY = "Safehouse-Manifest";
 
+/**
+ * Normalise YAML-loaded document into a {@link SafehouseManifest} or `null` if shape is invalid.
+ *
+ * @param raw - Value from `yaml.load`.
+ * @returns Manifest structure, or `null`.
+ */
 function parseManifest(raw: unknown): SafehouseManifest | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
@@ -32,7 +46,39 @@ function parseManifest(raw: unknown): SafehouseManifest | null {
   };
 }
 
-/** Serialize manifest with Safehouse-Manifest wrapper for manifest.yaml. */
+/**
+ * Absolute path to `manifest.yaml` under the project's Safehouse directory.
+ *
+ * @param projectBase - Project root containing `.atp_safehouse`.
+ * @returns Full path to the manifest file.
+ */
+function safehouseManifestFilePath(projectBase: string): string {
+  return path.join(getSafehousePath(projectBase), SAFEHOUSE_MANIFEST_FILE);
+}
+
+/**
+ * Write a manifest to disk under the given project base.
+ *
+ * @param projectBase - Project root containing `.atp_safehouse`.
+ * @param manifest - In-memory manifest to serialise.
+ */
+function writeSafehouseManifestToProject(
+  projectBase: string,
+  manifest: SafehouseManifest
+): void {
+  fs.writeFileSync(
+    safehouseManifestFilePath(projectBase),
+    writeManifestContent(manifest),
+    "utf8"
+  );
+}
+
+/**
+ * Serialize manifest with Safehouse-Manifest wrapper for manifest.yaml.
+ *
+ * @param manifest - Packages and station path reference.
+ * @returns YAML text including the `Safehouse-Manifest` wrapper key.
+ */
 export function writeManifestContent(manifest: SafehouseManifest): string {
   return yaml.dump(
     { [SAFEHOUSE_MANIFEST_KEY]: manifest },
@@ -49,7 +95,7 @@ export function loadSafehouseManifest(
   projectBase: string = process.cwd()
 ): SafehouseManifest | null {
   const safehousePath = getSafehousePath(projectBase);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
+  const manifestPath = safehouseManifestFilePath(projectBase);
 
   if (!pathExists(safehousePath) || !fs.existsSync(manifestPath)) {
     return null;
@@ -67,34 +113,48 @@ export function loadSafehouseManifest(
  * @param binaryScope - user-bin or project-bin.
  * @param source - station or local.
  * @param projectBase - Project base directory. Defaults to process.cwd().
+ * @param installLayout - Optional `multi` vs `legacy` hint for Feature 4 manifests.
+ * @param configJournalEntries - Optional MCP/hooks merge journal (written under `config-journal/`).
  */
 export function addPackageToSafehouseManifest(
   name: string,
   version: string | undefined,
   binaryScope: BinaryScope = "user-bin",
   source: PackageSource = "station",
-  projectBase: string = process.cwd()
+  projectBase: string = process.cwd(),
+  installLayout?: "multi" | "legacy",
+  configJournalEntries?: ConfigMergeJournalEntryV1[]
 ): void {
-  const safehousePath = getSafehousePath(projectBase);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-
   const existing = loadSafehouseManifest(projectBase);
   const packages = existing?.packages ?? [];
   const stationPath = existing?.station_path ?? null;
+  const safehousePath = getSafehousePath(projectBase);
+
+  const prev = packages.find((p) => p.name === name);
+  if (prev?.config_journal_path && (!configJournalEntries || configJournalEntries.length === 0)) {
+    deletePackageConfigJournalFile(safehousePath, prev.config_journal_path);
+  }
 
   const filtered = packages.filter((p) => p.name !== name);
-  filtered.push({
+  const row: SafehouseManifestPackage = {
     name,
     version,
     source,
     binary_scope: binaryScope,
-  });
+  };
+  if (installLayout) {
+    row.install_layout = installLayout;
+  }
+  if (configJournalEntries && configJournalEntries.length > 0) {
+    writePackageConfigJournalFile(safehousePath, name, configJournalEntries);
+    row.config_journal_path = configJournalRelativePath(name);
+  }
+  filtered.push(row);
 
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages: filtered, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(projectBase, {
+    packages: filtered,
+    station_path: stationPath,
+  });
 }
 
 /**
@@ -109,16 +169,56 @@ export function removePackageFromSafehouseManifest(
   const existing = loadSafehouseManifest(cwd);
   if (!existing) return;
 
+  const safehousePath = getSafehousePath(cwd);
+  const victim = existing.packages.find((p) => p.name === name);
+  if (victim?.config_journal_path) {
+    deletePackageConfigJournalFile(safehousePath, victim.config_journal_path);
+  }
+
   const packages = (existing.packages ?? []).filter((p) => p.name !== name);
   const stationPath = existing.station_path ?? null;
 
-  const safehousePath = getSafehousePath(cwd);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(cwd, { packages, station_path: stationPath });
+}
+
+/**
+ * Refresh MCP/hooks config journal after re-install (e.g. agent handover).
+ *
+ * @param projectBase - Project root with Safehouse.
+ * @param packageName - Installed package name.
+ * @param entries - New journal entries (empty clears stored journal file and manifest path).
+ */
+export function syncSafehousePackageConfigJournal(
+  projectBase: string,
+  packageName: string,
+  entries: ConfigMergeJournalEntryV1[]
+): void {
+  const existing = loadSafehouseManifest(projectBase);
+  if (!existing) return;
+
+  const safehousePath = getSafehousePath(projectBase);
+  const packages = (existing.packages ?? []).map((p) => ({ ...p }));
+  const idx = packages.findIndex((p) => p.name === packageName);
+  if (idx < 0) return;
+
+  const prevPath = packages[idx].config_journal_path;
+  if (prevPath && entries.length === 0) {
+    deletePackageConfigJournalFile(safehousePath, prevPath);
+    delete packages[idx].config_journal_path;
+  }
+
+  if (entries.length > 0) {
+    writePackageConfigJournalFile(safehousePath, packageName, entries);
+    packages[idx] = {
+      ...packages[idx],
+      config_journal_path: configJournalRelativePath(packageName),
+    };
+  }
+
+  writeSafehouseManifestToProject(projectBase, {
+    packages,
+    station_path: existing.station_path ?? null,
+  });
 }
 
 /**
@@ -140,13 +240,7 @@ export function updateSafehousePackageInManifest(
   );
   const stationPath = existing.station_path ?? null;
 
-  const safehousePath = getSafehousePath(cwd);
-  const manifestPath = path.join(safehousePath, SAFEHOUSE_MANIFEST_FILE);
-  fs.writeFileSync(
-    manifestPath,
-    writeManifestContent({ packages, station_path: stationPath }),
-    "utf8"
-  );
+  writeSafehouseManifestToProject(cwd, { packages, station_path: stationPath });
 }
 
 /**

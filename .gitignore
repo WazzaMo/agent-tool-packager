@@ -1,14 +1,8 @@
-# Go
-/src/atp
-/src/*.exe
-/src/vendor/
 
 # Generated / build
 dist/
 
 # Dependencies
-.venv/
-venv/
 node_modules/
 
 # Secrets and env
@@ -32,3 +26,5 @@ coverage.out
 coverage.html
 
 .atp_safehouse
+atp-package.yaml
+stage.tar

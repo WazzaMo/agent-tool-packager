@@ -1,0 +1,42 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required so GitHub Actions can mint an OIDC token for npm trusted publishing.
+  # See https://docs.github.com/en/actions/concepts/security/openid-connect
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Publish to npm
+        # OIDC trusted publishing: configure on npmjs.com (workflow file publish-npm.yml).
+        run: npm publish --access public

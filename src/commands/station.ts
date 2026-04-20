@@ -1,11 +1,17 @@
 /**
- * Station subcommands: atp station init, atp station list, etc.
+ * Station subcommands: `atp station init`, `atp station list`.
  */
 
-import type { Command } from "commander";
 import { stationInit } from "../init/station-init.js";
 import { stationList } from "../station/list.js";
 
+import type { Command } from "commander";
+
+/**
+ * Register Station-related commands on the program.
+ *
+ * @param program - Root Commander program.
+ */
 export function registerStationCommands(program: Command): void {
   const station = program
     .command("station")
@@ -21,7 +27,12 @@ export function registerStationCommands(program: Command): void {
   station
     .command("list")
     .description("List packages installed in the Station")
-    .action(() => {
-      stationList();
+    .option(
+      "--extended",
+      "Append types from user_packages/<name>/atp-package.yaml (parse errors exit 2)"
+    )
+    .action(function (this: Command) {
+      const o = this.opts() as { extended?: boolean };
+      stationList({ extended: o.extended });
     });
 }

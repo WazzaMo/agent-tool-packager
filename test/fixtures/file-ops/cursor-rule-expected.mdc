@@ -1,0 +1,10 @@
+---
+description: Test rule for ATP golden file
+globs:
+  - "**/*.ts"
+alwaysApply: false
+---
+
+# Rule body
+
+Use TypeScript carefully.

@@ -1,29 +1,36 @@
 /**
- * Create package skeleton: atp create package skeleton
- * Deletes atp-package.yaml and stage.tar if present, creates empty atp-package.yaml.
+ * Create package skeleton: `atp create package [skeleton]`.
  */
 
-import fs from "node:fs";
 import path from "node:path";
 
+import {
+  clearPackageSkeletonArtifacts,
+  writeLegacySkeletonManifest,
+  writeMultiTypeSkeletonManifest,
+} from "./package-skeleton.js";
+
 const PACKAGE_FILE = "atp-package.yaml";
-const STAGE_FILE = "stage.tar";
+
+/** Options for {@link createPackageSkeleton}. */
+export interface CreateSkeletonOptions {
+  /** Legacy single-type flow (empty type until `atp package type`). */
+  legacy?: boolean;
+}
 
 /**
- * Create empty package skeleton. Removes existing atp-package.yaml and stage.tar.
+ * Create an empty package skeleton: remove existing `atp-package.yaml` and `stage.tar`,
+ * then write the default manifest (Multi or legacy).
  *
- * @param cwd - Package root directory
+ * @param cwd - Package root directory.
+ * @param opts - When `legacy`, write single-type empty-type skeleton.
  */
-export function createPackageSkeleton(cwd: string): void {
+export function createPackageSkeleton(cwd: string, opts?: CreateSkeletonOptions): void {
+  clearPackageSkeletonArtifacts(cwd);
   const pkgPath = path.join(cwd, PACKAGE_FILE);
-  const stagePath = path.join(cwd, STAGE_FILE);
-
-  if (fs.existsSync(pkgPath)) {
-    fs.unlinkSync(pkgPath);
+  if (opts?.legacy) {
+    writeLegacySkeletonManifest(pkgPath);
+    return;
   }
-  if (fs.existsSync(stagePath)) {
-    fs.unlinkSync(stagePath);
-  }
-
-  fs.writeFileSync(pkgPath, "type: \"\"\n", "utf8");
+  writeMultiTypeSkeletonManifest(pkgPath);
 }

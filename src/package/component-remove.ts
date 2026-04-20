@@ -7,13 +7,19 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { DevPackageManifest } from "./types.js";
+
 import { loadDevManifest } from "./load-manifest.js";
+import { exitIfMultiDevManifestForLegacyRemove } from "./root-staging-guard.js";
 import { saveDevManifest } from "./save-manifest.js";
+
+import type { DevPackageManifest } from "./types.js";
 
 const STAGE_TAR = "stage.tar";
 
-/** Load manifest or exit. */
+/**
+ * @param cwd - Package root directory.
+ * @returns Loaded manifest or exits when missing.
+ */
 function loadManifestOrExit(cwd: string): DevPackageManifest {
   const manifest = loadDevManifest(cwd);
   if (!manifest) {
@@ -23,7 +29,12 @@ function loadManifestOrExit(cwd: string): DevPackageManifest {
   return manifest;
 }
 
-/** Exit if component not listed in manifest. */
+/**
+ * Exit if the basename is not listed under `components`.
+ *
+ * @param manifest - Parsed developer manifest.
+ * @param baseName - File basename to remove.
+ */
 function assertComponentInManifest(manifest: DevPackageManifest, baseName: string): void {
   const components = manifest.components ?? [];
   if (!components.includes(baseName)) {
@@ -40,11 +51,12 @@ function assertComponentInManifest(manifest: DevPackageManifest, baseName: strin
  * @param filePath - Path to file (relative to cwd)
  */
 export function componentRemove(cwd: string, filePath: string): void {
+  const manifest = loadManifestOrExit(cwd);
+  exitIfMultiDevManifestForLegacyRemove(manifest);
   const pkgRoot = path.resolve(cwd);
   const resolved = path.resolve(cwd, filePath);
   const baseName = path.basename(resolved);
 
-  const manifest = loadManifestOrExit(cwd);
   assertComponentInManifest(manifest, baseName);
 
   const tarPath = path.join(cwd, STAGE_TAR);

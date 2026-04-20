@@ -70,12 +70,62 @@ usage:
     );
   });
 
-  it("exits 1 when path invalid (outside pkg)", () => {
-    fs.writeFileSync(path.join(pkgDir, "atp-package.yaml"), "type: Rule\nname: x\nversion: 0.1.0\nusage: [x]\n");
-    expect(() => componentAdd(pkgDir, "../other/file.md")).toThrow("exit:1");
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Invalid path")
+  it("adds component from path outside package (../ relative)", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Rule
+name: test
+version: 0.1.0
+usage:
+  - x
+`
     );
+    const extDir = path.join(path.dirname(pkgDir), `atp-ext-${Date.now()}`);
+    fs.mkdirSync(extDir, { recursive: true });
+    fs.writeFileSync(path.join(extDir, "upstream.md"), "# Upstream");
+    try {
+      componentAdd(pkgDir, path.join("..", path.basename(extDir), "upstream.md"));
+      const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      expect(manifest).toMatch(/upstream\.md/);
+      const list = execSync(`tar -tf "${path.join(pkgDir, "stage.tar")}"`, {
+        encoding: "utf8",
+        cwd: pkgDir,
+      });
+      expect(list).toMatch(/upstream\.md/);
+    } finally {
+      try {
+        fs.rmSync(extDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+
+  it("adds component from absolute path", () => {
+    fs.writeFileSync(
+      path.join(pkgDir, "atp-package.yaml"),
+      `type: Rule
+name: test
+version: 0.1.0
+usage:
+  - x
+`
+    );
+    const absDir = path.join(path.dirname(pkgDir), `atp-abs-${Date.now()}`);
+    fs.mkdirSync(absDir, { recursive: true });
+    const absFile = path.join(absDir, "abs.md");
+    fs.writeFileSync(absFile, "# Abs");
+    try {
+      componentAdd(pkgDir, absFile);
+      const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      expect(manifest).toMatch(/abs\.md/);
+    } finally {
+      try {
+        fs.rmSync(absDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
   });
 
   it("exits 1 when file does not exist", () => {

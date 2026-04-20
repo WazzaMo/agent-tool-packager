@@ -13,13 +13,16 @@ This file summarises the project’s markdown documentation so agents can work e
 - **`atp agent <name>`**: assign agent (e.g. cursor) to project; configures safehouse for that agent.
 - **`atp agent handover to <name>`**: switch to a new agent; re-installs skills for new agent.
 - **`atp catalog list`**: list packages in the station catalog.
+- **`atp catalog add package`**: publish the current package directory to the user catalog (run from the package root).
+- **`atp catalog remove <name>`**: remove a **user** catalog entry and delete `user_packages/<name>/` under the Station (standard catalog rows are not removed here; edit `atp-catalog.yaml` or your standard catalog source for those).
+- **`atp validate package`**: authoring check (`atp-package.yaml` + `stage.tar` in cwd). **`atp validate catalog-package [dir]`**: same pre-install checks ATP runs before `atp install` on a catalog extract (default `dir` = cwd).
 - **`atp install <name>`**: install package from catalog. Use `--project` (default) or `--station` for prompts; `--user-bin` (default) or `--project-bin` for binaries. `--dependencies` to install deps.
-- **`atp station list`** / **`atp safehouse list`**: list installed packages. **`atp remove station <pkg>`** / **`atp remove safehouse <pkg>`**: remove packages; use `--exfiltrate` with station remove to copy to Safehouses first.
+- **`atp station list`** / **`atp safehouse list`**: list installed packages. **`atp remove station <pkg>`** / **`atp remove safehouse <pkg>`**: remove the **entire** package (no per-part uninstall after install); use `--exfiltrate` with station remove to copy to Safehouses first.
 
 ## Build and test
 
 - **Prerequisites:** Node.js v24.14.0 (the specific version required will change over time; always refer to `.node-version`). If your environment does not match, run `fnm use` to ensure the correct version is active.
-- **Commands:** `npm install`, `npm run build`, `npm run dev` (development)
+- **Commands:** `npm install`, `npm run lint`, `npm run build`, `npm run dev` (development), `npm run test:run` (tests).
 
 
 
@@ -36,7 +39,7 @@ This file summarises the project’s markdown documentation so agents can work e
 
 ## Concepts (from design notes)
 
-- **Package:** Versioned unit with manifest (`atp-package.yaml`) containing name, version, type (Rule, Skill, Mcp, Command, Experimental), components (e.g. markdown files), and optionally bundles (e.g. executables). Catalog entries point at paths or URLs; install copies from there into the project.
+- **Package:** Versioned unit with manifest (`atp-package.yaml`) containing name, version, type (Rule, Prompt, Skill, Hook, Mcp, Command, Experimental), components (e.g. markdown files), and optionally bundles (e.g. executables). Catalog entries point at paths or URLs; install copies from there into the project.
 - **Catalog:** Single index at the Station (`atp-catalog.yaml`) listing available packages (standard + user). All installs source from this catalog.
 - **Safehouse manifest:** Each project’s `.atp_safehouse` holds `manifest.yaml` listing installed packages for that project; it does not hold a catalog.
 - **Config:** `~/.atp_station/atp-config.yaml` defines version, agent-paths (cursor, claude, etc.), and standard-catalog URL. See [configuration](docs/configuration.md).
@@ -50,6 +53,7 @@ This file summarises the project’s markdown documentation so agents can work e
 | Package definition & install | [docs/features/1-package-definition-and-installation.md](docs/features/1-package-definition-and-installation.md) |
 | Package developer support    | [docs/features/2-package-developer-support.md](docs/features/2-package-developer-support.md) |
 | Contributing & schema    | [CONTRIBUTING.md](CONTRIBUTING.md)                   |
+| AgentProvider contributor guide | [docs/contributor-guide-agent-providers.md](docs/contributor-guide-agent-providers.md) |
 | Doc formatting           | [docs/doc-guide.md](docs/doc-guide.md)               |
 | Code style               | [docs/clean-code.md](docs/clean-code.md)             |
 | Package & catalog        | [docs/notes/2026-02-25-plan-package-metadata-and-catalog.md](docs/notes/2026-02-25-plan-package-metadata-and-catalog.md) |

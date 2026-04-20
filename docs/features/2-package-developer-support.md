@@ -59,13 +59,20 @@ influences how those files and bundles will be installed into the work
 environment for an agent.
 
 Package types can be:
-  1.  Rule - prompt material, usually markdown, that is installed as a rule
-      or standard prompt.
-  2.  Skill - markdown file describing for the agent, how to do achieve
+  1.  Rule - prompt material, usually markdown, installed under the agent
+      rules area (for example Cursor `rules/`).
+  2.  Prompt - reusable prompt templates or instruction files, usually markdown,
+      installed under the agent prompts area (for example Cursor `prompts/`).
+  3.  Skill - markdown file describing for the agent, how to do achieve
       an outcome or a goal.
-  3.  MCP servers which could vary in implementation
-  4.  Commands, which can be shell scripts, or other executables, that automate different workflows
-  5.  Experimental payloads to install into a project of a type the
+  4.  Hook - agent hook configuration and scripts (for example `hooks.json` plus
+      executables under a `hooks/` directory). Cursor, Claude Code, and Kiro (and
+      related agents) support hook-style extension of the agent loop; see
+      [Cursor Hooks](https://cursor.com/docs/hooks) for the reference layout ATP
+      aligns with for Cursor installs.
+  5.  MCP servers which could vary in implementation
+  6.  Commands, which can be shell scripts, or other executables, that automate different workflows
+  7.  Experimental payloads to install into a project of a type the
       industry is yet to define.
 
 A dev should be allowed to get this wrong and to fix it by
@@ -305,10 +312,12 @@ for their presence.
 Sets the correct field value. For type, it should match the keyword
 with one of the known types:
     1.  rule -> Rule
-    2.  skill -> Skill
-    3.  mcp -> Mcp
-    4.  shell -> Command
-    5.  other -> Experimental
+    2.  prompt -> Prompt
+    3.  skill -> Skill
+    4.  hook -> Hook
+    5.  mcp -> Mcp
+    6.  shell -> Command
+    7.  other -> Experimental
 
 For other subcommands, the value given within the text length limits will be taken
 and used in the package file, `atp-package.yaml`.
@@ -342,6 +351,12 @@ Exit code:
 
 ----
 
+## atp validate catalog-package [dir]
+
+Validates an **extracted catalog package** directory (e.g. `user_packages/<name>/` under the Station—the same layout ATP checks immediately before `atp install`). Optional **`dir`** defaults to the current working directory. Uses `validateCatalogInstallPackage` in code (on-disk files and manifest, not `stage.tar`). Exit codes follow the same tiers as `atp validate package` where applicable.
+
+----
+
 ## atp package summary
 
 Prints the content of the `atp-package.yaml` file.
@@ -367,14 +382,16 @@ Takes the file and add it to the `stage.tar` file, creating the file if non-exis
 ### Acceptance Criteria
 
 Must check the path and it must confirm the file exists.
-If the path is invalid, it should show an error message
-"Invalid path to component given: {path}"
-
 If the file does not exist, it should show an error message "Nominated path 
 or file does not exist."
 
-Component paths must be under the package root, which should be the current
-directory where `atp` has been invoked.
+If the path is not a file (e.g. a directory), it should show an error message
+"Path is not a file: {path}"
+
+Component sources are resolved like `cp`: paths may be **relative to the current
+directory** (including `../` to reach a parent or sibling tree) or **absolute**.
+The manifest and `stage.tar` still record components by **basename** (flat layout
+for legacy packages; `part_N_Type/basename` for Multi-type parts).
 
 If `stage.tar` cannot be created or appended this is an error.
 
@@ -587,6 +604,33 @@ of context engineering.
 
 Given the above, a rule is not expected to include any bundles,
 just a number of markdown component files.
+
+### Prompt type
+
+Prompt packages deliver reusable prompt templates or instruction text
+(usually markdown) for the agent prompts area, distinct from rules and skills.
+They are not expected to include bundles, only component files.
+
+### Hook type
+
+Hook packages ship `hooks.json` and hook scripts so an agent can observe or
+control the agent loop (shell commands, tool use, session lifecycle, and so on).
+
+For **Cursor**, follow [Cursor Hooks](https://cursor.com/docs/hooks): project hooks
+use `.cursor/hooks.json` with scripts under `.cursor/hooks/`. When you install a
+Hook-type package with ATP into a Cursor project, list a component named
+`hooks.json` for the manifest and add each script as additional components: ATP
+writes `hooks.json` at the agent project root (for example `.cursor/hooks.json`)
+and every other component file under the `hooks/` subdirectory (for example
+`.cursor/hooks/format.sh`), matching the documented layout.
+
+**Claude Code** and **Kiro** also support hook-style workflows; paths depend on
+the agent. Use `atp agent <name>` with Station `agent-paths` for that agent (the
+defaults include `kiro` with a `.kiro/` project layout). Extend `agent-paths` when
+your tool uses different directories.
+
+Hook packages are normally components only (no bundles), unless you deliberately
+package hook tooling as a command bundle alongside a small `hooks.json`.
 
 ### Command type
 

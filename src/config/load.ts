@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
 import yaml from "js-yaml";
 
 import {
@@ -15,24 +16,40 @@ import {
 } from "./paths.js";
 
 import type { StationConfig, SafehouseListConfig } from "./station-config.js";
-
 import type { SafehouseConfig } from "./types.js";
 
 const STATION_CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_CONFIG_FILE = "atp-config.yaml";
 const SAFEHOUSE_LIST_FILE = "atp-safehouse-list.yaml";
 
-/** Load Station config. Returns null if Station does not exist. */
+/**
+ * Parse a YAML file when its container directory exists and the file is present.
+ *
+ * @typeParam T - Expected document shape after `yaml.load`.
+ * @param containerDirExists - Whether the enclosing directory (e.g. Station or Safehouse) exists.
+ * @param yamlFilePath - Full path to the YAML file.
+ * @returns Parsed document, or `null` when prerequisites fail.
+ */
+function loadYamlFileWhenPresent<T>(
+  containerDirExists: boolean,
+  yamlFilePath: string
+): T | null {
+  if (!containerDirExists || !fs.existsSync(yamlFilePath)) {
+    return null;
+  }
+  const content = fs.readFileSync(yamlFilePath, "utf8");
+  return yaml.load(content) as T;
+}
+
+/**
+ * Load Station `atp-config.yaml`. Returns `null` if Station or the file is missing.
+ *
+ * @returns Parsed station configuration, or `null`.
+ */
 export function loadStationConfig(): StationConfig | null {
   const stationPath = getStationPath();
   const configPath = path.join(stationPath, STATION_CONFIG_FILE);
-
-  if (!pathExists(stationPath) || !fs.existsSync(configPath)) {
-    return null;
-  }
-
-  const content = fs.readFileSync(configPath, "utf8");
-  return yaml.load(content) as StationConfig;
+  return loadYamlFileWhenPresent<StationConfig>(pathExists(stationPath), configPath);
 }
 
 /**
@@ -45,16 +62,17 @@ export function loadSafehouseConfig(
 ): SafehouseConfig | null {
   const safehousePath = getSafehousePath(projectBase);
   const configPath = path.join(safehousePath, SAFEHOUSE_CONFIG_FILE);
-
-  if (!pathExists(safehousePath) || !fs.existsSync(configPath)) {
-    return null;
-  }
-
-  const content = fs.readFileSync(configPath, "utf8");
-  return yaml.load(content) as SafehouseConfig;
+  return loadYamlFileWhenPresent<SafehouseConfig>(
+    pathExists(safehousePath),
+    configPath
+  );
 }
 
-/** Check if Station is initialized. */
+/**
+ * Whether the Station directory exists (initialized or partially created).
+ *
+ * @returns `true` when `${STATION_PATH}` is an existing directory.
+ */
 export function stationExists(): boolean {
   return pathExists(getStationPath());
 }
@@ -87,11 +105,12 @@ export function writeSafehouseConfig(
 }
 
 /**
- * Load Safehouse list from Station. Returns expanded absolute paths to .atp_safehouse directories.
- * @returns Array<string>
+ * Load Safehouse list from a given Station root (expanded absolute `.atp_safehouse` paths).
+ *
+ * @param stationPath - Absolute Station directory (typically {@link getStationPath}).
+ * @returns Resolved paths; empty array when Station or list file is missing.
  */
-export function loadSafehouseList(): string[] {
-  const stationPath = getStationPath();
+export function loadSafehouseListFromStation(stationPath: string): string[] {
   const listPath = path.join(stationPath, SAFEHOUSE_LIST_FILE);
   if (!pathExists(stationPath) || !fs.existsSync(listPath)) {
     return [];
@@ -100,4 +119,13 @@ export function loadSafehouseList(): string[] {
   const config = yaml.load(content) as SafehouseListConfig | null;
   const raw = config?.safehouse_paths ?? [];
   return raw.map((p) => path.resolve(expandHome(p)));
+}
+
+/**
+ * Load Safehouse list from Station. Returns expanded absolute paths to `.atp_safehouse` directories.
+ *
+ * @returns Resolved paths; empty array when Station or list file is missing.
+ */
+export function loadSafehouseList(): string[] {
+  return loadSafehouseListFromStation(getStationPath());
 }

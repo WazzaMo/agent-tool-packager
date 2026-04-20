@@ -159,11 +159,11 @@ scripts into bin/ while placing the remaining hierarchy into share/.
 
 5.  Depending on the package type, look up the station's configuration agent-paths object
     for the agent configured in the Safehouse to then find the agent's `home_path`
-    and type relative path component by type, `rule` field for a rule type, `command` for command
-    type and so on. The proper path for the file components (markdown prompt matter)
+    and type relative path component by type (`rule`, `prompts`, `skills`, `hooks`, `commands`, and so on).
+    The proper path for the file components (markdown prompt matter)
     can be copied into is composed using ${home_path}/{type_relative_path}.
 
-6.  Any prompt markdown component files, especially SKILL.md skill file or markdown in rules,
+6.  Any prompt markdown component files, including SKILL.md, markdown in rules, prompt templates, or hook scripts,
     will require adjustment depending on the executable path used, depending
     on the exec scope at install time. Adjusting the path in the markdown makes
     it easier for the agent to call the executable correctly in a single attempt
@@ -220,7 +220,7 @@ Check that the rule appears in the .cursor directory in the test project directo
 
 # Markdown prompt matter format
 
-The markdown files for rules and skills need to know where the executable
+The markdown files for rules, prompts, and skills need to know where the executable
 parts of the package will be installed but the actual location on disk
 may vary.
 

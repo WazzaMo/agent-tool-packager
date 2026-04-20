@@ -20,24 +20,22 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   let base: string;
   let stationDir: string;
   let pkgDir: string;
-  let origStationPath: string | undefined;
 
   beforeEach(() => {
     const env = createTempPackageEnv("atp-f2");
     base = env.base;
     stationDir = env.stationDir;
     pkgDir = env.pkgDir;
-    origStationPath = env.origStationPath;
   });
 
   afterEach(() => {
-    cleanupTempPackageEnv(base, origStationPath);
+    cleanupTempPackageEnv(base);
   });
 
   it("catalog add package fails with exit 1 when package is incomplete", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
 
     const result = runAtpExpectExit(["catalog", "add", "package"], 1, o);
@@ -91,7 +89,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   it("package usage sets a usage list entry in atp-package.yaml", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(
       ["package", "usage", "When working on TypeScript code the coding rule should apply"],
       o
@@ -131,24 +129,36 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(true);
     const manifestBefore = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
     expect(manifestBefore).toMatch(/skeleton-pkg/);
-    runAtp(["create", "package", "skeleton"], atpCwd(pkgDir, stationDir));
+    runAtp(["create", "package", "skeleton", "--legacy"], atpCwd(pkgDir, stationDir));
     expect(fs.existsSync(path.join(pkgDir, "stage.tar"))).toBe(false);
     const manifestAfter = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
     expect(manifestAfter).not.toMatch(/skeleton-pkg/);
   });
 
-  it("component add with invalid path exits 1", () => {
+  it("component add accepts source outside package directory (../)", () => {
     initPackage(pkgDir, stationDir, {
       type: "rule",
       name: "x",
       usage: "x",
     });
-    const result = runAtpExpectExit(
-      ["package", "component", "add", "../other/file.md"],
-      1,
-      atpCwd(pkgDir, stationDir)
-    );
-    expect(result.stdout + result.stderr).toMatch(/Invalid path/);
+    const extDir = path.join(path.dirname(pkgDir), `atp-cli-ext-${Date.now()}`);
+    fs.mkdirSync(extDir, { recursive: true });
+    const extFile = path.join(extDir, "outside.md");
+    fs.writeFileSync(extFile, "# Outside\n");
+    try {
+      const rel = path.join("..", path.basename(extDir), "outside.md");
+      runAtp(["package", "component", "add", rel], atpCwd(pkgDir, stationDir));
+      const manifest = fs.readFileSync(path.join(pkgDir, "atp-package.yaml"), "utf8");
+      expect(manifest).toMatch(/outside\.md/);
+      const list = listStageTar(pkgDir);
+      expect(list).toMatch(/outside\.md/);
+    } finally {
+      try {
+        fs.rmSync(extDir, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
   });
 
   it("bundle remove when bundle not in package exits 1", () => {
@@ -222,7 +232,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
   it("atp package summary lists set items and missing (Feature 2)", () => {
     const o = atpCwd(pkgDir, stationDir);
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
     runAtp(["package", "name", "summary-pkg"], o);
     runAtp(["package", "version", "0.1.0"], o);
@@ -318,7 +328,7 @@ describe("Integration: package developer - Feature 2 acceptance", () => {
     const o = atpCwd(pkgDir, stationDir);
     fs.writeFileSync(path.join(pkgDir, "ref.md"), "# Ref\n");
     runAtp(["station", "init"], o);
-    runAtp(["create", "package", "skeleton"], o);
+    runAtp(["create", "package", "skeleton", "--legacy"], o);
     runAtp(["package", "type", "rule"], o);
     runAtp(["package", "name", "exit1-pkg"], o);
     runAtp(["package", "version", "0.1.0"], o);

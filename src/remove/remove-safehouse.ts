@@ -5,128 +5,52 @@
 
 import fs from "node:fs";
 import path from "node:path";
+
+import { resolveAgentProjectPath } from "../config/agent-path.js";
+import {
+  assignedSafehouseAgentName,
+  formatSafehouseAgentNotAssignedMessage,
+} from "../config/safehouse-agent.js";
 import {
   safehouseExists,
   loadSafehouseConfig,
   loadStationConfig,
-  loadSafehouseList,
 } from "../config/load.js";
-
+import {
+  loadPackageConfigJournalEntries,
+  rollbackMergedConfigJournal,
+} from "../config/config-merge-journal.js";
+import { getSafehousePath } from "../config/paths.js";
 import {
   loadSafehouseManifest,
   removePackageFromSafehouseManifest,
-  loadSafehouseManifestFromPath,
 } from "../config/safehouse-manifest.js";
-
-import { getSafehousePath, expandHome, pathExists } from "../config/paths.js";
-import { resolveAgentProjectPath } from "../config/agent-path.js";
-
 import {
   resolvePackage,
   resolvePackagePath,
   loadPackageManifest,
 } from "../install/resolve.js";
 
-import type { PackageAsset } from "../install/types.js";
+import { removeAgentCopies } from "./safehouse-remove-agent-assets.js";
+import { removeUserBinariesIfUnused } from "./safehouse-remove-user-bin.js";
 
-const ASSET_TYPES_TO_AGENT_SUBDIR: Record<string, string> = {
-  skill: "skills",
-  rule: "rules",
-  "sub-agent": "rules",
-  program: "bin",
-};
+/** Outcome of {@link removeSafehousePackageWithResult} when removal fails. */
+export type RemoveSafehouseFailureCode =
+  | "no_safehouse"
+  | "not_installed"
+  | "agent_not_assigned";
 
-const LOCAL_BIN = "~/.local/bin";
-const LOCAL_SHARE = "~/.local/share";
-const LOCAL_ETC = "~/.local/etc";
+export type RemoveSafehousePackageResult =
+  | { ok: true }
+  | { ok: false; code: RemoveSafehouseFailureCode; message: string };
 
-function getLocalBinPath(): string {
-  return path.join(expandHome(LOCAL_BIN));
-}
-
-function getLocalSharePath(): string {
-  return path.join(expandHome(LOCAL_SHARE));
-}
-
-function getLocalEtcPath(): string {
-  return path.join(expandHome(LOCAL_ETC));
-}
-
-/** Remove package binaries and share from Station (~/.local) IF no other Safehouse uses them. */
-function removeUserBinariesIfUnused(pkgName: string, currentCwd: string): void {
-  const safehousePaths = loadSafehouseList();
-  const others = safehousePaths.filter(
-    (p) => path.resolve(p) !== path.resolve(getSafehousePath(currentCwd))
-  );
-
-  let inUse = false;
-  for (const shPath of others) {
-    const manifest = loadSafehouseManifestFromPath(shPath);
-    if (
-      manifest?.packages?.some(
-        (p) => p.name === pkgName && p.binary_scope === "user-bin"
-      )
-    ) {
-      inUse = true;
-      break;
-    }
-  }
-
-  if (!inUse) {
-    const localBin = getLocalBinPath();
-    const shareDir = path.join(getLocalSharePath(), pkgName);
-    const etcDir = path.join(getLocalEtcPath(), pkgName);
-
-    if (pathExists(shareDir)) {
-      fs.rmSync(shareDir, { recursive: true });
-    }
-    if (pathExists(etcDir)) {
-      fs.rmSync(etcDir, { recursive: true });
-    }
-
-    const binFile = path.join(localBin, pkgName);
-    if (fs.existsSync(binFile) && fs.statSync(binFile).isFile()) {
-      fs.unlinkSync(binFile);
-    }
-    console.log(`Removed shared binaries for ${pkgName} as they are no longer in use.`);
-  } else {
-    console.log(`Shared binaries for ${pkgName} kept as they are still in use by other projects.`);
-  }
-}
-
-function removeAgentCopies(
-  projectBase: string,
-  pkgName: string,
-  assets: PackageAsset[]
-): void {
-  const config = loadSafehouseConfig(projectBase);
-  const stationConfig = loadStationConfig();
-  const agentName = config?.agent ?? "cursor";
-  const projectPath = resolveAgentProjectPath(agentName, stationConfig);
-  const agentBase = path.join(projectBase, projectPath);
-
-  for (const asset of assets) {
-    if (asset.type === "program") continue;
-
-    const subdir = ASSET_TYPES_TO_AGENT_SUBDIR[asset.type] ?? "skills";
-    const baseName = path.basename(asset.path);
-    const destPath = path.join(agentBase, subdir, baseName);
-
-    if (fs.existsSync(destPath)) {
-      try {
-        fs.unlinkSync(destPath);
-      } catch (err) {
-        console.warn(`Could not remove ${destPath}:`, err);
-      }
-    }
-  }
-}
-
-/** Remove package binaries and share data from Safehouse. */
-function removeSafehouseBinariesAndShare(
-  safehousePath: string,
-  utility: string
-): void {
+/**
+ * Remove project-scoped `share/`, `etc/`, and named binary under the Safehouse tree.
+ *
+ * @param safehousePath - Path to `.atp_safehouse`.
+ * @param utility - Package name used as subdirectory / binary stem.
+ */
+function removeSafehouseBinariesAndShare(safehousePath: string, utility: string): void {
   const shareDir = path.join(safehousePath, "share", utility);
   const etcDir = path.join(safehousePath, "etc", utility);
   const binDir = path.join(safehousePath, "bin");
@@ -138,20 +62,29 @@ function removeSafehouseBinariesAndShare(
     fs.rmSync(etcDir, { recursive: true });
   }
 
-  // Best-effort: remove binary with package name if it exists
   const binFile = path.join(binDir, utility);
   if (fs.existsSync(binFile) && fs.statSync(binFile).isFile()) {
     fs.unlinkSync(binFile);
   }
 }
 
-export function removeSafehousePackage(
+/**
+ * Remove a package from the project Safehouse manifest and clean up installed files.
+ *
+ * @param pkgName - Package name as recorded in the manifest.
+ * @param cwd - Project base directory; defaults to `process.cwd()`.
+ * @returns Success or a structured failure (no `process.exit`).
+ */
+export function removeSafehousePackageWithResult(
   pkgName: string,
   cwd: string = process.cwd()
-): void {
+): RemoveSafehousePackageResult {
   if (!safehouseExists(cwd)) {
-    console.error("No Safehouse found. Run `atp safehouse init` first.");
-    process.exit(1);
+    return {
+      ok: false,
+      code: "no_safehouse",
+      message: "No Safehouse found. Run `atp safehouse init` first.",
+    };
   }
 
   const manifest = loadSafehouseManifest(cwd);
@@ -159,18 +92,58 @@ export function removeSafehousePackage(
   const found = packages.find((p) => p.name === pkgName);
 
   if (!found) {
-    console.error(`Package ${pkgName} is not installed in this Safehouse.`);
-    process.exit(1);
+    return {
+      ok: false,
+      code: "not_installed",
+      message: `Package ${pkgName} is not installed in this Safehouse.`,
+    };
   }
 
-  // Remove skill/rule copies - need package manifest for asset list
+  const safehousePath = getSafehousePath(cwd);
+  const stationConfig = loadStationConfig();
+  const shConfig = loadSafehouseConfig(cwd);
+  const agentName = assignedSafehouseAgentName(shConfig);
+  if (!agentName) {
+    return {
+      ok: false,
+      code: "agent_not_assigned",
+      message: formatSafehouseAgentNotAssignedMessage(),
+    };
+  }
+  const agentBaseForJournal = path.join(cwd, resolveAgentProjectPath(agentName, stationConfig));
+
+  let skipMcpHooksFragmentStrip = false;
+  if (found.config_journal_path) {
+    const journalEntries = loadPackageConfigJournalEntries(
+      safehousePath,
+      found.config_journal_path
+    );
+    if (journalEntries.length > 0) {
+      const warnings = rollbackMergedConfigJournal(
+        agentBaseForJournal,
+        path.resolve(cwd),
+        journalEntries
+      );
+      for (const w of warnings) {
+        console.warn(w);
+      }
+      skipMcpHooksFragmentStrip = true;
+    }
+  }
+
   const catalogPkg = resolvePackage(pkgName, cwd);
   if (catalogPkg) {
     const pkgDir = resolvePackagePath(catalogPkg.location, cwd);
     if (pkgDir) {
       const pkgManifest = loadPackageManifest(pkgDir);
       if (pkgManifest?.assets) {
-        removeAgentCopies(cwd, pkgName, pkgManifest.assets);
+        removeAgentCopies(
+          cwd,
+          pkgName,
+          pkgManifest.assets,
+          pkgDir,
+          skipMcpHooksFragmentStrip
+        );
       }
     }
   } else {
@@ -179,14 +152,11 @@ export function removeSafehousePackage(
     );
   }
 
-  const safehousePath = getSafehousePath(cwd);
-
   if (found.binary_scope === "user-bin") {
     removeUserBinariesIfUnused(pkgName, cwd);
   } else if (found.binary_scope === "project-bin") {
     removeSafehouseBinariesAndShare(safehousePath, pkgName);
   } else {
-    // Default/fallback: just try both if scope unknown
     removeUserBinariesIfUnused(pkgName, cwd);
     removeSafehouseBinariesAndShare(safehousePath, pkgName);
   }
@@ -194,4 +164,19 @@ export function removeSafehousePackage(
   removePackageFromSafehouseManifest(pkgName, cwd);
 
   console.log(`Removed ${pkgName} from Safehouse.`);
+  return { ok: true };
+}
+
+/**
+ * Remove a package from the project Safehouse manifest and clean up installed files.
+ *
+ * @param pkgName - Package name as recorded in the manifest.
+ * @param cwd - Project base directory; defaults to `process.cwd()`.
+ */
+export function removeSafehousePackage(pkgName: string, cwd: string = process.cwd()): void {
+  const r = removeSafehousePackageWithResult(pkgName, cwd);
+  if (!r.ok) {
+    console.error(r.message);
+    process.exit(1);
+  }
 }

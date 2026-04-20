@@ -6,37 +6,54 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { stationExists, loadSafehouseList } from "../config/load.js";
 
+import { stationExists, loadSafehouseList } from "../config/load.js";
+import { expandHome, pathExists } from "../config/paths.js";
+import {
+  loadSafehouseManifestFromPath,
+  updateSafehousePackageInManifest,
+} from "../config/safehouse-manifest.js";
 import {
   stationHasPackage,
   deleteStationPackageManifest,
 } from "../config/station-package-manifest.js";
 
-import {
-  loadSafehouseManifestFromPath,
-  updateSafehousePackageInManifest,
-} from "../config/safehouse-manifest.js";
-
-import { expandHome, pathExists } from "../config/paths.js";
-
 const LOCAL_BIN = "~/.local/bin";
 const LOCAL_SHARE = "~/.local/share";
 const LOCAL_ETC = "~/.local/etc";
 
+/**
+ * Absolute path to the user's `~/.local/bin` directory.
+ *
+ * @returns Resolved bin directory.
+ */
 function getLocalBinPath(): string {
   return path.join(expandHome(LOCAL_BIN));
 }
 
+/**
+ * Absolute path to the user's `~/.local/share` root.
+ *
+ * @returns Resolved share root.
+ */
 function getLocalSharePath(): string {
   return path.join(expandHome(LOCAL_SHARE));
 }
 
+/**
+ * Absolute path to the user's `~/.local/etc` root.
+ *
+ * @returns Resolved etc root.
+ */
 function getLocalEtcPath(): string {
   return path.join(expandHome(LOCAL_ETC));
 }
 
-/** Remove package binaries and share from Station (~/.local). */
+/**
+ * Remove package binaries and share data from the user Station layout (`~/.local`).
+ *
+ * @param utility - Package / utility name (binary basename and share subtree).
+ */
 function removeStationBinariesAndShare(utility: string): void {
   const localBin = getLocalBinPath();
   const shareDir = path.join(getLocalSharePath(), utility);
@@ -55,7 +72,12 @@ function removeStationBinariesAndShare(utility: string): void {
   }
 }
 
-/** Copy Station binaries/share/config to a Safehouse. */
+/**
+ * Copy `~/.local` bin/share/etc for `utility` into a Safehouse tree (`bin/`, `share/`, `etc/`).
+ *
+ * @param safehousePath - Absolute path to `.atp_safehouse` (or Station-listed path).
+ * @param utility - Package name used as subdirectory under share/etc and bin filename.
+ */
 function exfiltrateToSafehouse(
   safehousePath: string,
   utility: string
@@ -87,6 +109,13 @@ function exfiltrateToSafehouse(
   }
 }
 
+/**
+ * Remove a package from the Station manifest and user-local install artifacts.
+ * Optionally exfiltrate binaries/share to Safehouses that still reference the package.
+ *
+ * @param pkgName - Catalog / manifest package name.
+ * @param opts - When `exfiltrate` is true, copy assets to qualifying Safehouses and mark `source: local`.
+ */
 export function removeStationPackage(
   pkgName: string,
   opts: { exfiltrate?: boolean } = {}
