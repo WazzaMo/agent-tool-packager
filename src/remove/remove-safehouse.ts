@@ -34,6 +34,16 @@ import {
 import { removeAgentCopies } from "./safehouse-remove-agent-assets.js";
 import { removeUserBinariesIfUnused } from "./safehouse-remove-user-bin.js";
 
+/** Outcome of {@link removeSafehousePackageWithResult} when removal fails. */
+export type RemoveSafehouseFailureCode =
+  | "no_safehouse"
+  | "not_installed"
+  | "agent_not_assigned";
+
+export type RemoveSafehousePackageResult =
+  | { ok: true }
+  | { ok: false; code: RemoveSafehouseFailureCode; message: string };
+
 /**
  * Remove project-scoped `share/`, `etc/`, and named binary under the Safehouse tree.
  *
@@ -63,14 +73,18 @@ function removeSafehouseBinariesAndShare(safehousePath: string, utility: string)
  *
  * @param pkgName - Package name as recorded in the manifest.
  * @param cwd - Project base directory; defaults to `process.cwd()`.
+ * @returns Success or a structured failure (no `process.exit`).
  */
-export function removeSafehousePackage(
+export function removeSafehousePackageWithResult(
   pkgName: string,
   cwd: string = process.cwd()
-): void {
+): RemoveSafehousePackageResult {
   if (!safehouseExists(cwd)) {
-    console.error("No Safehouse found. Run `atp safehouse init` first.");
-    process.exit(1);
+    return {
+      ok: false,
+      code: "no_safehouse",
+      message: "No Safehouse found. Run `atp safehouse init` first.",
+    };
   }
 
   const manifest = loadSafehouseManifest(cwd);
@@ -78,8 +92,11 @@ export function removeSafehousePackage(
   const found = packages.find((p) => p.name === pkgName);
 
   if (!found) {
-    console.error(`Package ${pkgName} is not installed in this Safehouse.`);
-    process.exit(1);
+    return {
+      ok: false,
+      code: "not_installed",
+      message: `Package ${pkgName} is not installed in this Safehouse.`,
+    };
   }
 
   const safehousePath = getSafehousePath(cwd);
@@ -87,8 +104,11 @@ export function removeSafehousePackage(
   const shConfig = loadSafehouseConfig(cwd);
   const agentName = assignedSafehouseAgentName(shConfig);
   if (!agentName) {
-    console.error(formatSafehouseAgentNotAssignedMessage());
-    process.exit(1);
+    return {
+      ok: false,
+      code: "agent_not_assigned",
+      message: formatSafehouseAgentNotAssignedMessage(),
+    };
   }
   const agentBaseForJournal = path.join(cwd, resolveAgentProjectPath(agentName, stationConfig));
 
@@ -144,4 +164,19 @@ export function removeSafehousePackage(
   removePackageFromSafehouseManifest(pkgName, cwd);
 
   console.log(`Removed ${pkgName} from Safehouse.`);
+  return { ok: true };
+}
+
+/**
+ * Remove a package from the project Safehouse manifest and clean up installed files.
+ *
+ * @param pkgName - Package name as recorded in the manifest.
+ * @param cwd - Project base directory; defaults to `process.cwd()`.
+ */
+export function removeSafehousePackage(pkgName: string, cwd: string = process.cwd()): void {
+  const r = removeSafehousePackageWithResult(pkgName, cwd);
+  if (!r.ok) {
+    console.error(r.message);
+    process.exit(1);
+  }
 }

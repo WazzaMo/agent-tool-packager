@@ -11,6 +11,7 @@ import yaml from "js-yaml";
 import {
   isSafeCatalogPackageName,
   removeCatalogUserPackage,
+  removeCatalogUserPackageWithPolicy,
 } from "../../src/package/catalog-remove.js";
 
 import { makeStationCatalogYaml } from "../integration/test-helpers.js";
@@ -143,6 +144,134 @@ describe("catalog-remove", () => {
       };
       expect(root.catalog).toBeDefined();
       expect(root.catalog.packages.user).toHaveLength(0);
+    });
+  });
+
+  describe("removeCatalogUserPackageWithPolicy", () => {
+    let stationDir: string;
+    let fakeProj: string;
+    let prevStationPath: string | undefined;
+
+    beforeEach(() => {
+      prevStationPath = process.env.STATION_PATH;
+      stationDir = path.join(os.tmpdir(), `atp-catpol-${Date.now()}`);
+      fakeProj = path.join(os.tmpdir(), `atp-catpol-proj-${Date.now()}`);
+      process.env.STATION_PATH = stationDir;
+      fs.mkdirSync(stationDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(stationDir, "atp-config.yaml"),
+        `configuration:
+  version: 0.1.0
+  agent-paths:
+    cursor:
+      project_path: .cursor/
+`,
+        "utf8"
+      );
+      const sh = path.join(fakeProj, ".atp_safehouse");
+      fs.mkdirSync(sh, { recursive: true });
+      fs.writeFileSync(
+        path.join(sh, "atp-config.yaml"),
+        yaml.dump({ agent: "cursor", station_path: stationDir }),
+        "utf8"
+      );
+      fs.writeFileSync(
+        path.join(sh, "manifest.yaml"),
+        yaml.dump({
+          "Safehouse-Manifest": {
+            packages: [{ name: "guard-pkg", source: "station", binary_scope: "user-bin" }],
+            station_path: null,
+          },
+        }),
+        "utf8"
+      );
+      fs.writeFileSync(
+        path.join(stationDir, "atp-safehouse-list.yaml"),
+        yaml.dump({ safehouse_paths: [sh] }, { lineWidth: 120 }),
+        "utf8"
+      );
+      const userDir = path.join(stationDir, "user_packages", "guard-pkg");
+      fs.mkdirSync(userDir, { recursive: true });
+      fs.writeFileSync(path.join(userDir, "atp-package.yaml"), "name: guard-pkg\nversion: 1\n");
+      const yamlText = makeStationCatalogYaml(
+        [
+          {
+            name: "guard-pkg",
+            version: "1.0.0",
+            location: `file://${userDir.replace(/\\/g, "/")}`,
+          },
+        ],
+        []
+      );
+      fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), yamlText);
+    });
+
+    afterEach(() => {
+      if (prevStationPath === undefined) {
+        delete process.env.STATION_PATH;
+      } else {
+        process.env.STATION_PATH = prevStationPath;
+      }
+      for (const d of [stationDir, fakeProj]) {
+        try {
+          fs.rmSync(d, { recursive: true });
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+
+    it("refuses default mode when a registered Safehouse still lists the package", () => {
+      const r = removeCatalogUserPackageWithPolicy(stationDir, "guard-pkg", {});
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.code).toBe("still_in_registered_safehouses");
+        expect(r.message).toContain("--and-from-projects");
+        expect(r.message).toContain("--from-catalog-only");
+        expect(r.message).toContain(path.resolve(fakeProj));
+      }
+      expect(fs.existsSync(path.join(stationDir, "user_packages", "guard-pkg"))).toBe(true);
+    });
+
+    it("allows removal with fromCatalogOnly while manifest still references the package", () => {
+      const r = removeCatalogUserPackageWithPolicy(stationDir, "guard-pkg", {
+        fromCatalogOnly: true,
+      });
+      expect(r.ok).toBe(true);
+      const doc = yaml.load(fs.readFileSync(path.join(stationDir, "atp-catalog.yaml"), "utf8")) as {
+        packages: { user: { name: string }[] };
+      };
+      expect(doc.packages.user).toHaveLength(0);
+    });
+
+    it("rejects when both policy flags are set", () => {
+      const r = removeCatalogUserPackageWithPolicy(stationDir, "guard-pkg", {
+        fromCatalogOnly: true,
+        andFromProjects: true,
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.code).toBe("conflicting_catalog_remove_options");
+      }
+    });
+
+    it("andFromProjects removes from Safehouse manifest then drops the catalog row", () => {
+      const r = removeCatalogUserPackageWithPolicy(stationDir, "guard-pkg", {
+        andFromProjects: true,
+      });
+      expect(r.ok).toBe(true);
+      if (r.ok) {
+        expect(r.removedFromProjectBases).toEqual([path.resolve(fakeProj)]);
+      }
+      const doc = yaml.load(fs.readFileSync(path.join(stationDir, "atp-catalog.yaml"), "utf8")) as {
+        packages: { user: { name: string }[] };
+      };
+      expect(doc.packages.user).toHaveLength(0);
+      const man = yaml.load(
+        fs.readFileSync(path.join(fakeProj, ".atp_safehouse", "manifest.yaml"), "utf8")
+      ) as { "Safehouse-Manifest": { packages: { name: string }[] } };
+      const pkgs = man["Safehouse-Manifest"]?.packages ?? [];
+      expect(pkgs.some((p) => p.name === "guard-pkg")).toBe(false);
     });
   });
 });

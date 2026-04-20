@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import yaml from "js-yaml";
 import {
   runAtp,
   runAtpSpawn,
@@ -121,5 +122,168 @@ describe("Integration: catalog list", () => {
       env: { STATION_PATH: stationDir },
     });
     expect(r.status).toBe(2);
+  });
+});
+
+describe("Integration: catalog remove vs registered Safehouses", () => {
+  let stationDir: string;
+  let cwdDir: string;
+  let blockerProj: string;
+  let installProj: string;
+
+  beforeEach(() => {
+    stationDir = path.join(os.tmpdir(), `atp-catsh-st-${Date.now()}`);
+    cwdDir = path.join(os.tmpdir(), `atp-catsh-cwd-${Date.now()}`);
+    blockerProj = path.join(os.tmpdir(), `atp-catsh-block-${Date.now()}`);
+    installProj = path.join(os.tmpdir(), `atp-catsh-inst-${Date.now()}`);
+    fs.mkdirSync(stationDir, { recursive: true });
+    fs.mkdirSync(cwdDir, { recursive: true });
+    fs.mkdirSync(blockerProj, { recursive: true });
+    fs.mkdirSync(installProj, { recursive: true });
+    fs.writeFileSync(
+      path.join(stationDir, "atp-config.yaml"),
+      `configuration:
+  version: 0.1.0
+  agent-paths:
+    cursor:
+      project_path: .cursor/
+`
+    );
+    const catalogContent = makeStationCatalogYaml(
+      [
+        {
+          name: "test-package",
+          version: "1.0.0",
+          location: `file://${FIXTURE_PKG.replace(/\\/g, "/")}`,
+        },
+      ],
+      []
+    );
+    fs.writeFileSync(path.join(stationDir, "atp-catalog.yaml"), catalogContent);
+    fs.mkdirSync(path.join(stationDir, "manifest"), { recursive: true });
+  });
+
+  afterEach(() => {
+    for (const d of [stationDir, cwdDir, blockerProj, installProj]) {
+      try {
+        fs.rmSync(d, { recursive: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+
+  it("atp catalog remove refuses when a registered Safehouse manifest still lists the package", () => {
+    const shBlock = path.join(blockerProj, ".atp_safehouse");
+    fs.mkdirSync(shBlock, { recursive: true });
+    fs.writeFileSync(
+      path.join(shBlock, "manifest.yaml"),
+      yaml.dump({
+        "Safehouse-Manifest": {
+          packages: [
+            { name: "test-package", source: "station", binary_scope: "user-bin" },
+          ],
+          station_path: null,
+        },
+      }),
+      "utf8"
+    );
+    fs.writeFileSync(
+      path.join(stationDir, "atp-safehouse-list.yaml"),
+      yaml.dump({ safehouse_paths: [shBlock] }),
+      "utf8"
+    );
+
+    const r = runAtpSpawn(["catalog", "remove", "test-package"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr + r.stdout).toMatch(/registered project Safehouse/i);
+    expect(r.stderr + r.stdout).toMatch(/--and-from-projects/);
+    const listOut = runAtp(["catalog", "list"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(listOut).toContain("test-package");
+  });
+
+  it("atp catalog remove --from-catalog-only succeeds despite registered Safehouse manifest", () => {
+    const shBlock = path.join(blockerProj, ".atp_safehouse");
+    fs.mkdirSync(shBlock, { recursive: true });
+    fs.writeFileSync(
+      path.join(shBlock, "manifest.yaml"),
+      yaml.dump({
+        "Safehouse-Manifest": {
+          packages: [
+            { name: "test-package", source: "station", binary_scope: "user-bin" },
+          ],
+          station_path: null,
+        },
+      }),
+      "utf8"
+    );
+    fs.writeFileSync(
+      path.join(stationDir, "atp-safehouse-list.yaml"),
+      yaml.dump({ safehouse_paths: [shBlock] }),
+      "utf8"
+    );
+
+    runAtp(["catalog", "remove", "test-package", "--from-catalog-only"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+    const listOut = runAtp(["catalog", "list"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(listOut).not.toContain("test-package");
+  });
+
+  it("atp catalog remove rejects mutually exclusive flags", () => {
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    const r = runAtpSpawn(
+      ["catalog", "remove", "test-package", "--from-catalog-only", "--and-from-projects"],
+      {
+        cwd: cwdDir,
+        env: { STATION_PATH: stationDir },
+      }
+    );
+    expect(r.status).toBe(1);
+    expect(r.stderr + r.stdout).toMatch(/mutually exclusive/i);
+  });
+
+  it("atp catalog remove --and-from-projects removes install then catalog row", () => {
+    fs.writeFileSync(path.join(stationDir, "atp-safehouse-list.yaml"), "safehouse_paths: []\n");
+    fs.mkdirSync(path.join(installProj, ".git"), { recursive: true });
+    runAtp(["safehouse", "init"], {
+      cwd: installProj,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["agent", "cursor"], {
+      cwd: installProj,
+      env: { STATION_PATH: stationDir },
+    });
+    runAtp(["install", "test-package", "--project"], {
+      cwd: installProj,
+      env: { STATION_PATH: stationDir },
+    });
+
+    runAtp(["catalog", "remove", "test-package", "--and-from-projects"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+
+    const catList = runAtp(["catalog", "list"], {
+      cwd: cwdDir,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(catList).not.toContain("test-package");
+
+    const shList = runAtp(["safehouse", "list"], {
+      cwd: installProj,
+      env: { STATION_PATH: stationDir },
+    });
+    expect(shList).toMatch(/No packages installed|no packages/i);
   });
 });

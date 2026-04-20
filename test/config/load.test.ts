@@ -13,6 +13,7 @@ import {
   stationExists,
   safehouseExists,
   loadSafehouseList,
+  loadSafehouseListFromStation,
 } from "../../src/config/load.js";
 
 import {
@@ -131,6 +132,20 @@ describe("config/load", () => {
       deleteStationPackageManifest("util-pkg");
       expect(stationHasPackage("util-pkg")).toBe(false);
 
+      fs.rmSync(tmp, { recursive: true });
+    });
+  });
+
+  describe("loadSafehouseListFromStation", () => {
+    it("reads paths without STATION_PATH env", () => {
+      const tmp = createTempDir();
+      fs.writeFileSync(
+        path.join(tmp, "atp-safehouse-list.yaml"),
+        "safehouse_paths:\n  - /abs/z-safe\n  - /abs/a-safe"
+      );
+      const list = loadSafehouseListFromStation(tmp);
+      expect(list).toHaveLength(2);
+      expect(list[0]).toMatch(/abs/);
       fs.rmSync(tmp, { recursive: true });
     });
   });

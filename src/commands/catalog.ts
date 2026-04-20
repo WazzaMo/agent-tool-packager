@@ -96,7 +96,19 @@ export function registerCatalogCommands(program: Command): void {
     .description(
       "Remove a user catalog package from the Station (atp-catalog.yaml and user_packages/)"
     )
-    .action((packageName: string) => {
-      catalogRemovePackageCli(packageName);
+    .option(
+      "--from-catalog-only",
+      "Remove the catalog row even when registered Safehouses still list this package (may orphan installs)"
+    )
+    .option(
+      "--and-from-projects",
+      "Remove this package from every registered Safehouse manifest first, then drop the catalog row"
+    )
+    .action(function (this: Command, packageName: string) {
+      const o = this.opts() as { fromCatalogOnly?: boolean; andFromProjects?: boolean };
+      catalogRemovePackageCli(packageName, {
+        fromCatalogOnly: o.fromCatalogOnly ?? false,
+        andFromProjects: o.andFromProjects ?? false,
+      });
     });
 }

@@ -105,12 +105,12 @@ export function writeSafehouseConfig(
 }
 
 /**
- * Load Safehouse list from Station. Returns expanded absolute paths to `.atp_safehouse` directories.
+ * Load Safehouse list from a given Station root (expanded absolute `.atp_safehouse` paths).
  *
+ * @param stationPath - Absolute Station directory (typically {@link getStationPath}).
  * @returns Resolved paths; empty array when Station or list file is missing.
  */
-export function loadSafehouseList(): string[] {
-  const stationPath = getStationPath();
+export function loadSafehouseListFromStation(stationPath: string): string[] {
   const listPath = path.join(stationPath, SAFEHOUSE_LIST_FILE);
   if (!pathExists(stationPath) || !fs.existsSync(listPath)) {
     return [];
@@ -119,4 +119,13 @@ export function loadSafehouseList(): string[] {
   const config = yaml.load(content) as SafehouseListConfig | null;
   const raw = config?.safehouse_paths ?? [];
   return raw.map((p) => path.resolve(expandHome(p)));
+}
+
+/**
+ * Load Safehouse list from Station. Returns expanded absolute paths to `.atp_safehouse` directories.
+ *
+ * @returns Resolved paths; empty array when Station or list file is missing.
+ */
+export function loadSafehouseList(): string[] {
+  return loadSafehouseListFromStation(getStationPath());
 }
