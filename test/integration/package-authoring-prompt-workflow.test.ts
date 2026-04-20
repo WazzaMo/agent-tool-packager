@@ -6,8 +6,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { escapeRegExp } from "node:util";
 import yaml from "js-yaml";
+
+import { escapeRegExp } from "../../src/install/copy-asset-support.js";
 import { runAtp, runAtpExpectExit, PROJECT_ROOT } from "./test-helpers.js";
 import { atpCwd, listStageTar } from "./package-developer-helpers.js";
 
