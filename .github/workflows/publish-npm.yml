@@ -12,6 +12,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment:
+      name: publisher
+      deployment: false
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
@@ -23,7 +26,6 @@ jobs:
         with:
           node-version-file: '.node-version'
           node-version: '24'
-          # registry-url: 'https://www.npmjs.com/package/'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
