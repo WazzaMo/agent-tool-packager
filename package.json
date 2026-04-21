@@ -7,7 +7,10 @@
   "description": "CLI for agentic software development workflows",
   "type": "module",
   "main": "dist/atp.js",
-  "repository.url": "https://github.com/WazzaMo/agent-tool-packager",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WazzaMo/agent-tool-packager"
+  },
   "bin": {
     "atp": "bin/atp"
   },
